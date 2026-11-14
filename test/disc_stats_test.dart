@@ -23,13 +23,16 @@ double _shot(double power) {
   b.y = b.py = e.Fb - 120;
   e.fire(b, 0, -1e6, 1e6); // full power straight up the pitch (dx, dy = drag vector, l = its length)
   final v0 = math.sqrt(b.vx * b.vx + b.vy * b.vy);
-  final y0 = b.y;
+  // path length (v6 billiards: a full-power shot now reaches the far cushion and comes back)
+  var path = 0.0;
   for (var i = 0; i < 60 * 20 && (b.vx != 0 || b.vy != 0); i++) {
+    final x0 = b.x, y0 = b.y;
     e.update(1 / 60);
+    path += math.sqrt((b.x - x0) * (b.x - x0) + (b.y - y0) * (b.y - y0));
   }
   // ignore: avoid_print
-  print('power ${power.toStringAsFixed(1)}: launch ${v0.toStringAsFixed(0)} px/s, travel ${(y0 - b.y).toStringAsFixed(0)} px');
-  return y0 - b.y;
+  print('power ${power.toStringAsFixed(1)}: launch ${v0.toStringAsFixed(0)} px/s, path ${path.toStringAsFixed(0)} px');
+  return path;
 }
 
 void main() {
