@@ -147,6 +147,3 @@ class Rarity {
 }
 
 const kRarity = [Rarity('COMMON', 0xff8ea3d6), Rarity('RARE', 0xff4fe3ff), Rarity('EPIC', 0xffb46bff), Rarity('LEGENDARY', 0xffffd257)];
-
-/// Ball-size choices (0 small, 1 medium = default, 2 large) shared by the offline setup and online rooms.
-const List<(int, String)> kBallSizeItems = [(0, 'کوچک'), (1, 'متوسط'), (2, 'بزرگ')];

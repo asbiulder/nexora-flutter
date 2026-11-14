@@ -234,7 +234,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     Wrap(textDirection: TextDirection.rtl, runSpacing: 4, children: [
                       Badge2(ruleLabel(room.rec('settings')), color: C.violet),
                       Badge2(kFields[room.rec('settings').i('field').clamp(0, kFields.length - 1)].name, color: C.sky),
-                      Badge2('توپ ${kBallSizeItems[room.rec('settings').i('bsize', 1).clamp(0, 2)].$2}', color: N.amber),
                       Badge2(room.b('ranked') ? 'رتبه‌ای' : 'دوستانه', color: room.b('ranked') ? C.gold : C.green),
                       if (room.b('is_private')) const Badge2('خصوصی', color: C.pink),
                       if (playing) const Badge2('در حال بازی', color: C.red, live: true),
@@ -350,7 +349,7 @@ class _RoomSettingsState extends State<_RoomSettings> {
   late final Rec room = widget.link.room!;
   late final name = TextEditingController(text: room.s('name'));
   late String rule = settingsToRule(room.rec('settings'));
-  late int turn = room.rec('settings').i('turn', 15), field = room.rec('settings').i('field'), bsize = room.rec('settings').i('bsize', 1).clamp(0, 2);
+  late int turn = room.rec('settings').i('turn', 15), field = room.rec('settings').i('field');
   late final String mode0 = kModesOnline.contains(room.s('mode')) ? room.s('mode') : '1v1';
   late String mode = mode0;
   bool busy = false;
@@ -366,7 +365,7 @@ class _RoomSettingsState extends State<_RoomSettings> {
     setState(() => busy = true);
     final args = <String, dynamic>{
       'p_room': room.s('id'),
-      'p_settings': {...room.rec('settings').m, ...ruleToSettings(rule), 'turn': turn, 'field': field, 'bsize': bsize},
+      'p_settings': {...room.rec('settings').m, ...ruleToSettings(rule), 'turn': turn, 'field': field},
       'p_name': name.text.trim().substring(0, name.text.trim().length.clamp(0, 40)),
     };
     try {
@@ -407,8 +406,6 @@ class _RoomSettingsState extends State<_RoomSettings> {
         Segment<int>(value: turn, onChange: (v) => setState(() => turn = v), items: const [(10, '۱۰ث'), (15, '۱۵ث'), (20, '۲۰ث'), (0, 'بدون')], accent: C.green),
         _lbl('زمین'),
         FieldPicker(value: field, onChange: (v) => setState(() => field = v)),
-        _lbl('اندازه‌ی توپ'),
-        Segment<int>(value: bsize, onChange: (v) => setState(() => bsize = v), items: kBallSizeItems, accent: C.orange),
         const SizedBox(height: 16),
         Btn(busy ? 'در حال ذخیره…' : 'ذخیره', disabled: busy, onTap: _save),
       ]);
@@ -585,7 +582,7 @@ class _HubScreenState extends State<HubScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Row(textDirection: TextDirection.rtl, children: [
-                SizedBox(width: 120, child: Btn('ساخت اتاق', small: true, colors: G.green, onTap: () => showSheet(context, title: 'ساخت اتاق', en: 'CREATE ROOM', accent: C.green, height: .88, child: (ctx) => _CreateRoom(onCreate: (a) {
+                SizedBox(width: 120, child: Btn('ساخت اتاق', small: true, colors: G.green, onTap: () => showSheet(context, title: 'ساخت اتاق', en: 'CREATE ROOM', accent: C.green, height: .88, child: (ctx) => CreateRoomSheet(onCreate: (a) {
                           Navigator.pop(ctx);
                           act('create', () => rpc('create_room', a));
                         })))),
@@ -606,7 +603,7 @@ class _HubScreenState extends State<HubScreen> {
             else if (data.isEmpty)
               const EmptyState('فعلاً اتاقی باز نیست · یک اتاق بساز و دوستانت را با کد دعوت کن')
             else
-              for (final r in data) _RoomRow(r: r, busy: busy, onJoin: (id, spec) => act((spec ? 'w' : 'j') + id, () => rpc('join_room', {'p_room': id, 'p_spectate': spec}))),
+              for (final r in data) RoomRow(r: r, busy: busy, onJoin: (id, spec) => act((spec ? 'w' : 'j') + id, () => rpc('join_room', {'p_room': id, 'p_spectate': spec}))),
           ]),
         ),
       ]),
@@ -614,11 +611,11 @@ class _HubScreenState extends State<HubScreen> {
   }
 }
 
-class _RoomRow extends StatelessWidget {
+class RoomRow extends StatelessWidget {
   final Rec r;
   final String? busy;
   final void Function(String id, bool spectate) onJoin;
-  const _RoomRow({required this.r, required this.busy, required this.onJoin});
+  const RoomRow({super.key, required this.r, required this.busy, required this.onJoin});
   @override
   Widget build(BuildContext context) {
     final full = r.i('players') >= r.i('capacity'), playing = r.s('status') == 'playing';
@@ -650,18 +647,18 @@ class _RoomRow extends StatelessWidget {
   }
 }
 
-class _CreateRoom extends StatefulWidget {
+class CreateRoomSheet extends StatefulWidget {
   final void Function(Map<String, dynamic>) onCreate;
-  const _CreateRoom({required this.onCreate});
+  const CreateRoomSheet({super.key, required this.onCreate});
   @override
-  State<_CreateRoom> createState() => _CreateRoomState();
+  State<CreateRoomSheet> createState() => CreateRoomSheetState();
 }
 
-class _CreateRoomState extends State<_CreateRoom> {
+class CreateRoomSheetState extends State<CreateRoomSheet> {
   final name = TextEditingController();
   String mode = '1v1', rule = 'g3';
   bool priv = false, ranked = true, voice = true;
-  int turn = 15, field = 0, bsize = 1;
+  int turn = 15, field = 0;
   Widget opt(String l, String s, bool v, ValueChanged<bool> on) => Padding(
         padding: const EdgeInsets.only(top: 12),
         child: Row(textDirection: TextDirection.rtl, children: [
@@ -678,8 +675,6 @@ class _CreateRoomState extends State<_CreateRoom> {
         Segment<int>(value: turn, onChange: (v) => setState(() => turn = v), items: const [(10, '۱۰ث'), (15, '۱۵ث'), (20, '۲۰ث'), (0, 'بدون')], accent: C.green),
         _lbl('زمین'),
         FieldPicker(value: field, onChange: (v) => setState(() => field = v)),
-        _lbl('اندازه‌ی توپ'),
-        Segment<int>(value: bsize, onChange: (v) => setState(() => bsize = v), items: kBallSizeItems, accent: C.orange),
         opt('رتبه‌ای', 'نتیجه روی امتیاز و لیگ اثر دارد', ranked, (v) => setState(() => ranked = v)),
         opt('خصوصی', 'فقط با کد اتاق قابل ورود است', priv, (v) => setState(() => priv = v)),
         opt('چت صوتی', 'بازیکن‌ها می‌توانند با هم صحبت کنند', voice, (v) => setState(() => voice = v)),
@@ -688,7 +683,7 @@ class _CreateRoomState extends State<_CreateRoom> {
           final n = name.text.trim();
           widget.onCreate({
             'p_mode': mode, 'p_name': n.isEmpty ? null : n, 'p_private': priv, 'p_ranked': ranked, 'p_voice': voice,
-            'p_settings': {...ruleToSettings(rule), 'field': field, 'turn': turn, 'ball': 0, 'bsize': bsize},
+            'p_settings': {...ruleToSettings(rule), 'field': field, 'turn': turn, 'ball': 0},
           });
         }),
       ]);

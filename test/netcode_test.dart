@@ -52,7 +52,7 @@ void main() {
     final cli = NetMatch(eng: ce, isHost: false, port: cp, onEvent: (_, __) {});
     var t = 0, keys = 0, shots = 0, checked = 0;
     const dt = 1 / 60;
-    while (he.shots < 25 && t < 60 * 60 * 1000) {
+    while (shots < 25 && t < 60 * 60 * 1000) { // count fired shots (he.shots resets after every goal)
       t += 16;
       hp.now = t;
       cp.now = t;
@@ -76,7 +76,7 @@ void main() {
     }
     // ignore: avoid_print
     print('shots=$shots keyframes=$keys checks=$checked desyncs=${cli.desyncs} corrections=${cli.corrections} resets=${cli.resets} msgs=${bus.msgs} bytes=${bus.bytes}');
-    expect(he.shots, greaterThanOrEqualTo(25));
+    expect(shots, greaterThanOrEqualTo(25));
     expect(cli.desyncs, 0);
     expect(checked, greaterThan(100));
     // no soft correction may ever be needed: every keyframe must already match the local result

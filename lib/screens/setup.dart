@@ -77,7 +77,6 @@ Launch buildLaunch(ModeKey mode, Profile p, {required int lvl, required String r
     vip: [_boosted(me), _boosted(opp)],
     first: 0,
     stats: [Discs.i.stats(me.id), Discs.i.stats(opp.id)],
-    ballSize: p.ballSize,
   );
   return Launch(cfg, [me, opp], [p.name, ai ? opp.name : 'بازیکن ۲'], mode, stage);
 }
@@ -95,7 +94,6 @@ class _SetupSheetState extends State<SetupSheet> {
   late int lvl = Store.i.p.aiLvl;
   late String rule = Store.i.p.limit == 5 ? 'g5' : 'g3';
   late int tt = Store.i.p.turnTime;
-  late int bsize = Store.i.p.ballSize;
   Team opp = pickOpp();
 
   @override
@@ -164,7 +162,6 @@ class _SetupSheetState extends State<SetupSheet> {
       if (showLvl) row('سختی', Segment<int>(value: lvl, onChange: (v) => setState(() => lvl = v), items: const [(0, 'آسان'), (1, 'معمولی'), (2, 'سخت')])),
       if (showRule) row('قانون', Segment<String>(value: rule, onChange: (v) => setState(() => rule = v), items: const [('g3', 'تا ۳ گل'), ('g5', 'تا ۵ گل'), ('t3', '۳ دقیقه')], accent: C.violet)),
       if (showTT) row('زمان نوبت', Segment<int>(value: tt, onChange: (v) => setState(() => tt = v), items: const [(0, 'خاموش'), (10, '۱۰ث'), (15, '۱۵ث'), (20, '۲۰ث')], accent: C.green)),
-      row('اندازه‌ی توپ', Segment<int>(value: bsize, onChange: (v) => setState(() => bsize = v), items: kBallSizeItems, accent: C.orange)),
       const SizedBox(height: 16),
       Press(
         onTap: widget.onTeam,
@@ -192,7 +189,6 @@ class _SetupSheetState extends State<SetupSheet> {
           q.aiLvl = lvl;
           q.limit = rule == 'g5' ? 5 : 3;
           q.turnTime = tt;
-          q.ballSize = bsize;
         });
         widget.onStart(buildLaunch(m.k, Store.i.p, lvl: lvl, rule: rule, tt: tt, opp: opp));
       }),

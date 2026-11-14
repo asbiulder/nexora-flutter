@@ -19,7 +19,6 @@ class Profile {
   int lastDaily = 0, streak = 0;
   bool sound = true, music = true, haptics = true;
   int aiLvl = 1, limit = 3, turnTime = 15;
-  int ballSize = 1; // v6: 0 small, 1 medium (default), 2 large
   int cupsWon = 0, winStreak = 0, bestStreak = 0, chests = 1, lastChest = 0;
   List<String> claimedAch = [];
   String quality = 'high';
@@ -54,7 +53,7 @@ class Profile {
         'team': team, 'ball': ball, 'field': field, 'form': form,
         'ownedTeams': ownedTeams, 'ownedBalls': ownedBalls, 'ownedFields': ownedFields,
         'lastDaily': lastDaily, 'streak': streak, 'sound': sound, 'music': music, 'haptics': haptics,
-        'aiLvl': aiLvl, 'limit': limit, 'turnTime': turnTime, 'ballSize': ballSize, 'cupsWon': cupsWon, 'winStreak': winStreak, 'bestStreak': bestStreak,
+        'aiLvl': aiLvl, 'limit': limit, 'turnTime': turnTime, 'cupsWon': cupsWon, 'winStreak': winStreak, 'bestStreak': bestStreak,
         'chests': chests, 'lastChest': lastChest, 'claimedAch': claimedAch, 'quality': quality, 'volume': volume,
         'oracle': oracle, 'oracleTour': oracleTour, 'fieldsV': fieldsV, 'debugOverlay': debugOverlay, 'lang': lang,
         'goal': goal, 'ownedGoals': ownedGoals, 'tutorialV4': tutorialDone, 'introVideo': introVideo,
@@ -90,7 +89,6 @@ class Profile {
     p.aiLvl = i('aiLvl', 1).clamp(0, 2);
     p.limit = i('limit', 3);
     p.turnTime = i('turnTime', 15);
-    p.ballSize = i('ballSize', 1).clamp(0, 2);
     p.cupsWon = i('cupsWon', 0);
     p.winStreak = i('winStreak', 0);
     p.bestStreak = i('bestStreak', 0);

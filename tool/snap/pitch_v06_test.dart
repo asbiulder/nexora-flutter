@@ -15,10 +15,10 @@ final _fields = (Platform.environment['NX_FIELDS'] ?? '0').split(',').map(int.pa
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   for (final fi in _fields) {
-    for (final bs in fi == _fields.first ? [0, 1, 2] : [1]) {
-      testWidgets('pitch $fi ball size $bs', (t) async {
+    {
+      testWidgets('pitch $fi', (t) async {
         await t.runAsync(() async {
-          final cfg = MatchCfg(field: fi, ball: 0, forms: [0, 0], ai: true, aiLvl: 1, limit: 3, matchTime: 0, turnTime: 15, vip: [false, false], first: 0, ballSize: bs);
+          final cfg = MatchCfg(field: fi, ball: 0, forms: [0, 0], ai: true, aiLvl: 1, limit: 3, matchTime: 0, turnTime: 15, vip: [false, false], first: 0);
           final e = Engine(cfg);
           e.ball.x = e.ball.px = e.CX + 60;
           e.ball.y = e.ball.py = e.CY - 140;
@@ -32,7 +32,7 @@ void main() {
           r.render(c, 0);
           final img = await rec.endRecording().toImage((W * 2).round(), (H * 2).round());
           final bd = await img.toByteData(format: ui.ImageByteFormat.png);
-          File('$_out/pitch_f${fi}_ball${['small', 'medium', 'large'][bs]}.png').writeAsBytesSync(bd!.buffer.asUint8List());
+          File('$_out/pitch_f$fi.png').writeAsBytesSync(bd!.buffer.asUint8List());
         });
       });
     }

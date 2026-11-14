@@ -120,12 +120,9 @@ void main() {
     expect((b.vx - b.vy).abs() / b.vx.abs(), lessThan(.02), reason: 'leaves the corner on the 45 degree diagonal');
   });
 
-  test('ball size option: small < medium (default) < large', () {
-    final r = [for (final s in [0, 1, 2]) Engine(MatchCfg(field: 0, ball: 0, forms: [0, 0], ai: false, aiLvl: 1, limit: 3, matchTime: 0, turnTime: 0, vip: [false, false], first: 0, ballSize: s)).ball.r];
-    expect(Engine(_cfg()).ball.r, r[1]);
-    expect(r[1], kTuneStars.ballR);
-    expect(r[0], lessThan(r[1]));
-    expect(r[2], greaterThan(r[1]));
+  test('single fixed ball size: 0.8x the v5 radius (27)', () {
+    expect(kTuneStars.ballR, closeTo(27 * .8, 1e-9));
+    expect(Engine(_cfg()).ball.r, kTuneStars.ballR);
   });
 
   test('deterministic: same inputs -> identical outputs (AI vs AI, 3000 frames)', () {

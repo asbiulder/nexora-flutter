@@ -122,7 +122,7 @@ const kTuneGodot = PhysTune(
 /// than in Soccer Stars. Reasoning per value: /workspace/work/godot_vs_flutter_physics.md.
 const kTuneStars = PhysTune(
   name: 'stars',
-  discR: 49, ballR: 27,
+  discR: 49, ballR: 21.6, // v6: one fixed ball, 0.8x the v5 radius (27) - owner 2026-11-14
   // v4 retune (phone feedback 2026-11-14: "billiards ball, heavy Soccer Stars pucks"). v3 values in brackets.
   discM: 4, ballM: 1, // [3] disc 4x the ball: a disc striking the ball sends it off at (1+e)*4/5 = 1.52x its speed
   // power stat (stars): full-drag speed = discVmax * power/10 (powerFrac, exact + linear); shotMax only without stats
@@ -143,10 +143,6 @@ const kTuneStars = PhysTune(
   postR: 5, cornerNudge: 70,
   subPx: 4, subMax: 16, stepCap: 14, rollK: .6,
 );
-
-/// Ball radius multiplier per ball-size option (0 small, 1 medium = default size, 2 large).
-const List<double> kBallSizeMul = [.78, 1.0, 1.28];
-double ballSizeMul(int i) => kBallSizeMul[i.clamp(0, 2)];
 
 PhysTune? tuneFor(String profile) => switch (profile) {
       'classic' => null,
@@ -239,8 +235,6 @@ class MatchCfg {
   /// Gameplay profile: 'stars' (default, Soccer Stars feel), 'godot' (Nexora_godot nx8 values) or 'classic' (RN TS engine).
   String profile;
 
-  /// Ball size picked by the room host / match setup: 0 small, 1 medium (default, the classic size), 2 large.
-  int ballSize;
   MatchCfg({
     required this.field,
     required this.ball,
@@ -254,7 +248,6 @@ class MatchCfg {
     required this.first,
     this.stats,
     this.profile = 'stars',
-    this.ballSize = 1,
   });
 }
 
@@ -452,7 +445,7 @@ class Engine {
         bodies.add(godot ? _mk(x, y, cm, tu.discR, tu.discM, cm * 20 + i) : _mk(x, y, cm, PR, 5, cm * 20 + i));
       }
     }
-    ball = godot ? _mk(CX, KY, 2, tu.ballR * ballSizeMul(cfg.ballSize), tu.ballM, 99) : _mk(CX, KY, 2, BR, 1.5, 99);
+    ball = godot ? _mk(CX, KY, 2, tu.ballR, tu.ballM, 99) : _mk(CX, KY, 2, BR, 1.5, 99);
     bodies.add(ball);
     turn = kickTeam;
     phase = Phase.aim;
