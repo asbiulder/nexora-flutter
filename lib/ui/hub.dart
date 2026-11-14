@@ -55,7 +55,8 @@ class HubActions {
 
 const _bgAsset = 'assets/g/v6/bg_stadium.webp';
 const _rimGrad = [Color(0xffffa24a), Color(0xffff5aa0), Color(0xff4f7dff)];
-const _panelFill = [Color(0xf2120d38), Color(0xf2090b27)];
+// v0.6.2: richer, a little translucent so the moving backdrop glows through (was f2120d38 / f2090b27)
+const _panelFill = [Color(0xc81a0f4a), Color(0xd00c0a30)];
 
 class MainHub extends StatefulWidget {
   final HubActions a;
@@ -75,6 +76,12 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
   };
   late final Map<HubEdge, Animation<double>> _fades = {for (final e in HubEdge.values) e: c[e]!.drive(CurveTween(curve: const Interval(0, .16)))};
   static final _spring = SpringDescription.withDampingRatio(mass: 1, stiffness: 420, ratio: .86);
+  // v0.6.2: while a side panel is being swiped its cards shrink and dim (1 = fully squeezed), springing back on release
+  late final AnimationController _squeeze = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 180),
+    reverseDuration: const Duration(milliseconds: 420),
+  );
 
   HubEdge? get open => c.entries.where((e) => e.value.value > .5).map((e) => e.key).firstOrNull;
 
@@ -84,6 +91,7 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
   }
 
   void toggle(HubEdge e) {
+    hubPicked.value = null;
     final opening = c[e]!.value < .5;
     for (final o in HubEdge.values) {
       if (o != e && c[o]!.value > 0) _animate(o, 0);
@@ -109,6 +117,7 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
     for (final a in c.values) {
       a.dispose();
     }
+    _squeeze.dispose();
     super.dispose();
   }
 
@@ -197,7 +206,25 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
     final panel = FadeTransition(
       opacity: _fades[e]!,
       child: RepaintBoundary(
-        child: _NeonPanel(title: _titles[e]!.$1, en: _titles[e]!.$2, edge: e, onClose: () => toggle(e), child: _content(e)),
+        child: _NeonPanel(
+          title: _titles[e]!.$1,
+          en: _titles[e]!.$2,
+          edge: e,
+          onClose: () => toggle(e),
+          // v0.6.2: cards shrink + dim while the panel is swiped, and grow in as it opens
+          child: AnimatedBuilder(
+            animation: Listenable.merge([ac, _squeeze]),
+            child: _content(e),
+            builder: (_, ch) {
+              final q = Curves.easeOut.transform(_squeeze.value), open = Curves.easeOutCubic.transform(ac.value);
+              final sc = (.86 + .14 * open) * (1 - .12 * q);
+              return Opacity(
+                opacity: (1 - .3 * q).clamp(0.0, 1.0),
+                child: Transform.scale(scale: sc, child: ch),
+              );
+            },
+          ),
+        ),
       ),
     );
     final tab = _EdgeTab(
@@ -212,6 +239,8 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
       onDrag: (d) {
         // d = delta along the opening direction, in px
         if (ac.isAnimating) ac.stop();
+        hubPicked.value = null;
+        if (_squeeze.status != AnimationStatus.forward && _squeeze.value < 1) _squeeze.forward();
         if (d > 0) {
           for (final o in HubEdge.values) {
             if (o != e && c[o]!.value > 0) _animate(o, 0);
@@ -220,6 +249,7 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
         ac.value = (ac.value + d / travel).clamp(0.0, 1.0);
       },
       onDragEnd: (v) {
+        _squeeze.reverse();
         final vv = v / travel;
         _animate(e, vv.abs() > .6 ? (vv > 0 ? 1 : 0) : (ac.value > .45 ? 1 : 0), vv);
       },
@@ -284,21 +314,85 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
 }
 
 // =========================================================================== chrome
-class _Backdrop extends StatelessWidget {
+/// v0.6.2 animated backdrop (owner: "richer colours, a moving background"): the stadium art drifts slowly
+/// (Ken Burns pan + zoom), three saturated aurora blobs (magenta / cyan / orange) wander across it in additive
+/// blend, and a field of small stars drifts upward. One 40 s repeating controller, one CustomPainter, no blur filters.
+class _Backdrop extends StatefulWidget {
   const _Backdrop();
+  @override
+  State<_Backdrop> createState() => _BackdropState();
+}
+
+class _BackdropState extends State<_Backdrop> with SingleTickerProviderStateMixin {
+  late final AnimationController _t = AnimationController(vsync: this, duration: const Duration(seconds: 40))..repeat();
+  @override
+  void dispose() {
+    _t.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => RepaintBoundary(
     child: Stack(
       fit: StackFit.expand,
       children: [
         const ColoredBox(color: Color(0xff0a0626)),
-        Image.asset(_bgAsset, fit: BoxFit.cover, filterQuality: FilterQuality.medium, errorBuilder: (_, _, _) => const SizedBox()),
+        AnimatedBuilder(
+          animation: _t,
+          child: Image.asset(_bgAsset, fit: BoxFit.cover, filterQuality: FilterQuality.medium, errorBuilder: (_, _, _) => const SizedBox()),
+          builder: (_, ch) {
+            final a = _t.value * 2 * math.pi;
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..translateByDouble(math.sin(a) * 18, math.cos(a * .5) * 14, 0, 1)
+                ..scaleByDouble(1.10 + .05 * math.sin(a * .5), 1.10 + .05 * math.sin(a * .5), 1, 1),
+              child: ch,
+            );
+          },
+        ),
+        AnimatedBuilder(
+          animation: _t,
+          builder: (_, _) => CustomPaint(painter: _AuroraPainter(_t.value)),
+        ),
         const DecoratedBox(
-          decoration: BoxDecoration(gradient: RadialGradient(radius: 1.2, colors: [Color(0x00000000), Color(0x8805031a)])),
+          decoration: BoxDecoration(gradient: RadialGradient(radius: 1.25, colors: [Color(0x00000000), Color(0x7005031a)])),
         ),
       ],
     ),
   );
+}
+
+class _AuroraPainter extends CustomPainter {
+  final double t;
+  _AuroraPainter(this.t);
+  static final List<(double, double, double)> _stars = [
+    for (var i = 0; i < 46; i++) (((i * 0.6180339) % 1), ((i * 0.3819 + i * i * .0137) % 1), .6 + (i % 5) * .35),
+  ];
+  @override
+  void paint(Canvas c, Size s) {
+    final a = t * 2 * math.pi;
+    final p = Paint()..blendMode = BlendMode.plus;
+    for (final (cx, cy, r, col, ph) in [
+      (.25 + .18 * math.sin(a), .28 + .12 * math.cos(a * 2), .55, const Color(0x88ff2fd0), 0.0),
+      (.78 + .14 * math.cos(a + 1), .55 + .16 * math.sin(a + 2), .6, const Color(0x7724d8ff), 1.0),
+      (.45 + .2 * math.sin(a * 2 + 3), .86 + .06 * math.cos(a + 1), .5, const Color(0x66ff8a2a), 2.0),
+    ]) {
+      final o = Offset(s.width * cx, s.height * cy), rr = s.shortestSide * r * (1 + .12 * math.sin(a * 3 + ph));
+      p.shader = RadialGradient(colors: [col, col.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: o, radius: rr));
+      c.drawCircle(o, rr, p);
+    }
+    p.shader = null;
+    for (final (x, y, r) in _stars) {
+      final yy = (y - t * (.15 + r * .08)) % 1.0;
+      final tw = .45 + .55 * (.5 + .5 * math.sin(a * 6 + x * 40));
+      p.color = Color.fromRGBO(220, 235, 255, .55 * tw);
+      c.drawCircle(Offset(x * s.width, yy * s.height), r, p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_AuroraPainter o) => o.t != t;
 }
 
 /// Peeking tab on a screen edge (orange glowing pill / vertical bar). Tap toggles; dragging moves the panel.
@@ -488,6 +582,9 @@ class OrangePill extends StatelessWidget {
 }
 
 /// Square glowing tile used inside the panels.
+/// v0.6.2: the card the user tapped in a side panel (scales up big; any new swipe/toggle of a panel resets it).
+final ValueNotifier<Object?> hubPicked = ValueNotifier(null);
+
 class HubTile extends StatelessWidget {
   final String label;
   final String? sub, img;
@@ -497,44 +594,56 @@ class HubTile extends StatelessWidget {
   final VoidCallback onTap;
   const HubTile({super.key, required this.label, required this.onTap, this.sub, this.img, this.icon, this.color = N.orange, this.dot = false});
   @override
-  Widget build(BuildContext context) => Press(
-    onTap: onTap,
-    scaleTo: .95,
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: .55), width: 1.2),
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [color.withValues(alpha: .20), const Color(0xe60a0b2a)]),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: .18), blurRadius: 10)],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (img != null)
-                    Img(img!, w: 40, h: 40)
-                  else
-                    Icon(
-                      icon ?? Icons.circle,
-                      color: color,
-                      size: 32,
-                      shadows: [Shadow(color: color, blurRadius: 12)],
-                    ),
-                  const SizedBox(height: 5),
-                  T(label, size: 12, weight: 800, lines: 1, align: TextAlign.center),
-                  if (sub != null) T(sub!, size: 8.5, family: F.head, weight: 700, spacing: 1.2, color: N.amber, lines: 1, align: TextAlign.center),
-                ],
+  Widget build(BuildContext context) => ValueListenableBuilder<Object?>(
+    valueListenable: hubPicked,
+    builder: (_, picked, ch) => AnimatedScale(
+      scale: picked == label ? 1.16 : 1,
+      duration: const Duration(milliseconds: 360),
+      curve: picked == label ? Curves.easeOutBack : Curves.easeOutCubic,
+      child: ch,
+    ),
+    child: Press(
+      onTap: () {
+        hubPicked.value = label;
+        Future<void>.delayed(const Duration(milliseconds: 240), onTap);
+      },
+      scaleTo: .95,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: .55), width: 1.2),
+          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [color.withValues(alpha: .20), const Color(0xe60a0b2a)]),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: .18), blurRadius: 10)],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (img != null)
+                      Img(img!, w: 40, h: 40)
+                    else
+                      Icon(
+                        icon ?? Icons.circle,
+                        color: color,
+                        size: 32,
+                        shadows: [Shadow(color: color, blurRadius: 12)],
+                      ),
+                    const SizedBox(height: 5),
+                    T(label, size: 12, weight: 800, lines: 1, align: TextAlign.center),
+                    if (sub != null) T(sub!, size: 8.5, family: F.head, weight: 700, spacing: 1.2, color: N.amber, lines: 1, align: TextAlign.center),
+                  ],
+                ),
               ),
             ),
-          ),
-          if (dot) const Positioned(top: -2, right: -2, child: _Dot()),
-        ],
+            if (dot) const Positioned(top: -2, right: -2, child: _Dot()),
+          ],
+        ),
       ),
     ),
   );
@@ -968,7 +1077,7 @@ class _RoomsPanelState extends State<RoomsPanel> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(34),
         border: Border.all(color: const Color(0x99ffc08a), width: 1.4),
-        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xd6121a44), Color(0xe0070a22), Color(0xd60c1030)]),
+        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xb8241657), Color(0xc00a0c2e), Color(0xb8142a5c)]), // v0.6.2 richer + translucent over the moving backdrop
         boxShadow: const [
           BoxShadow(color: Color(0x55ff7a2a), blurRadius: 24),
           BoxShadow(color: Color(0x553b6bff), blurRadius: 30, offset: Offset(-6, 0)),

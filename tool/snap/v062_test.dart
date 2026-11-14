@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:nexora/core/store.dart';
+import 'package:nexora/net/supabase.dart' show Rec;
+import 'package:nexora/ui/hub.dart';
 import 'package:nexora/screens/shop.dart';
 import 'package:nexora/screens/team.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,4 +78,34 @@ void main() {
         await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 800)));
         await t.pump(const Duration(milliseconds: 600));
       }));
+
+  final rooms = [
+    for (final (n, h, lv, pl, st) in [('فینال کهکشانی', 'Sara', 12, 1, 'waiting'), ('Golden League', 'omid', 8, 2, 'playing'), ('NEXORA Night', 'Ghost', 21, 1, 'waiting')])
+      Rec({'id': n, 'name': n, 'host_name': h, 'host_level': lv, 'host_avatar': 'club${lv % 9}', 'mode': '1v1', 'kind': 'casual', 'players': pl, 'capacity': 2, 'spectators': 1, 'status': st, 'settings': {'goals': 3, 'turn': 15, 'field': 0}}),
+  ];
+  final a = HubActions(profile: () {}, shop: () {}, daily: () {}, oracle: () {}, settings: () {}, chest: (_) {}, team: (_) {}, social: (_) {}, online: (_, [_]) {}, mode: (_) {}, room: (_) {});
+  Widget hub(HubEdge? e) => Scaffold(backgroundColor: const Color(0xff0a0626), body: MainHub(a: a, dailyReady: true, chestReady: false, initialOpen: e, previewRooms: rooms));
+  testWidgets('hub bg frame A', (t) async => snap(t, 'hub_bg_a', hub(null)));
+  testWidgets('hub bg frame B', (t) async => snap(t, 'hub_bg_b', hub(null), after: () async => t.pump(const Duration(seconds: 9))));
+  testWidgets('hub left open', (t) async => snap(t, 'hub_left_open', hub(HubEdge.left)));
+  testWidgets('hub left picked', (t) async => snap(t, 'hub_left_picked', hub(HubEdge.left), after: () async {
+        hubPicked.value = 'توپ';
+        await t.pump(const Duration(milliseconds: 500));
+      }));
+  testWidgets('hub left swiping', (t) async {
+    hubPicked.value = null;
+    await snap(t, 'hub_left_swiping', hub(HubEdge.left), after: () async {
+      // drag the left tab back towards the edge and hold (mid-swipe)
+      final tab = find.text('تیم').last;
+      final g = await t.startGesture(t.getCenter(tab));
+      for (var i = 0; i < 6; i++) {
+        await g.moveBy(const Offset(-12, 0));
+        await t.pump(const Duration(milliseconds: 30));
+      }
+      await t.pump(const Duration(milliseconds: 250));
+      _held = g;
+    });
+    await _held?.up();
+  });
 }
+TestGesture? _held;

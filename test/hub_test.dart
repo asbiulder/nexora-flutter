@@ -25,22 +25,22 @@ void main() {
     final s = await pump(t);
     expect(s.open, isNull);
     await t.tap(find.text('بازی'));
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(s.open, HubEdge.bottom);
     expect(s.c[HubEdge.bottom]!.value, closeTo(1, .01));
     await t.tap(find.text('پروفایل').last);
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(s.open, HubEdge.top);
     expect(s.c[HubEdge.bottom]!.value, closeTo(0, .01));
     s.closeAll();
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(s.open, isNull);
   });
 
   testWidgets('drag the left tab inwards opens MY TEAM', (t) async {
     final s = await pump(t);
     await t.drag(find.text('تیم'), const Offset(260, 0));
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(s.open, HubEdge.left);
   });
 
@@ -49,4 +49,11 @@ void main() {
     expect(find.text('ساخت اتاق'), findsOneWidget);
     expect(find.text('CREATE ROOM'), findsOneWidget);
   });
+}
+
+/// v0.6.2: the main screen backdrop animates forever (pumpAndSettle never settles); springs finish well within 1.5 s.
+Future<void> _settle(WidgetTester t) async {
+  for (var i = 0; i < 15; i++) {
+    await t.pump(const Duration(milliseconds: 100));
+  }
 }
