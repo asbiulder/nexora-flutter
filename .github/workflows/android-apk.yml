@@ -2,7 +2,7 @@ name: Android APK
 
 on:
   push:
-    branches: [flutter]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -62,7 +62,7 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: flutter-v${{ github.run_number }}
+          tag_name: v0.5.0-build${{ github.run_number }}
           name: NEXORA Flutter build ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           prerelease: true
