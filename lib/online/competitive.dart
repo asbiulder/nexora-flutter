@@ -168,10 +168,7 @@ class _ArenaScreenState extends State<ArenaScreen> {
           const T('امتیاز آرنا · هر برد ۳۰+ و برای برد پیاپی تا ۲۵+ اضافه، هر باخت ۲۰−', size: 11, color: C.dim, align: TextAlign.center),
           const SizedBox(height: 12),
           Row(textDirection: TextDirection.rtl, children: [
-            for (final m in ['1v1', '2v2', '3v3']) ...[
-              if (m != '1v1') const SizedBox(width: 8),
-              Expanded(child: Btn(busy == m ? '…' : m.toUpperCase(), small: true, colors: G.violet, disabled: busy != null, onTap: () => go(m))),
-            ],
+            Expanded(child: Btn(busy == '1v1' ? '…' : 'ورود به آرنا · 1V1', small: true, colors: G.violet, disabled: busy != null, onTap: () => go('1v1'))),
           ]),
         ]),
       ),
@@ -463,8 +460,6 @@ class _CreateTourState extends State<_CreateTour> {
         Field2(name, label: 'نام تورنمنت', maxLength: 40),
         _l('فرمت'),
         Wrap(textDirection: TextDirection.rtl, runSpacing: 6, children: [for (final f in kFormatFa.entries) Chip2(f.value, on: format == f.key, onTap: () => setState(() => format = f.key), accent: C.violet)]),
-        _l('حالت'),
-        Segment<String>(value: mode, onChange: (v) => setState(() => mode = v), items: const [('1v1', '۱ به ۱'), ('2v2', '۲ به ۲'), ('3v3', '۳ به ۳')]),
         _l('ظرفیت'),
         Segment<int>(value: max, onChange: (v) => setState(() => max = v), items: const [(4, '۴'), (8, '۸'), (16, '۱۶'), (32, '۳۲')], accent: C.green),
         if (format == 'league' || format == 'swiss') ...[

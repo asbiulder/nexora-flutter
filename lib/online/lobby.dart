@@ -23,7 +23,8 @@ import 'online_match.dart' show ruleLabel;
 import 'room_ui.dart';
 import 'ui.dart';
 
-const kModesOnline = ['1v1', '2v2', '3v3'];
+// v5: one room type (1v1); 2v2/3v3 were removed from creation, settings, quick match and the room filter.
+const kModesOnline = ['1v1'];
 const kModeFa = {'1v1': 'تک به تک', '2v2': '۲ به ۲', '3v3': '۳ به ۳'};
 const kKindFa = {'casual': ('دوستانه', C.green), 'quick': ('سریع', C.cyan), 'arena': ('آرنا', C.violet), 'tournament': ('تورنمنت', C.orange)};
 const kRules = [('g3', 'تا ۳ گل'), ('g5', 'تا ۵ گل'), ('t3', '۳ دقیقه'), ('t5', '۵ دقیقه')];
@@ -431,10 +432,6 @@ class _RoomSettingsState extends State<_RoomSettings> {
   @override
   Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(16), children: [
         Field2(name, label: 'نام اتاق', maxLength: 40),
-        _lbl('حالت'),
-        Segment<String>(value: mode, onChange: (v) => setState(() => mode = v), items: [for (final m in kModesOnline) (m, kModeFa[m]!)], accent: C.sky),
-        if (teamSize(mode) < teamSize(mode0))
-          Padding(padding: const EdgeInsets.only(top: 6), child: T('بازیکن‌های صندلی‌های اضافه تماشاگر می‌شوند', size: 11, color: C.dim, align: TextAlign.right)),
         _lbl('قانون بازی'),
         Segment<String>(value: rule, onChange: (v) => setState(() => rule = v), items: kRules, accent: C.violet),
         _lbl('زمان هر نوبت'),
@@ -534,7 +531,7 @@ class _HubScreenState extends State<HubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final data = (rows ?? const <Rec>[]).where((r) => filter == 'all' || r.s('mode') == filter).toList();
+    final data = (rows ?? const <Rec>[]).where((r) => r.s('mode', '1v1') == '1v1').toList();
     return Scaffold(
       backgroundColor: C.bg,
       body: Stack(children: [
@@ -588,9 +585,9 @@ class _HubScreenState extends State<HubScreen> {
                 ]),
                 const SizedBox(height: 8),
                 Row(textDirection: TextDirection.rtl, children: [
-                  for (var i = 0; i < 3; i++) ...[
+                  for (var i = 0; i < kModesOnline.length; i++) ...[
                     if (i > 0) const SizedBox(width: 8),
-                    Expanded(child: Btn(busy == 'quick${kModesOnline[i]}' ? '…' : kModesOnline[i].toUpperCase(), sub: kModeFa[kModesOnline[i]], small: true, disabled: busy != null, colors: [G.primary, G.violet, G.gold][i], onTap: () => quick(kModesOnline[i]))),
+                    Expanded(child: Btn(busy == 'quick${kModesOnline[i]}' ? '…' : kModesOnline[i].toUpperCase(), sub: kModeFa[kModesOnline[i]], small: true, disabled: busy != null, colors: G.primary, onTap: () => quick(kModesOnline[i]))),
                   ],
                 ]),
               ]),
@@ -631,7 +628,6 @@ class _HubScreenState extends State<HubScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Row(textDirection: TextDirection.rtl, children: [tBold('اتاق‌های باز', size: 16), const Spacer(), T(rows != null ? '${fa(data.length)} اتاق' : '', size: 11, color: C.dim)]),
             ),
-            Tabs2<String>(items: const [('all', 'همه'), ('1v1', '1v1'), ('2v2', '2v2'), ('3v3', '3v3')], value: filter, onChange: (v) => setState(() => filter = v)),
             if (err != null)
               ErrorState(err!, onRetry: load)
             else if (rows == null)
@@ -705,8 +701,6 @@ class _CreateRoomState extends State<_CreateRoom> {
   @override
   Widget build(BuildContext context) => ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 48), children: [
         Field2(name, label: 'نام اتاق', hint: 'مثلاً: فینال کهکشانی', maxLength: 40),
-        _lbl('حالت'),
-        Segment<String>(value: mode, onChange: (v) => setState(() => mode = v), items: [for (final m in kModesOnline) (m, kModeFa[m]!)]),
         _lbl('قانون'),
         Segment<String>(value: rule, onChange: (v) => setState(() => rule = v), items: kRules, accent: C.violet),
         _lbl('زمان هر نوبت'),

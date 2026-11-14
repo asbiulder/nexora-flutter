@@ -193,7 +193,7 @@ class OnlineCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       tTitle('آنلاین', size: 24, shadows: const [Shadow(color: N.blue, blurRadius: 12)]),
                     ]),
-                    const T('مسابقه با بازیکن‌های واقعی · ۱ به ۱، ۲ به ۲، ۳ به ۳', size: 12, color: Color(0xffd6e6ff), lines: 2),
+                    const T('مسابقه‌ی تک به تک با بازیکن‌های واقعی', size: 12, color: Color(0xffd6e6ff), lines: 2),
                     if (pr != null) tBold('امتیاز ${fa(pr.i('rating'))} · 💎 ${fa(pr.i('gems'))}', size: 11, color: C.gold),
                   ]),
                 ),
