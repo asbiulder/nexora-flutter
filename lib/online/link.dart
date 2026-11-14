@@ -2,6 +2,8 @@
 //  - postgres_changes on rooms / room_players  -> refetch room state (debounced)
 //  - broadcast 'chat'                           -> text chat
 //  - broadcast 'g'                              -> match netcode (online_match.dart)
+//  - broadcast 'pick' (v0.6)                   -> host's ticked match list (user ids, in pick order)
+//  - broadcast 'rx' (v0.6)                     -> like / gem reactions (cosmetic, nobody is charged)
 //  - broadcast 'sync'                           -> "please refetch" pings
 //  - broadcast 'pi'/'po'                        -> RTT probe (never touches the DB)
 //  - presence (key = user id)                   -> who is connected right now
@@ -47,6 +49,14 @@ class RoomLink extends ChangeNotifier {
   int unread = 0;
   int? rtt;
   bool chatOpen = false;
+
+  /// v0.6: user ids the host ticked for the next match (2-6, pick order). Broadcast by the host, cosmetic for the
+  /// server: the match itself is still 1v1, the first two picked take the seats.
+  List<String> picks = [];
+
+  /// v0.6: last reaction received ('like' | 'gem', from user id, sequence number) for the floating animation.
+  final ValueNotifier<(String, String, int)?> reaction = ValueNotifier(null);
+  int _rxSeq = 0;
   late final Voice voice = Voice(id);
 
   RealtimeChannel? _ch;
@@ -118,6 +128,21 @@ class RoomLink extends ChangeNotifier {
             callback: (_) => soon())
         .onBroadcast(event: 'sync', callback: (_) => soon())
         .onBroadcast(event: 'chat', callback: (p) => _addChat(_inner(p)))
+        .onBroadcast(
+            event: 'pick',
+            callback: (p) {
+              final m = _inner(p);
+              if (m['from'] != room?.s('host') || m['ids'] is! List) return;
+              picks = [for (final x in m['ids'] as List) x.toString()].take(6).toList();
+              notifyListeners();
+            })
+        .onBroadcast(
+            event: 'rx',
+            callback: (p) {
+              final m = _inner(p);
+              final k = m['k']?.toString();
+              if (k == 'like' || k == 'gem') reaction.value = (k!, m['from']?.toString() ?? '', ++_rxSeq);
+            })
         .onBroadcast(
             event: 'pi',
             callback: (p) {
@@ -252,6 +277,19 @@ class RoomLink extends ChangeNotifier {
     final c = ChatMsg('${DateTime.now().millisecondsSinceEpoch}-${math.Random().nextInt(1 << 30).toRadixString(36)}', me, myName, t.substring(0, math.min(200, t.length)), DateTime.now().millisecondsSinceEpoch);
     _addChat(c.toJson());
     _send('chat', c.toJson());
+  }
+
+  /// host only: publish the ticked match list
+  void setPicks(List<String> ids) {
+    picks = ids.take(6).toList();
+    notifyListeners();
+    _send('pick', {'ids': picks, 'from': me});
+  }
+
+  /// like / gem reaction (cosmetic)
+  void react(String k) {
+    reaction.value = (k, me, ++_rxSeq);
+    _send('rx', {'k': k, 'from': me});
   }
 
   void markRead() {

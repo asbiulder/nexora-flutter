@@ -13,6 +13,7 @@ import 'competitive.dart';
 import 'link.dart';
 import 'lobby.dart';
 import 'online_match.dart';
+import 'room_v6.dart';
 
 class _R {
   final String k;
@@ -25,7 +26,11 @@ class _R {
 class OnlineRoot extends StatefulWidget {
   final String entry;
   final String? quick;
-  const OnlineRoot({super.key, this.entry = 'hub', this.quick});
+
+  /// v0.6: a room joined / created from the main screen's room list -> straight into the room; leaving it closes
+  /// the online page again (back to the main screen).
+  final Rec? room;
+  const OnlineRoot({super.key, this.entry = 'hub', this.quick, this.room});
   @override
   State<OnlineRoot> createState() => _OnlineRootState();
 }
@@ -34,7 +39,7 @@ class _OnlineRootState extends State<OnlineRoot> {
   late List<_R> stack = [widget.entry == 'leagues' ? const _R('ranks', tab: 'leagues') : _R(widget.entry)];
   RoomLink? link;
   String? connErr, skip;
-  bool firstLoad = true, quickDone = false;
+  bool firstLoad = true, quickDone = false, _directDone = false;
   Rec? before;
 
   _R get top => stack.last;
@@ -50,6 +55,10 @@ class _OnlineRootState extends State<OnlineRoot> {
     Auth.i.ensure().then((id) {
       if (id == null && mounted) setState(() => connErr = 'اتصال به سرور برقرار نشد');
       if (id != null) _maybeQuick();
+      if (id != null && widget.room != null && !_directDone) {
+        _directDone = true;
+        enterRoom(widget.room!);
+      }
       if (mounted) setState(() {});
     }, onError: (e) => mounted ? setState(() => connErr = errFa(e)) : null);
   }
@@ -117,6 +126,10 @@ class _OnlineRootState extends State<OnlineRoot> {
       } catch (_) {}
     }
     _dropLink();
+    if (widget.room != null && _noRoom.length <= 1 && mounted) {
+      Navigator.pop(context);
+      return;
+    }
     _set(_noRoom);
     Sound.playLoop(Snd.music);
   }
@@ -183,7 +196,7 @@ class _OnlineRootState extends State<OnlineRoot> {
     }
     final t = top, l = link;
     final Widget page = switch (t.k) {
-      'lobby' when l != null => LobbyScreen(link: l, onLeave: back, onWatch: () {
+      'lobby' when l != null => RoomScreen(link: l, onLeave: back, settings: (_, lk) => RoomSettingsSheet(link: lk), onWatch: () {
           final m = l.room?.str('current_match');
           if (m != null) push(_R('match', id: m));
         }),

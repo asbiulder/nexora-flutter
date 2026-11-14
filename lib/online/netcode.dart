@@ -125,7 +125,7 @@ const kNetProfiles = {'stars', 'godot', 'classic'};
 /// Flutter builds v1-v3 advertise c:'fl' without 'pv' (treated as 3): their 'stars' tuning, linear power and
 /// smooth stop differ from v4, so a mixed match would desync -> v3 and v4 clients must not share a match.
 /// RN / Godot peers (no c:'fl') keep playing the legacy 'classic' profile as before.
-const int kProtoVersion = 4;
+const int kProtoVersion = 5; // v0.6: billiards physics + 0.8x ball (v0.5 peers must not share a match)
 const kMsgUpdateMe = 'نسخه‌ی NEXORA روی گوشی تو قدیمی است. لطفاً برنامه را به‌روز کن تا بتوانی با این بازیکن‌ها بازی کنی.';
 const kMsgUpdateThem = 'یکی از بازیکنان نسخه‌ی قدیمی NEXORA دارد. لطفاً از او بخواه برنامه را به‌روز کند؛ تا آن موقع بازی شروع نمی‌شود.';
 

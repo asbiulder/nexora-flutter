@@ -181,7 +181,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   }),
                   if (isHost && !playing && room.str('tournament_match_id') == null)
                     Press(
-                      onTap: () => showSheet(context, title: 'تنظیمات اتاق', en: 'ROOM SETTINGS', height: .8, child: (ctx) => _RoomSettings(link: link)),
+                      onTap: () => showSheet(context, title: 'تنظیمات اتاق', en: 'ROOM SETTINGS', height: .8, child: (ctx) => RoomSettingsSheet(link: link)),
                       child: const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.tune_rounded, color: N.amber, size: 24)),
                     ),
                 ]),
@@ -338,14 +338,14 @@ class FieldPicker extends StatelessWidget {
       );
 }
 
-class _RoomSettings extends StatefulWidget {
+class RoomSettingsSheet extends StatefulWidget {
   final RoomLink link;
-  const _RoomSettings({required this.link});
+  const RoomSettingsSheet({super.key, required this.link});
   @override
-  State<_RoomSettings> createState() => _RoomSettingsState();
+  State<RoomSettingsSheet> createState() => RoomSettingsSheetState();
 }
 
-class _RoomSettingsState extends State<_RoomSettings> {
+class RoomSettingsSheetState extends State<RoomSettingsSheet> {
   late final Rec room = widget.link.room!;
   late final name = TextEditingController(text: room.s('name'));
   late String rule = settingsToRule(room.rec('settings'));
