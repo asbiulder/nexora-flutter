@@ -171,6 +171,7 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
     //   /nx-home: skip the launch intro;  /nx-quickmatch: straight into a quick match vs the bot;
     //   /nx-team, /nx-shop: open My Team / the shop.
     final r = PlatformDispatcher.instance.defaultRouteName;
+    debugPrint('NX_TEST initial route $r');
     if (r.startsWith('/nx-')) {
       intro = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -533,32 +534,37 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
       // v4: clamp the system font scale so layouts built for a ~400 dp design width never overflow
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: .85, maxScaleFactor: 1.15)),
-        child: Stack(
-          children: [
-            child ?? const SizedBox.shrink(),
-            // Oracle coach + bubble (bubble only while the tabs are visible)
-            Positioned.fill(
-              child: ValueListenableBuilder<int>(
-                valueListenable: depth,
-                builder: (_, d, _) => OracleLayer(bubble: d == 0 && !intro, onOpenPanel: () => _push(const OraclePanel())),
-              ),
-            ),
-            // cross-fade veil between tabs / match / result / online
-            Positioned.fill(
-              child: IgnorePointer(
-                child: FadeTransition(
-                  opacity: veil,
-                  child: const ColoredBox(color: Color(0xff02030b)),
+        // v0.6: a transparent Material gives the overlays above the navigator (intro skip, Oracle bubble) a text
+        // theme - without it Flutter draws its yellow "missing Material" double underline under their text
+        child: Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              // Oracle coach + bubble (bubble only while the tabs are visible)
+              Positioned.fill(
+                child: ValueListenableBuilder<int>(
+                  valueListenable: depth,
+                  builder: (_, d, _) => OracleLayer(bubble: d == 0 && !intro, onOpenPanel: () => _push(const OraclePanel())),
                 ),
               ),
-            ),
-            if (intro)
+              // cross-fade veil between tabs / match / result / online
               Positioned.fill(
-                child: Store.i.p.introVideo && !_videoFailed
-                    ? VideoIntro(onDone: _introDone, onFail: () => setState(() => _videoFailed = true))
-                    : Intro(onDone: _introDone),
+                child: IgnorePointer(
+                  child: FadeTransition(
+                    opacity: veil,
+                    child: const ColoredBox(color: Color(0xff02030b)),
+                  ),
+                ),
               ),
-          ],
+              if (intro)
+                Positioned.fill(
+                  child: Store.i.p.introVideo && !_videoFailed
+                      ? VideoIntro(onDone: _introDone, onFail: () => setState(() => _videoFailed = true))
+                      : Intro(onDone: _introDone),
+                ),
+            ],
+          ),
         ),
       ),
       home: _TabsPage(shell: this),
