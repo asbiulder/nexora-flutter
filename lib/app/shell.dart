@@ -149,13 +149,23 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
     Store.i.addListener(_onStore);
     Auth.i.addListener(_onAuth);
     _onStore();
-    // Test hook: `adb shell am start -n com.nexora.nexora/.MainActivity --es route /nx-quickmatch` skips the
-    // intro and opens a quick match vs the bot (used by the CI emulator smoke test).
-    if (PlatformDispatcher.instance.defaultRouteName == '/nx-quickmatch') {
+    // Test hooks (CI emulator smoke test), Flutter initial route from `am start ... --es route <r>`:
+    //   /nx-home: skip the launch intro;  /nx-quickmatch: straight into a quick match vs the bot;
+    //   /nx-team, /nx-shop: open My Team / the shop.
+    final r = PlatformDispatcher.instance.defaultRouteName;
+    if (r.startsWith('/nx-')) {
       intro = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        debugPrint('NX_TEST quick match started');
-        startMatch(buildLaunch(ModeKey.quick, p, lvl: 1, rule: 'g3', tt: 15, opp: pickOpp()));
+        debugPrint('NX_TEST route $r');
+        switch (r) {
+          case '/nx-quickmatch':
+            debugPrint('NX_TEST quick match started');
+            startMatch(buildLaunch(ModeKey.quick, p, lvl: 1, rule: 'g3', tt: 15, opp: pickOpp()));
+          case '/nx-team':
+            openTeam();
+          case '/nx-shop':
+            _push(ShopScreen(onChest: openChest));
+        }
       });
     }
   }

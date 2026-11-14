@@ -23,12 +23,12 @@ check() {
 }
 SIZE=$(adb shell wm size | tr -d '\r' | grep -o '[0-9]*x[0-9]*' | tail -n 1); W=${SIZE%x*}; H=${SIZE#*x}
 
-echo "== phase 1: normal launch"
-adb shell am start -W -n $ACT
-sleep 6; shot p1_06s
-sleep 8; shot p1_14s
-adb shell input tap $((W/2)) $((H/2)) || true   # skip the intro video if still playing
-sleep 8; shot p1_22s_home
+# The launch intro is an MP4; the emulator's host-side h264 decoder crashed the whole emulator in CI run 2, so
+# the smoke test enters through the intro-skipping test route (the intro itself is not exercised here).
+echo "== phase 1: launch to home"
+adb shell am start -W -n $ACT --es route /nx-home
+sleep 8; shot p1_08s_home
+sleep 6; shot p1_14s_home
 [ -z "$(alive)" ] && { echo "::error::[launch] process died"; fail=1; }
 adb logcat -d -v threadtime > "$OUT/logcat_launch.txt"
 check "$OUT/logcat_launch.txt" launch
@@ -46,5 +46,13 @@ adb logcat -d -v threadtime > "$OUT/logcat_match.txt"
 grep -q "NX_TEST match ready" "$OUT/logcat_match.txt" && echo "match ready marker found" || { echo "::error::match never reported ready"; fail=1; }
 adb shell dumpsys gfxinfo $PKG > "$OUT/gfxinfo.txt" 2>/dev/null || true
 check "$OUT/logcat_match.txt" match
+echo "== phase 3: my team + shop"
+for R in team shop; do
+  adb shell am force-stop $PKG; sleep 2; adb logcat -c || true
+  adb shell am start -W -n $ACT --es route /nx-$R
+  sleep 9; shot p3_$R
+  adb logcat -d -v threadtime > "$OUT/logcat_$R.txt"
+  check "$OUT/logcat_$R.txt" $R
+done
 echo "result: fail=$fail"
 exit $fail
