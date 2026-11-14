@@ -35,6 +35,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import '../game/data.dart' show kForms;
 import '../game/engine.dart';
 
 const _tau = math.pi * 2;
@@ -125,7 +126,8 @@ const kNetProfiles = {'stars', 'godot', 'classic'};
 /// Flutter builds v1-v3 advertise c:'fl' without 'pv' (treated as 3): their 'stars' tuning, linear power and
 /// smooth stop differ from v4, so a mixed match would desync -> v3 and v4 clients must not share a match.
 /// RN / Godot peers (no c:'fl') keep playing the legacy 'classic' profile as before.
-const int kProtoVersion = 5; // v0.6: billiards physics + 0.8x ball (v0.5 peers must not share a match)
+const int kProtoVersion = 6; // v0.6.1: retuned physics (power, friction, cushions), taller pitch, shallow goals, mid-match formation ('fm')
+// [5 = v0.6.0: billiards physics + 0.8x ball]
 const kMsgUpdateMe = 'نسخه‌ی NEXORA روی گوشی تو قدیمی است. لطفاً برنامه را به‌روز کن تا بتوانی با این بازیکن‌ها بازی کنی.';
 const kMsgUpdateThem = 'یکی از بازیکنان نسخه‌ی قدیمی NEXORA دارد. لطفاً از او بخواه برنامه را به‌روز کند؛ تا آن موقع بازی شروع نمی‌شود.';
 
@@ -341,7 +343,7 @@ class NetMatch {
       'q': ++_q, 'ts': now, 'hz': hz, 'ph': eng.phase.name, 'tu': eng.turn, 'sc': [eng.score[0], eng.score[1]],
       'ml': (eng.mleft * 10).round() / 10, 'tl': (eng.tleft * 10).round() / 10, 'su': eng.sudden ? 1 : 0, 'c': ctrl, 'n': seq,
       'p': p, 'R': [for (final v in eng.ball.R) (v * 1000).round()], 'ev': List.of(_evs), 'lk': 1,
-      'pf': eng.cfg.profile, 'pv': kProtoVersion,
+      'pf': eng.cfg.profile, 'pv': kProtoVersion, 'fm': [eng.cfg.forms[0], eng.cfg.forms[1]],
       if (teamIds != null) 'tm': teamIds,
     };
     _evs.clear();
@@ -637,6 +639,15 @@ class NetMatch {
       final b = eng.bodies.where((x) => x.id == bid).firstOrNull;
       if (b == null) return;
       eng.drag = Drag(b, b.x, b.y, b.x - ((m['dx'] as num?)?.toDouble() ?? 0), b.y - ((m['dy'] as num?)?.toDouble() ?? 0), ai: true);
+    } else if (k == 'fm') {
+      // v0.6.1: a captain changed formation mid-match; the host applies it at the next kick-off / reset (its
+      // snapshots then carry the new positions), clients mirror it for display.
+      final t = (m['t'] as num?)?.toInt() ?? -1, f = (m['f'] as num?)?.toInt() ?? -1;
+      if (isHost) {
+        eng.setFormation(t, f);
+      } else if (t >= 0 && t < 2 && f >= 0 && f < kForms.length) {
+        eng.cfg.forms = [for (var i = 0; i < 2; i++) i == t ? f : eng.cfg.forms[i]];
+      }
     } else if (k == 'rq' && isHost) {
       _keyAsked = true;
       sendSnap(now, key: true);
@@ -653,6 +664,16 @@ class NetMatch {
     if (eng.phase != Phase.aim || _cctrl != port.me || now - pendingShot < 1500) return false;
     if (mode == NetMode.lockstep) return !simulating && _pendingKey == null && atRest(eng);
     return true;
+  }
+
+  /// v0.6.1: this peer's captain picks formation [f] for team [t] (next kick-off / reset).
+  void setForm(int t, int f) {
+    if (isHost) {
+      eng.setFormation(t, f);
+    } else {
+      eng.cfg.forms = [for (var i = 0; i < 2; i++) i == t ? f : eng.cfg.forms[i]];
+    }
+    port.send({'k': 'fm', 't': t, 'f': f});
   }
 
   /// A local flick release. Host fires directly; clients send the shot (and predict it in lockstep).

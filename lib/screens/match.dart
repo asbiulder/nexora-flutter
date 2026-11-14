@@ -17,6 +17,7 @@ import '../game/goal_skins.dart';
 import '../game/render.dart';
 import '../oracle/oracle.dart';
 import '../ui/kit.dart';
+import 'formation_sheet.dart';
 import '../ui/v4.dart';
 
 class MatchResult {
@@ -119,6 +120,14 @@ class _MatchScreenState extends State<MatchScreen> {
   EdgeInsets _ins = EdgeInsets.zero;
 
   bool human(int t) => !(widget.cfg.ai && t == 1);
+
+  Future<void> _changeForm(int t) async {
+    final f = await pickFormation(context, current: eng.cfg.forms[t]);
+    if (f == null || !mounted) return;
+    eng.setFormation(t, f);
+    if (t == 0) Store.i.set((p) => p.form = f); // the player's own pick is their saved formation too
+    setState(() {});
+  }
 
   @override
   void initState() {
@@ -334,6 +343,13 @@ class _MatchScreenState extends State<MatchScreen> {
                         const SizedBox(height: 18),
                         Btn('ادامه', onTap: () => setState(() => paused = false)),
                         const SizedBox(height: 12),
+                        // v0.6.1: captains change formation mid-match (next kick-off / reset; at once if nobody shot yet)
+                        for (var t = 0; t < 2; t++)
+                          if (human(t)) ...[
+                            Btn(widget.cfg.ai ? 'تغییر ترکیب (${kForms[eng.cfg.forms[t]].code})' : 'ترکیب ${t == 0 ? 'آبی' : 'قرمز'} (${kForms[eng.cfg.forms[t]].code})',
+                                key: ValueKey('formBtn$t'), small: true, colors: G.dark, onTap: () => _changeForm(t)),
+                            const SizedBox(height: 12),
+                          ],
                         Btn('شروع دوباره', small: true, colors: G.dark, onTap: () {
                           eng.score[0] = 0;
                           eng.score[1] = 0;

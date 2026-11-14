@@ -459,6 +459,18 @@ class Engine {
     _push(EvType.turn).team = turn;
   }
 
+  /// v0.6.1: a captain changes formation mid-match. Takes effect at the next kick-off / reset (goal, restart); when
+  /// nobody has shot since the current kick-off the discs are re-placed at once (still the same kick-off).
+  void setFormation(int team, int form) {
+    if (team < 0 || team > 1 || form < 0 || form >= kForms.length) return;
+    if (cfg.forms.length < 2) cfg.forms = [cfg.forms.isEmpty ? 0 : cfg.forms[0], 0];
+    cfg.forms = [for (var i = 0; i < 2; i++) i == team ? form : cfg.forms[i]];
+    if (!slave && atKickoff) reset(turn);
+  }
+
+  /// true while the discs still stand in their kick-off places (no shot fired since the last reset).
+  bool get atKickoff => phase == Phase.aim && shots == 0 && drag == null;
+
   bool isAiTurn() => (cfg.ai && turn == 1) || aiTeams[turn];
   bool canControl() => phase == Phase.aim && !isAiTurn();
 

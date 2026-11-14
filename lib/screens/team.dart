@@ -46,7 +46,9 @@ class _TeamScreenState extends State<TeamScreen> {
             Expanded(
               child: ListenableBuilder(
                 listenable: Listenable.merge([Store.i, Discs.i, Auth.i]),
-                builder: (_, __) => switch (sub) { 'ball' => const _Balls(), 'field' => const _Fields(), 'form' => const _Formation(), _ => const _Discs() },
+                // v0.6.1 FIX: these must NOT be const - an identical const child is never rebuilt by the ListenableBuilder, so a
+                // formation (or ball / pitch) tap was saved but the picker never showed it (owner: "formation change does not work").
+                builder: (_, __) => switch (sub) { 'ball' => _Balls(), 'field' => _Fields(), 'form' => _Formation(), _ => _Discs() },
               ),
             ),
           ]),

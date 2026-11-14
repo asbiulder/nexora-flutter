@@ -22,6 +22,7 @@ import 'link.dart';
 import 'netcode.dart';
 import 'room_ui.dart';
 import 'ui.dart';
+import '../screens/formation_sheet.dart';
 
 class OnlineOutcome {
   final String matchId;
@@ -553,6 +554,32 @@ class _OnlineMatchScreenState extends State<OnlineMatchScreen> {
             bottom: ins.bottom + 10,
             child: Row(children: [
               ChatButton(link: link),
+              // v0.6.1: the captain can change formation mid-match (applied at the next kick-off / reset)
+              if (myTeam != null && pf != null) ...[
+                const SizedBox(width: 8),
+                Press(
+                  key: const ValueKey('onlineFormBtn'),
+                  onTap: () async {
+                    final t = myTeam!;
+                    final f = await pickFormation(context, current: eng.cfg.forms[t]);
+                    if (f == null || !mounted) return;
+                    Store.i.set((p) => p.form = f);
+                    net.setForm(t, f);
+                    setState(() {});
+                  },
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: const Color(0xd9080c22), borderRadius: BorderRadius.circular(12), border: Border.all(color: C.line)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.grid_view_rounded, size: 18, color: C.cyan),
+                      const SizedBox(width: 6),
+                      tBold('ترکیب ${kForms[eng.cfg.forms[myTeam!]].code}', size: 12),
+                    ]),
+                  ),
+                ),
+              ],
               const Spacer(),
               VoiceBar(link: link, enabled: room0.b('voice'), compact: true),
             ]),
