@@ -1,8 +1,9 @@
-// v4 launch intro (owner request 2026-11-14): the two owner videos, complete and in order:
+// v4 launch intro (owner request 2026-11-14): the owner videos, complete and in order:
 //   assets/video/intro1.mp4 (544x960, 12.25 s: spaceship through the portal to the NeXora logo)
 //   assets/video/intro2.mp4 (512x768, 10.04 s: a character walks the tunnel into the NEXORA base)
-// Full-screen BoxFit.cover centred on a black background (no stretch on any aspect). Video 2 is initialised while
-// video 1 plays and both stay stacked, so the hand-over is just a visibility swap (no black gap). Skip appears
+//   assets/video/intro3.mp4 (720x720, 5.7 s, owner's third clip added for v0.6.1; re-encoded H.264 main)
+// Full-screen BoxFit.cover centred on a black background (no stretch on any aspect). Each next clip is initialised while
+// the current one plays and all stay stacked, so the hand-over is just a visibility swap (no black gap). Skip appears
 // after ~1 s and goes straight home. If a video can't initialise, [onFail] runs (the Flutter cinematic fallback).
 import 'dart:async';
 
@@ -14,14 +15,14 @@ import '../core/sound.dart';
 class VideoIntro extends StatefulWidget {
   final VoidCallback onDone, onFail;
   const VideoIntro({super.key, required this.onDone, required this.onFail});
-  static const clips = ['assets/video/intro1.mp4', 'assets/video/intro2.mp4'];
+  static const clips = ['assets/video/intro1.mp4', 'assets/video/intro2.mp4', 'assets/video/intro3.mp4'];
   @override
   State<VideoIntro> createState() => _VideoIntroState();
 }
 
 class _VideoIntroState extends State<VideoIntro> {
   final List<VideoPlayerController> _c = [for (final p in VideoIntro.clips) VideoPlayerController.asset(p)];
-  final List<bool> _ready = [false, false];
+  final List<bool> _ready = [for (final _ in VideoIntro.clips) false];
   int _cur = 0;
   bool _skip = false, _done = false;
   Timer? _skipT, _guard;
@@ -38,10 +39,11 @@ class _VideoIntroState extends State<VideoIntro> {
     _init(0).then((ok) {
       if (!ok) return _fail();
       _c[0].play();
-      _init(1); // pre-initialise clip 2 while clip 1 plays
+      _init(1); // pre-initialise the next clip while this one plays
     });
-    _c[0].addListener(() => _watch(0));
-    _c[1].addListener(() => _watch(1));
+    for (var i = 0; i < _c.length; i++) {
+      _c[i].addListener(() => _watch(i));
+    }
   }
 
   Future<bool> _init(int i) async {
@@ -61,19 +63,23 @@ class _VideoIntroState extends State<VideoIntro> {
     if (v.hasError) return i == 0 ? _fail() : _finish();
     final end = v.isInitialized && v.duration > Duration.zero && v.position >= v.duration - const Duration(milliseconds: 40) && !v.isPlaying;
     if (!end) return;
-    if (i == 0 && _ready[1]) {
-      _c[1].play();
-      setState(() => _cur = 1);
-    } else if (i == 0) {
-      // clip 2 still initialising: wait for it (rare), else finish
-      _init(1).then((ok) {
+    final n = i + 1;
+    if (n >= _c.length) return _finish();
+    void go() {
+      _c[n].play();
+      setState(() => _cur = n);
+      if (n + 1 < _c.length) _init(n + 1); // pre-initialise the clip after it
+    }
+
+    if (_ready[n]) {
+      go();
+    } else {
+      // next clip still initialising: wait for it (rare), else finish
+      _init(n).then((ok) {
         if (_done) return;
         if (!ok) return _finish();
-        _c[1].play();
-        setState(() => _cur = 1);
+        go();
       });
-    } else {
-      _finish();
     }
   }
 
@@ -125,8 +131,7 @@ class _VideoIntroState extends State<VideoIntro> {
       color: Colors.black,
       child: Stack(fit: StackFit.expand, children: [
         // both clips stay in the tree; only the current one is visible (seamless swap)
-        Offstage(offstage: _cur != 1, child: _clip(1)),
-        Offstage(offstage: _cur != 0, child: _clip(0)),
+        for (var i = _c.length - 1; i >= 0; i--) Offstage(offstage: _cur != i, child: _clip(i)),
         Positioned(
           top: pad.top + 12,
           left: 14,
