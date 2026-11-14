@@ -65,7 +65,7 @@ class _ShopScreenState extends State<ShopScreen> {
     toast('${it.name} باز شد!', 'ok');
   }
 
-  String tcat = 'vip';
+  String tcat = 'ultra'; // v0.6.2: the new Premium Ultra discs open first
 
   bool _owns(Item it) => switch (it.kind) { ItemKind.ball => ownsBall(it.idx), ItemKind.field => ownsField(it.idx), ItemKind.goal => ownsGoal(it.idx), ItemKind.team => ownsTeam(it.id) };
 
@@ -258,7 +258,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 SizedBox(
                   height: 44,
                   child: ListView(scrollDirection: Axis.horizontal, reverse: true, padding: const EdgeInsets.symmetric(horizontal: 8), children: [
-                    for (final c in kCats)
+                    for (final c in [...kCats.where((c) => c.k == 'ultra'), ...kCats.where((c) => c.k != 'ultra')])
                       if (shopTeams.any((t) => t.cat == c.k)) Chip2(c.name, on: tcat == c.k, onTap: () => setState(() => tcat = c.k)),
                   ]),
                 ),

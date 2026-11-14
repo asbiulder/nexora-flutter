@@ -16,14 +16,14 @@ const W = 412.0, H = 892.0, D = 2.0;
 
 Future<ui.Image?> _opt(String? p) async => p == null ? null : await loadImage(p);
 
-Future<(Engine, MatchRenderer)> _setup(int field, {String skin = 'classic'}) async {
+Future<(Engine, MatchRenderer)> _setup(int field, {String skin = 'classic', Team? a, Team? b}) async {
   final cfg = MatchCfg(field: field, ball: 0, forms: [0, 0], ai: true, aiLvl: 1, limit: 3, matchTime: 0, turnTime: 15, vip: [false, false], first: 0);
   final e = Engine(cfg);
   final f = kFields[field];
   final sk = kGoalSkins.firstWhere((s) => s.id == skin);
   final net = sk.net == null ? null : await loadImage(sk.net!);
-  final im = MatchImages(await loadImage(kFIELD_IMG[f.id]!, width: 1100), await loadImage(ballImg(0), width: 256), await loadImage(teamImg(kTeams[0]), width: 192),
-      await loadImage(teamImg(kTeams[1]), width: 192), await _opt(kARROW_IMG['head_e']), await _opt(kARROW_IMG['head_s']), await _opt(kARROW_IMG['shaft_e']),
+  final im = MatchImages(await loadImage(kFIELD_IMG[f.id]!, width: 1100), await loadImage(ballImg(0), width: 256), await loadImage(teamImg(a ?? kTeams[0]), width: 192),
+      await loadImage(teamImg(b ?? kTeams[1]), width: 192), await _opt(kARROW_IMG['head_e']), await _opt(kARROW_IMG['head_s']), await _opt(kARROW_IMG['shaft_e']),
       await _opt(kARROW_IMG['shaft_s']),
       skin: sk, net: net, aim: await _opt(kARROW_IMG['aim']));
   final r = MatchRenderer(e, im, 0, computeView(e, W, H, 86, 22), dpr: D, ballShader: await ballShader());
@@ -88,4 +88,16 @@ void main() {
       await _shot(r, 'trail', .2, crop: ui.Rect.fromLTWH(W * .2, H * .25, W * .6, H * .35));
     });
   });
+
+  // v0.6.2: new pitches with Premium Ultra discs
+  for (final id in ['sansiro', 'campnou', 'blossom', 'frost', 'beach', 'autumn']) {
+    testWidgets('v062 kickoff $id', (t) async {
+      await t.runAsync(() async {
+        final fi = kFields.indexWhere((f) => f.id == id);
+        final ul = kTeams.where((x) => x.cat == 'ultra').toList();
+        final (_, r) = await _setup(fi, a: ul[fi % ul.length], b: ul[(fi * 7) % ul.length]);
+        await _shot(r, 'v062_kickoff_$id', 0);
+      });
+    });
+  }
 }

@@ -34,14 +34,14 @@ const List<Field> kFields = [
   Field('esteghlal', 'Esteghlal', 1216, 1622, 218, 997, 112, 1481, 773, 135, 'gold'),
   Field('mancity', 'Man City', 1216, 1622, 218, 996, 114, 1488, 805, 135, 'red'),
   // v0.6.2 pitches (owner sheets 2026-11-14; geometry measured on the art's own lines)
-  Field('sansiro', 'San Siro Night', 1086, 1448, 208, 880, 216, 1304, 722, 117, 'white'),
+  Field('sansiro', 'San Siro Night', 1086, 1448, 208, 880, 177, 1308, 722, 117, 'white'),
   Field('blackice', 'Black Ice', 1086, 1448, 206, 880, 114, 1304, 697, 117, 'ice'),
   Field('autumn', 'Autumn', 1086, 1448, 210, 878, 116, 1304, 695, 116, 'wood'),
   Field('tropical', 'Tropical', 1086, 1448, 214, 874, 116, 1304, 698, 115, 'gold'),
   Field('frost', 'Frost Arena', 1086, 1448, 198, 888, 100, 1336, 700, 120, 'ice'),
   Field('glacier', 'Glacier', 1086, 1448, 208, 888, 116, 1304, 698, 118, 'ice'),
-  Field('campnou', 'Camp Nou Night', 1086, 1448, 194, 892, 104, 1332, 715, 121, 'gold'),
-  Field('blossom', 'Blossom', 1086, 1448, 174, 908, 126, 1238, 653, 128, 'white'),
+  Field('campnou', 'Camp Nou Night', 1086, 1448, 194, 892, 100, 1329, 715, 121, 'gold'),
+  Field('blossom', 'Blossom', 1086, 1448, 174, 908, 91, 1239, 653, 128, 'white'),
   Field('beach', 'Beach Resort', 1086, 1448, 178, 898, 122, 1238, 654, 125, 'rope'),
 ];
 

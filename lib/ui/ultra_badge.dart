@@ -18,7 +18,10 @@ class UltraBadge extends StatelessWidget {
           border: Border.all(color: const Color(0xccffffff), width: .8),
           boxShadow: const [BoxShadow(color: Color(0x99ff3df2), blurRadius: 8)],
         ),
-        child: Text('✦ ULTRA',
-            style: TextStyle(fontSize: size, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: .6, height: 1.1, decoration: TextDecoration.none)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.auto_awesome, size: size * 1.1, color: Colors.white),
+          SizedBox(width: size * .25),
+          Text('ULTRA', style: TextStyle(fontSize: size, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: .6, height: 1.1, decoration: TextDecoration.none)),
+        ]),
       );
 }
