@@ -38,7 +38,9 @@ jobs:
           flutter-version: 3.50.0
           cache: true
       - id: ver
-        run: echo "version=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')-b${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+        run: |
+          V=$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
+          echo "version=${V}-b${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
       - name: Signing config
         run: |
           printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$GITHUB_WORKSPACE/$NX_KS" "$NX_KS_PASS" "$NX_KS_ALIAS" "$NX_KS_PASS" > android/key.properties

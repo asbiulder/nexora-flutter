@@ -149,7 +149,6 @@ class MatchRenderer {
     ..isAntiAlias = true;
   final ui.Paint _fill = ui.Paint()..isAntiAlias = true;
   final ui.Paint _img = ui.Paint()..filterQuality = ui.FilterQuality.medium;
-  final ui.Paint _ballP = ui.Paint();
   final ui.Paint _art = ui.Paint()..filterQuality = ui.FilterQuality.medium;
   final ui.Paint _artGlow = ui.Paint()
     ..filterQuality = ui.FilterQuality.medium
@@ -178,6 +177,7 @@ class MatchRenderer {
   Future<void> prepare() async {
     atlas = await _bakeAtlas();
     bg = await _bakeStatic();
+    await _bakeBallSprites();
   }
 
   void resize(MatchView nv) async {
@@ -383,25 +383,17 @@ class MatchRenderer {
     rc[i * 4 + 3] = spr.toDouble();
   }
 
-  /// v4 M1 drew the ball with Canvas only (v3's FragmentShader positioned itself by FlutterFragCoord of the render
-  /// target, which pointed outside offscreen layers -> invisible ball). v4.1 renders the shader into the ball's own
-  /// image instead, so its coordinates are always local.
-  static bool useBallShader = true; // v4.1: shader renders into the ball's own image (see _sphereImage)
+  /// v5: the shader ball (v3 FragCoord bug, v4.1 per-frame toImageSync) is retired. The ball is now a textured
+  /// sphere MESH drawn with Canvas.drawVertices: works on every renderer/GPU, costs no offscreen image per frame
+  /// and rolls in true 3D (see [_ballMesh]).
+  static bool useBallShader = false;
 
   // ---- ball ----
-  // v4.1 ball (owner request: "bring back the v3 rolling ball"): the v3 sphere shader (shaders/ball.frag) is
-  // rendered into the ball's OWN small image each frame (toImageSync), so FlutterFragCoord is in that image's local
-  // pixel space (centre = S/2) and the ball can never fall outside an offscreen layer (the v4 M1 invisible-ball
-  // bug). The image is then drawn at the interpolated ball position. Rolling: the renderer keeps its own rotation
-  // R (material -> view), advanced every frame from the INTERPOLATED movement: axis = up x dir = (-dy, dx, 0),
-  // angle = distance / radius, so it slows with the ball, stops exactly when it stops and follows bounces.
-  // Render-only: the engine's physics and its own R are untouched. Canvas fallback when the shader is unavailable.
+  // Rolling: the renderer keeps its own rotation R (material -> view), advanced every frame from the INTERPOLATED
+  // movement: axis = up x dir = (-dy, dx, 0), angle = distance / radius, so it slows with the ball, stops exactly
+  // when it stops and follows bounces. Render-only: the engine's physics are untouched.
   final Float64List _bR = Float64List.fromList([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   double _blx = double.nan, _bly = 0;
-  ui.Image? _ballImg;
-  final ui.Paint _ballImgP = ui.Paint()
-    ..filterQuality = ui.FilterQuality.medium
-    ..isAntiAlias = true;
 
   void _rollBall(double x, double y, double r) {
     if (_blx.isNaN) {
@@ -449,98 +441,142 @@ class MatchRenderer {
     R[8] = R[0] * R[4] - R[3] * R[1];
   }
 
-  /// the ball rendered by the sphere shader into its own S x S image (S = ball diameter in physical px)
-  ui.Image? _sphereImage(ui.FragmentShader sh, double rPx) {
-    final S = math.max(8, (2 * rPx).ceil() + 2);
-    final R = _bR;
-    // when the view is flipped the world canvas is rotated by pi: render the image in SCREEN orientation
-    // (light stays top-left) by mapping screen normals n_s -> view normals n_v = (-x, -y, z) first.
-    final f = v.flipped ? -1.0 : 1.0;
-    // q = R^T n_v ; rows of R^T = columns of R
-    sh
-      ..setFloat(0, S / 2)
-      ..setFloat(1, S / 2)
-      ..setFloat(2, S / 2 - 1)
-      ..setFloat(3, R[0] * f)
-      ..setFloat(4, R[3] * f)
-      ..setFloat(5, R[6])
-      ..setFloat(6, R[1] * f)
-      ..setFloat(7, R[4] * f)
-      ..setFloat(8, R[7])
-      ..setFloat(9, R[2] * f)
-      ..setFloat(10, R[5] * f)
-      ..setFloat(11, R[8])
-      ..setFloat(12, math.min(.2, 1.6 / (S / 2)))
-      ..setImageSampler(0, im.ball);
-    _ballP.shader = sh;
-    final rec = ui.PictureRecorder();
-    ui.Canvas(rec).drawRect(ui.Rect.fromLTWH(0, 0, S.toDouble(), S.toDouble()), _ballP);
-    final pic = rec.endRecording();
-    try {
-      final img = pic.toImageSync(S, S);
-      _ballImg?.dispose();
-      _ballImg = img;
-    } catch (_) {
-      return null;
-    } finally {
-      pic.dispose();
+
+  // Sphere mesh: the visible hemisphere of a unit sphere, orthographic, as rings x segments. Each vertex's normal
+  // n is rotated by R^T into material space q; the texture (a front view of the ball) is wrapped on the front
+  // hemisphere and mirrored on the back one (same mapping as the old shader). Triangles are emitted unindexed so a
+  // triangle that straddles the front/back seam takes one side's mapping instead of smearing across the texture.
+  static const int _bRings = 9, _bSegs = 26;
+  static final int _bVerts = 1 + _bRings * _bSegs;
+  late final Float32List _bN = () {
+    final o = Float32List(_bVerts * 3);
+    o[2] = 1;
+    var k = 3;
+    for (var i = 1; i <= _bRings; i++) {
+      final rho = math.sin(i / _bRings * math.pi / 2) * (i == _bRings ? 1.0 : 1.0);
+      final z = math.sqrt(math.max(0.0, 1 - rho * rho));
+      for (var j = 0; j < _bSegs; j++) {
+        final a = j / _bSegs * 2 * math.pi;
+        o[k++] = rho * math.cos(a);
+        o[k++] = rho * math.sin(a);
+        o[k++] = z;
+      }
     }
-    return _ballImg;
+    return o;
+  }();
+  late final Uint16List _bTri = () {
+    final o = <int>[];
+    int at(int ring, int seg) => ring == 0 ? 0 : 1 + (ring - 1) * _bSegs + seg % _bSegs;
+    for (var j = 0; j < _bSegs; j++) {
+      o.addAll([0, at(1, j), at(1, j + 1)]);
+    }
+    for (var i = 1; i < _bRings; i++) {
+      for (var j = 0; j < _bSegs; j++) {
+        o.addAll([at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j), at(i + 1, j + 1), at(i, j + 1)]);
+      }
+    }
+    return Uint16List.fromList(o);
+  }();
+  late final Float32List _bQ = Float32List(_bVerts * 3);
+  late final Float32List _bPos = () {
+    final o = Float32List(_bTri.length * 2);
+    for (var t = 0; t < _bTri.length; t++) {
+      o[t * 2] = _bN[_bTri[t] * 3];
+      o[t * 2 + 1] = _bN[_bTri[t] * 3 + 1];
+    }
+    return o;
+  }();
+  late final Float32List _bTex = Float32List(_bTri.length * 2);
+  ui.Vertices? _bMesh;
+  bool _bDirty = true;
+  late final ui.Paint _ballTexP = ui.Paint()
+    ..filterQuality = ui.FilterQuality.medium
+    ..isAntiAlias = true
+    ..shader = ui.ImageShader(im.ball, ui.TileMode.clamp, ui.TileMode.clamp, Float64List.fromList([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]),
+        filterQuality: ui.FilterQuality.medium);
+  ui.Image? _ballLight, _ballHalo;
+  final ui.Paint _ballRim = ui.Paint()
+    ..style = ui.PaintingStyle.stroke
+    ..isAntiAlias = true
+    ..color = const ui.Color(0x66000000);
+
+  ui.Vertices _ballMesh() {
+    if (!_bDirty && _bMesh != null) return _bMesh!;
+    _bDirty = false;
+    final R = _bR, n = _bN, q = _bQ;
+    for (var v = 0; v < _bVerts; v++) {
+      final nx = n[v * 3], ny = n[v * 3 + 1], nz = n[v * 3 + 2];
+      q[v * 3] = R[0] * nx + R[3] * ny + R[6] * nz;
+      q[v * 3 + 1] = R[1] * nx + R[4] * ny + R[7] * nz;
+      q[v * 3 + 2] = R[2] * nx + R[5] * ny + R[8] * nz;
+    }
+    final tw = im.ball.width * .5, th = im.ball.height * .5;
+    const k = .93;
+    final tri = _bTri, tex = _bTex;
+    for (var t = 0; t < tri.length; t += 3) {
+      final a = tri[t], b = tri[t + 1], c = tri[t + 2];
+      final back = q[a * 3 + 2] + q[b * 3 + 2] + q[c * 3 + 2] < 0;
+      for (var m = 0; m < 3; m++) {
+        final vi = tri[t + m];
+        final ux = back ? -q[vi * 3] : q[vi * 3];
+        tex[(t + m) * 2] = tw + ux * k * tw;
+        tex[(t + m) * 2 + 1] = th + q[vi * 3 + 1] * k * th;
+      }
+    }
+    _bMesh?.dispose();
+    return _bMesh = ui.Vertices.raw(ui.VertexMode.triangles, _bPos, textureCoordinates: _bTex);
   }
+
+  /// light (diffuse falloff + specular + faint blue rim) and halo sprites, baked once
+  Future<void> _bakeBallSprites() async {
+    const S = 128.0, c = ui.Offset(S / 2, S / 2);
+    var rec = ui.PictureRecorder();
+    var cv = ui.Canvas(rec);
+    cv.drawCircle(c, S / 2, ui.Paint()..shader = ui.Gradient.radial(c.translate(-S * .15, -S * .18), S * .72, const [ui.Color(0x00000000), ui.Color(0x00000000), ui.Color(0x47000000), ui.Color(0x99000000)], const [0, .42, .78, 1]));
+    cv.drawCircle(c, S / 2, ui.Paint()..shader = ui.Gradient.radial(c, S / 2, const [ui.Color(0x00598cff), ui.Color(0x00598cff), ui.Color(0x2e598cff)], const [0, .82, 1]));
+    final hc = c.translate(-S * .19, -S * .21);
+    cv.drawCircle(hc, S * .28, ui.Paint()..shader = ui.Gradient.radial(hc, S * .28, const [ui.Color(0xb3ffffff), ui.Color(0x26ffffff), ui.Color(0x00ffffff)], const [0, .45, 1]));
+    _ballLight = await rec.endRecording().toImage(S.toInt(), S.toInt());
+    rec = ui.PictureRecorder();
+    cv = ui.Canvas(rec);
+    cv.drawCircle(c, S / 2, ui.Paint()..shader = ui.Gradient.radial(c, S / 2, const [ui.Color(0x00b8bdc6), ui.Color(0x00b8bdc6), ui.Color(0x4db8bdc6), ui.Color(0x1aa0a6b0), ui.Color(0x00a0a6b0)], const [0, .56, .66, .82, 1]));
+    _ballHalo = await rec.endRecording().toImage(S.toInt(), S.toInt());
+  }
+
+  static final ui.Rect _sprR = ui.Rect.fromLTWH(0, 0, 128, 128);
+  ui.Rect get _shadowSrc => ui.Rect.fromLTWH(3.0 * spr, 0, spr.toDouble(), spr.toDouble());
 
   void _drawBall(ui.Canvas c, double al, double shx, double shy) {
     final b = e.ball;
     final x = b.px + (b.x - b.px) * al + b.vox, y = b.py + (b.y - b.py) * al + b.voy;
     final r = math.max(4.0, b.r * (1 + b.sq * .08));
     final ctr = ui.Offset(x, y);
+    final rot = _bR[0] + _bR[4] * 3 + _bR[8] * 5;
     _rollBall(x, y, b.r);
-    // soft gray halo (a gentle glow around the rim so the ball reads on any pitch, no hard ring)
-    _fill.shader = ui.Gradient.radial(ctr, r * 1.6, const [ui.Color(0x00b8bdc6), ui.Color(0x00b8bdc6), ui.Color(0x4db8bdc6), ui.Color(0x1aa0a6b0), ui.Color(0x00a0a6b0)],
-        const [0, .56, .66, .82, 1]);
-    c.drawCircle(ctr, r * 1.6, _fill);
-    // soft drop shadow (offset down-right, like the discs)
-    _fill.shader = ui.Gradient.radial(ctr.translate(r * .22, r * .3), r * 1.18, const [ui.Color(0x80000000), ui.Color(0x38000000), ui.Color(0x00000000)], const [0, .55, 1]);
-    c.drawCircle(ctr.translate(r * .22, r * .3), r * 1.18, _fill);
-    _fill.shader = null;
-    final sh = ballShader;
-    final img = sh == null ? null : _sphereImage(sh, r * v.s * dpr);
-    if (img != null) {
-      final dst = ui.Rect.fromCircle(center: v.flipped ? ui.Offset.zero : ctr, radius: r * img.width / (img.width - 2));
-      final src = ui.Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
+    if (_bR[0] + _bR[4] * 3 + _bR[8] * 5 != rot) _bDirty = true;
+    // soft gray halo + drop shadow (offset down-right like the discs): cached sprites, no per-frame gradients
+    if (_ballHalo != null) c.drawImageRect(_ballHalo!, _sprR, ui.Rect.fromCircle(center: ctr, radius: r * 1.6), _img);
+    c.drawImageRect(atlas, _shadowSrc, ui.Rect.fromCircle(center: ctr.translate(r * .22, r * .3), radius: r * 1.18), _shadowP);
+    // textured sphere
+    c.save();
+    c.translate(x, y);
+    c.scale(r);
+    c.drawVertices(_ballMesh(), ui.BlendMode.srcOver, _ballTexP);
+    c.restore();
+    // lighting stays screen top-left even on the flipped (rotated) online view
+    if (_ballLight != null) {
       if (v.flipped) {
         c.save();
         c.translate(x, y);
         c.rotate(math.pi);
-        c.drawImageRect(img, src, dst, _ballImgP);
+        c.drawImageRect(_ballLight!, _sprR, ui.Rect.fromCircle(center: ui.Offset.zero, radius: r), _img);
         c.restore();
       } else {
-        c.drawImageRect(img, src, dst, _ballImgP);
+        c.drawImageRect(_ballLight!, _sprR, ui.Rect.fromCircle(center: ctr, radius: r), _img);
       }
-      return;
     }
-    _drawBallCanvas(c, ctr, r);
-  }
-
-  /// fallback (no shader): texture clipped to a circle, turned by the in-plane part of the rolling rotation
-  void _drawBallCanvas(ui.Canvas c, ui.Offset ctr, double r) {
-    final rot = math.atan2(_bR[3], _bR[0]);
-    c.save();
-    _path
-      ..reset()
-      ..addOval(ui.Rect.fromCircle(center: ctr, radius: r));
-    c.clipPath(_path);
-    _fill.color = const ui.Color(0xfff4f6fa);
-    c.drawCircle(ctr, r, _fill);
-    c.translate(ctr.dx, ctr.dy);
-    c.rotate(rot);
-    final bi = im.ball;
-    c.drawImageRect(bi, ui.Rect.fromLTWH(0, 0, bi.width.toDouble(), bi.height.toDouble()), ui.Rect.fromCircle(center: ui.Offset.zero, radius: r * 1.04), _img);
-    c.restore();
-    _fill.shader = ui.Gradient.radial(ctr.translate(-r * .3, -r * .35), r * 1.45, const [ui.Color(0x00000000), ui.Color(0x00000000), ui.Color(0x47000000), ui.Color(0x8c000000)], const [0, .45, .8, 1]);
-    c.drawCircle(ctr, r, _fill);
-    _fill.shader = ui.Gradient.radial(ctr.translate(-r * .38, -r * .42), r * .55, const [ui.Color(0xb3ffffff), ui.Color(0x26ffffff), ui.Color(0x00ffffff)], const [0, .45, 1]);
-    c.drawCircle(ctr.translate(-r * .38, -r * .42), r * .55, _fill);
-    _fill.shader = null;
+    _ballRim.strokeWidth = math.max(.8, 1.2 / v.s);
+    c.drawCircle(ctr, r - _ballRim.strokeWidth * .4, _ballRim);
   }
 
   void _drawTrail(ui.Canvas c) {

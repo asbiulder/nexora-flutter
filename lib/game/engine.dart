@@ -135,7 +135,7 @@ const kTuneStars = PhysTune(
   eDiscDisc: .88, eDiscBall: .90, discDiscK: 1, // equal-mass head-on: target gets 94% of the momentum
   eSoft: .5, vSoft: 120, // only very light touches are damped (anti-jitter)
   eWallBall: .92, tWallBall: .99, // [.90, .98] lively pool cushion: 0.92 normal, tangential nearly kept
-  eWallDisc: .55, tWallDisc: .85, // plastic puck on the rail: dead-ish bounce
+  eWallDisc: .80, tWallDisc: .95, // v5 (owner: walls ate too much disc power) [v4: .55, .85]
   postR: 5, cornerNudge: 70,
   subPx: 4, subMax: 16, stepCap: 14, rollK: .6,
 );

@@ -26,9 +26,24 @@ class MatchGame extends FlameGame {
   @override
   ui.Color backgroundColor() => const ui.Color(0xff02040c);
 
+  // v5 smoother motion: vsync deltas jitter by a few ms on Android, which makes the fixed-step interpolation stutter.
+  // A light low-pass on dt evens the frame pacing; real hitches (> 2x the average) pass through unfiltered so the
+  // simulation never drifts from wall-clock time for more than a frame.
+  double _dtAvg = 1 / 60;
+  double _smooth(double dt) {
+    if (dt <= 0) return dt;
+    if (dt > _dtAvg * 2 || dt < _dtAvg * .5) {
+      _dtAvg = _dtAvg * .7 + dt.clamp(1 / 240, 1 / 20) * .3;
+      return dt;
+    }
+    _dtAvg = _dtAvg * .85 + dt * .15;
+    return _dtAvg;
+  }
+
   @override
-  void update(double dt) {
-    super.update(dt);
+  void update(double rawDt) {
+    super.update(rawDt);
+    final dt = _smooth(rawDt);
     _t += dt;
     if (!paused) {
       _sw
@@ -38,7 +53,7 @@ class MatchGame extends FlameGame {
       _sw.stop();
       stepMs = stepMs * .9 + _sw.elapsedMicroseconds / 1000 * .1;
     }
-    frameMs = frameMs * .9 + dt * 1000 * .1;
+    frameMs = frameMs * .9 + rawDt * 1000 * .1;
   }
 
   @override
