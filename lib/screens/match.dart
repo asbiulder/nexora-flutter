@@ -39,26 +39,40 @@ Future<ui.FragmentShader?> ballShader() async {
 
 /// Load every image a match needs, decoded at the size it is drawn at.
 Future<MatchImages> loadMatchImages(MatchCfg cfg, Team t0, Team t1) async {
-  final f = kFields[cfg.field];
-  final r = await Future.wait([
-    loadImage(kFIELD_IMG[f.id]!, width: 1100),
-    loadImage(ballImg(cfg.ball), width: 256).catchError((_) => proceduralBall()),
-    loadImage(teamImg(t0), width: 192),
-    loadImage(teamImg(t1), width: 192),
-    loadImage(kARROW_IMG['head_e']!),
-    loadImage(kARROW_IMG['head_s']!),
-    loadImage(kARROW_IMG['shaft_e']!),
-    loadImage(kARROW_IMG['shaft_s']!),
+  final f = kFields[cfg.field.clamp(0, kFields.length - 1)];
+  // every image falls back instead of failing the whole match (a missing/undecodable asset used to leave the
+  // match on its loading spinner forever)
+  Future<ui.Image> img(String? path, {int? width, required Future<ui.Image> Function() orElse}) async {
+    if (path == null) return orElse();
+    try {
+      return await loadImage(path, width: width);
+    } catch (e) {
+      debugPrint('NX_ERR match image $path: $e');
+      return orElse();
+    }
+  }
+
+  Future<ui.Image?> opt(String? path) async {
+    if (path == null) return null;
+    try {
+      return await loadImage(path);
+    } catch (e) {
+      debugPrint('NX_ERR match image $path: $e');
+      return null;
+    }
+  }
+
+  final r = await Future.wait<ui.Image>([
+    img(kFIELD_IMG[f.id], width: 1100, orElse: () => solidImage(const Color(0xff1d6b2e))),
+    img(ballImg(cfg.ball), width: 256, orElse: proceduralBall),
+    img(teamImg(t0), width: 192, orElse: () => solidImage(C.cyanOld)),
+    img(teamImg(t1), width: 192, orElse: () => solidImage(C.red)),
   ]);
+  final a = await Future.wait<ui.Image?>([opt(kARROW_IMG['head_e']), opt(kARROW_IMG['head_s']), opt(kARROW_IMG['shaft_e']), opt(kARROW_IMG['shaft_s'])]);
   // v4 goal skin (cosmetic, local): the honeycomb net texture of the chosen skin; classic = procedural mesh
   final skin = goalSkin(Store.i.p.goal);
-  ui.Image? net;
-  if (skin.net != null) {
-    try {
-      net = await loadImage(skin.net!);
-    } catch (_) {}
-  }
-  return MatchImages(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], skin: net == null ? kGoalSkins[0] : skin, net: net);
+  final net = skin.net == null ? null : await opt(skin.net);
+  return MatchImages(r[0], r[1], r[2], r[3], a[0], a[1], a[2], a[3], skin: net == null ? kGoalSkins[0] : skin, net: net);
 }
 
 class HudState {
@@ -109,7 +123,8 @@ class _MatchScreenState extends State<MatchScreen> {
   @override
   void initState() {
     super.initState();
-    Oracle.i.setScene('match');
+    // notifying the Oracle layer during this build is not allowed: defer it to after the frame
+    WidgetsBinding.instance.addPostFrameCallback((_) => Oracle.i.setScene('match'));
     sfx(Snd.whistle);
     Sound.playLoop(Snd.crowd);
     Sound.scene(AudioScene.match);
@@ -117,9 +132,14 @@ class _MatchScreenState extends State<MatchScreen> {
   }
 
   Future<void> _load() async {
-    final im = await loadMatchImages(widget.cfg, widget.teams[0], widget.teams[1]);
-    _im = im;
-    await _buildRenderer();
+    try {
+      final im = await loadMatchImages(widget.cfg, widget.teams[0], widget.teams[1]);
+      _im = im;
+      await _buildRenderer();
+      debugPrint('NX_TEST match ready: ${widget.teams[0].id} vs ${widget.teams[1].id}, renderer=${game.r != null}');
+    } catch (e, st) {
+      debugPrint('NX_ERR match load: $e\n$st');
+    }
     if (mounted) setState(() => loading = false);
   }
 
@@ -135,7 +155,7 @@ class _MatchScreenState extends State<MatchScreen> {
   @override
   void dispose() {
     Sound.stopLoop(Snd.crowd);
-    Oracle.i.setScene('ui');
+    scheduleMicrotask(() => Oracle.i.setScene('ui'));
     hud.dispose();
     banner.dispose();
     debug.dispose();

@@ -47,6 +47,13 @@ Future<ui.Image> loadImage(String path, {int? width}) async {
   return fr.image;
 }
 
+/// A small solid-colour disc image (fallback art when a texture cannot be decoded).
+Future<ui.Image> solidImage(ui.Color c, [int size = 64]) {
+  final rec = ui.PictureRecorder();
+  ui.Canvas(rec).drawCircle(ui.Offset(size / 2, size / 2), size / 2, ui.Paint()..color = c);
+  return rec.endRecording().toImage(size, size);
+}
+
 /// Classic white/black soccer ball drawn with Canvas: used when the ball texture fails to load.
 Future<ui.Image> proceduralBall([int size = 256]) {
   final rec = ui.PictureRecorder();

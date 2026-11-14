@@ -11,6 +11,7 @@
 //   sheet / modal  = showSheet / showCard routes
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:material_ui/material_ui.dart';
 
@@ -149,6 +150,15 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
     Store.i.addListener(_onStore);
     Auth.i.addListener(_onAuth);
     _onStore();
+    // Test hook: `adb shell am start -n com.nexora.nexora/.MainActivity --es route /nx-quickmatch` skips the
+    // intro and opens a quick match vs the bot (used by the CI emulator smoke test).
+    if (PlatformDispatcher.instance.defaultRouteName == '/nx-quickmatch') {
+      intro = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint('NX_TEST quick match started');
+        startMatch(buildLaunch(ModeKey.quick, p, lvl: 1, rule: 'g3', tt: 15, opp: pickOpp()));
+      });
+    }
   }
 
   @override
@@ -460,6 +470,7 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
       title: 'NEXORA',
       debugShowCheckedModeBanner: false,
       navigatorKey: navKey,
+      initialRoute: '/',
       navigatorObservers: [_obs],
       theme: ThemeData(brightness: Brightness.dark, scaffoldBackgroundColor: C.bg, fontFamily: F.body, useMaterial3: true),
       // v4: clamp the system font scale so layouts built for a ~400 dp design width never overflow
