@@ -143,13 +143,14 @@ class _Skeleton extends StatelessWidget {
 // ======================= root =======================
 class SocialRoot extends StatefulWidget {
   final double top, bottom;
-  const SocialRoot({super.key, this.top = 0, this.bottom = 0});
+  final String initial; // 'msg' | 'club' | 'friends'
+  const SocialRoot({super.key, this.top = 0, this.bottom = 0, this.initial = 'msg'});
   @override
   State<SocialRoot> createState() => _SocialRootState();
 }
 
 class _SocialRootState extends State<SocialRoot> {
-  String tab = 'msg';
+  late String tab = widget.initial;
   bool busy = false;
 
   Future<void> _guest() async {

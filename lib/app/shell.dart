@@ -26,7 +26,6 @@ import '../net/auth.dart';
 import '../net/supabase.dart';
 import '../online/online_root.dart';
 import '../oracle/oracle.dart';
-import '../screens/home.dart';
 import '../screens/match.dart';
 import '../screens/play.dart';
 import '../screens/profile.dart';
@@ -37,13 +36,19 @@ import '../screens/shop.dart';
 import '../screens/team.dart';
 import '../social/social.dart' as social;
 import '../ui/chrome.dart';
-import '../tutorial/keys.dart';
+import '../ui/hub.dart';
 import '../ui/v4.dart';
 
 const int kDayMs = 86400000;
 
 /// Reward multiplier per offline mode (MULT in App.tsx).
-double modeMult(ModeKey m) => switch (m) { ModeKey.quick => 1, ModeKey.cup => 2, ModeKey.galaxy => 3, ModeKey.train => .3, ModeKey.local => 0 };
+double modeMult(ModeKey m) => switch (m) {
+  ModeKey.quick => 1,
+  ModeKey.cup => 2,
+  ModeKey.galaxy => 3,
+  ModeKey.train => .3,
+  ModeKey.local => 0,
+};
 
 class MatchOutcome {
   final Reward? reward;
@@ -60,9 +65,22 @@ MatchOutcome computeOutcome(MatchResult r, Launch l, Profile p) {
   CupInfo? cup;
   if (l.mode == ModeKey.cup) cup = CupInfo(l.stage, win, win && l.stage >= 2);
   final rw = Reward(
-    ((win ? 60 : draw ? 25 : 12) * mult + a * 5).round(),
+    ((win
+                    ? 60
+                    : draw
+                    ? 25
+                    : 12) *
+                mult +
+            a * 5)
+        .round(),
     ((win ? 50 : 20) * math.max(.3, mult)).round(),
-    l.mode == ModeKey.train ? 0 : win ? (20 * mult).round() : draw ? 0 : -8,
+    l.mode == ModeKey.train
+        ? 0
+        : win
+        ? (20 * mult).round()
+        : draw
+        ? 0
+        : -8,
     0,
   );
   if (cup?.champion == true) rw.coins += 400;
@@ -217,10 +235,10 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
   }
 
   void goHome() => transition(() {
-        _toRoot();
-        tab.value = NavTab.home;
-        Sound.scene(AudioScene.menu);
-      });
+    _toRoot();
+    tab.value = NavTab.home;
+    Sound.scene(AudioScene.menu);
+  });
 
   // ---------------- tabs ----------------
   void _goTabByName(String t) {
@@ -228,7 +246,7 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
       case 'home' || 'arcade':
         tab.value = NavTab.home;
       case 'social' || 'chat':
-        tab.value = NavTab.social;
+        openSocial('msg');
       case 'play':
         tab.value = NavTab.home;
         _push(PlayScreen(onMode: openMode, onOnline: (e) => openOnline(e)));
@@ -265,7 +283,7 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
       case 'challenges':
         openOnline('challenges');
       case 'social':
-        tab.value = NavTab.social;
+        openSocial('msg');
       case 'oracle':
         _push(const OraclePanel());
       case 'profile':
@@ -309,43 +327,59 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
   }
 
   void openTeam() => pushOverlay('team', (_) => const TeamScreen());
+  void openSocial(String tab) => pushOverlay('social', (_) => _SocialPage(tab: tab));
+
+  /// v0.6: a room joined / created from the main screen -> straight into the room screen
+  void openRoom(Rec room) => transition(() {
+    _toRoot();
+    _push(OnlineRoot(room: room)).whenComplete(() {
+      Sound.scene(AudioScene.menu);
+      Oracle.i.setScene('ui');
+    });
+  });
   void openProfile(String id) => social.openPublicProfile(ctx, id);
   void openChat(String id) => social.openChat(ctx, id);
   void openClub(String id) => social.openClub(ctx, id);
 
   // ---------------- sheets ----------------
-  void openMode(Mode m) => showSheet(ctx,
-      title: m.name,
-      en: m.en,
-      accent: m.color,
-      height: .9,
-      child: (sc) => SetupSheet(
-            mode: m,
-            onStart: startMatch,
-            onTeam: () {
-              Navigator.pop(sc);
-              openTeam();
-            },
-          ));
+  void openMode(Mode m) => showSheet(
+    ctx,
+    title: m.name,
+    en: m.en,
+    accent: m.color,
+    height: .9,
+    child: (sc) => SetupSheet(
+      mode: m,
+      onStart: startMatch,
+      onTeam: () {
+        Navigator.pop(sc);
+        openTeam();
+      },
+    ),
+  );
 
-  void openSettings() => showSheet(ctx,
-      title: 'تنظیمات',
-      en: 'SYSTEMS',
-      accent: C.sky,
-      height: .78,
-      child: (sc) => SettingsSheet(replayIntro: () {
-            Navigator.pop(sc);
-            setState(() => intro = true);
-          }));
+  void openSettings() => showSheet(
+    ctx,
+    title: 'تنظیمات',
+    en: 'SYSTEMS',
+    accent: C.sky,
+    height: .78,
+    child: (sc) => SettingsSheet(
+      replayIntro: () {
+        Navigator.pop(sc);
+        setState(() => intro = true);
+      },
+    ),
+  );
 
   // ---------------- online ----------------
   void openOnline(String entry, [String? quick]) => transition(() {
-        _toRoot();
-        _push(OnlineRoot(entry: entry, quick: quick)).whenComplete(() {
-          Sound.scene(AudioScene.menu);
-          Oracle.i.setScene('ui');
-        });
-      });
+    _toRoot();
+    _push(OnlineRoot(entry: entry, quick: quick)).whenComplete(() {
+      Sound.scene(AudioScene.menu);
+      Oracle.i.setScene('ui');
+    });
+  });
 
   // ---------------- match / result ----------------
   void startMatch(Launch l) {
@@ -391,15 +425,9 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
     }
     transition(() {
       Sound.scene(AudioScene.menu);
-      nav.pushReplacement(fadeRoute(_ResultPage(
-        r: r,
-        reward: o.reward,
-        names: l.names,
-        cup: o.cup,
-        levelUp: o.levelUp,
-        onAgain: () => _again(o.cup),
-        onHome: goHome,
-      )));
+      nav.pushReplacement(
+        fadeRoute(_ResultPage(r: r, reward: o.reward, names: l.names, cup: o.cup, levelUp: o.levelUp, onAgain: () => _again(o.cup), onHome: goHome)),
+      );
     });
   }
 
@@ -414,7 +442,21 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
       return;
     }
     final c = l.cfg;
-    startMatch(buildLaunch(l.mode, p, lvl: c.aiLvl, rule: c.matchTime == 180 ? 't3' : c.limit == 5 ? 'g5' : 'g3', tt: c.turnTime.round(), opp: l.teams[1], stage: 0));
+    startMatch(
+      buildLaunch(
+        l.mode,
+        p,
+        lvl: c.aiLvl,
+        rule: c.matchTime == 180
+            ? 't3'
+            : c.limit == 5
+            ? 'g5'
+            : 'g3',
+        tt: c.turnTime.round(),
+        opp: l.teams[1],
+        stage: 0,
+      ),
+    );
   }
 
   void nextCup() {
@@ -428,11 +470,13 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
   bool get dailyReady => _now - p.lastDaily > kDayMs;
   bool get chestReady => _now - p.lastChest > kChestEvery;
 
-  void openDaily() => showCard(ctx,
-      child: (cc) => ListenableBuilder(
-            listenable: Store.i,
-            builder: (_, _) => DailyCard(ready: dailyReady, streak: p.streak, lastDaily: p.lastDaily, onClaim: () => claimDaily(cc)),
-          ));
+  void openDaily() => showCard(
+    ctx,
+    child: (cc) => ListenableBuilder(
+      listenable: Store.i,
+      builder: (_, _) => DailyCard(ready: dailyReady, streak: p.streak, lastDaily: p.lastDaily, onClaim: () => claimDaily(cc)),
+    ),
+  );
 
   void claimDaily(BuildContext cc) {
     if (!dailyReady) return;
@@ -469,7 +513,11 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
       if (!premium) q.lastChest = now;
       q.chests += 1;
     });
-    showCard(ctx, accent: premium ? C.gold : C.cyan, child: (_) => ChestOpen(prize: prize, premium: premium));
+    showCard(
+      ctx,
+      accent: premium ? C.gold : C.cyan,
+      child: (_) => ChestOpen(prize: prize, premium: premium),
+    );
   }
 
   // ---------------- build ----------------
@@ -485,104 +533,92 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
       // v4: clamp the system font scale so layouts built for a ~400 dp design width never overflow
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: .85, maxScaleFactor: 1.15)),
-        child: Stack(children: [
-        child ?? const SizedBox.shrink(),
-        // Oracle coach + bubble (bubble only while the tabs are visible)
-        Positioned.fill(
-          child: ValueListenableBuilder<int>(
-            valueListenable: depth,
-            builder: (_, d, _) => OracleLayer(bubble: d == 0 && !intro, onOpenPanel: () => _push(const OraclePanel())),
-          ),
+        child: Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            // Oracle coach + bubble (bubble only while the tabs are visible)
+            Positioned.fill(
+              child: ValueListenableBuilder<int>(
+                valueListenable: depth,
+                builder: (_, d, _) => OracleLayer(bubble: d == 0 && !intro, onOpenPanel: () => _push(const OraclePanel())),
+              ),
+            ),
+            // cross-fade veil between tabs / match / result / online
+            Positioned.fill(
+              child: IgnorePointer(
+                child: FadeTransition(
+                  opacity: veil,
+                  child: const ColoredBox(color: Color(0xff02030b)),
+                ),
+              ),
+            ),
+            if (intro)
+              Positioned.fill(
+                child: Store.i.p.introVideo && !_videoFailed
+                    ? VideoIntro(onDone: _introDone, onFail: () => setState(() => _videoFailed = true))
+                    : Intro(onDone: _introDone),
+              ),
+          ],
         ),
-        // cross-fade veil between tabs / match / result / online
-        Positioned.fill(
-          child: IgnorePointer(child: FadeTransition(opacity: veil, child: const ColoredBox(color: Color(0xff02030b)))),
-        ),
-        if (intro)
-          Positioned.fill(
-            child: Store.i.p.introVideo && !_videoFailed
-                ? VideoIntro(onDone: _introDone, onFail: () => setState(() => _videoFailed = true))
-                : Intro(onDone: _introDone),
-          ),
-      ]),
       ),
       home: _TabsPage(shell: this),
     );
   }
 }
 
-/// Root page: Space backdrop, tab body (fade between tabs), HUD and bottom navigation. Back on a non-home tab -> home.
+/// Root page (v0.6): the main screen - central room list + four slide-out edge panels (lib/ui/hub.dart).
 class _TabsPage extends StatelessWidget {
   final _ShellState shell;
   const _TabsPage({required this.shell});
 
   @override
   Widget build(BuildContext context) {
+    final s = shell;
+    final a = HubActions(
+      profile: () => s._push(ProfileScreen(onOnline: (e) => s.openOnline(e))),
+      shop: () => s._push(ShopScreen(onChest: s.openChest)),
+      daily: s.openDaily,
+      oracle: () => s._push(const OraclePanel()),
+      settings: s.openSettings,
+      chest: s.openChest,
+      team: (t) => s.pushOverlay('team', (_) => TeamScreen(initial: t)),
+      social: s.openSocial,
+      online: (e, [q]) => s.openOnline(e, q),
+      mode: s.openMode,
+      room: s.openRoom,
+    );
+    return Scaffold(
+      backgroundColor: C.bg,
+      resizeToAvoidBottomInset: false,
+      body: ListenableBuilder(
+        listenable: Store.i,
+        builder: (context, _) => MainHub(a: a, dailyReady: s.dailyReady, chestReady: s.chestReady),
+      ),
+    );
+  }
+}
+
+/// Social page (friends / messages / clubs) opened from the right panel.
+class _SocialPage extends StatelessWidget {
+  final String tab;
+  const _SocialPage({required this.tab});
+  @override
+  Widget build(BuildContext context) {
     final ins = MediaQuery.paddingOf(context);
-    final top = ins.top + 66, bottom = kNavH + math.max(8.0, ins.bottom) + 6;
-    return ValueListenableBuilder<NavTab>(
-      valueListenable: shell.tab,
-      builder: (context, tab, _) => PopScope(
-        canPop: tab == NavTab.home,
-        onPopInvokedWithResult: (did, _) {
-          if (!did && tab != NavTab.home) shell.tab.value = NavTab.home;
-        },
-        child: Scaffold(
-          backgroundColor: C.bg,
-          body: ListenableBuilder(
-            listenable: Store.i,
-            builder: (context, _) {
-              final dailyReady = shell.dailyReady, chestReady = shell.chestReady;
-              return Stack(children: [
-                Positioned.fill(child: SpaceBg(image: tab == NavTab.home ? V4.bgSpace : V4.bgPortal3, dim: tab == NavTab.home ? 0 : .2)),
-                Positioned.fill(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 240),
-                    reverseDuration: const Duration(milliseconds: 120),
-                    child: KeyedSubtree(
-                      key: ValueKey(tab),
-                      child: tab == NavTab.social
-                          ? social.SocialRoot(top: top, bottom: bottom)
-                          : HomeScreen(
-                              top: top,
-                              bottom: bottom,
-                              onWorld: shell.onWorld,
-                              onQuick: () => shell.openMode(kModes.first),
-                              onDaily: shell.openDaily,
-                              onChest: () => shell.openChest(false),
-                              dailyReady: dailyReady,
-                              chestReady: chestReady,
-                              onShop: () => shell._push(ShopScreen(onChest: shell.openChest)),
-                              onSocial: () => shell.tab.value = NavTab.social,
-                              onRank: () => shell.openOnline('leagues'),
-                              onSettings: shell.openSettings,
-                              onOracle: () => shell._push(const OraclePanel()),
-                            ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: Hud(
-                    onProfile: () => shell._push(ProfileScreen(onOnline: (e) => shell.openOnline(e))),
-                    onShop: () => shell._push(ShopScreen(onChest: shell.openChest)),
-                    onDaily: shell.openDaily,
-                    onOracle: () => shell._push(const OraclePanel()),
-                    dailyReady: dailyReady,
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: NeonNavBar(tab: tab, onTab: shell.onTab, fa: Store.i.p.lang == 'fa', keys: TourKeys.nav),
-                ),
-              ]);
-            },
+    return Scaffold(
+      backgroundColor: C.bg,
+      body: Stack(
+        children: [
+          Positioned.fill(child: SpaceBg(image: V4.bgPortal3, dim: .2)),
+          Column(
+            children: [
+              Header(title: 'اجتماعی', en: 'SOCIAL', onBack: () => Navigator.pop(context)),
+              Expanded(
+                child: social.SocialRoot(initial: tab, bottom: ins.bottom + 12),
+              ),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -596,13 +632,21 @@ class _ResultPage extends StatelessWidget {
   final CupInfo? cup;
   final int? levelUp;
   final VoidCallback onAgain, onHome;
-  const _ResultPage({required this.r, required this.reward, required this.names, required this.cup, required this.levelUp, required this.onAgain, required this.onHome});
+  const _ResultPage({
+    required this.r,
+    required this.reward,
+    required this.names,
+    required this.cup,
+    required this.levelUp,
+    required this.onAgain,
+    required this.onHome,
+  });
   @override
   Widget build(BuildContext context) => PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (did, _) {
-          if (!did) onHome();
-        },
-        child: ResultScreen(r: r, reward: reward, names: names, cup: cup, levelUp: levelUp, onAgain: onAgain, onHome: onHome),
-      );
+    canPop: false,
+    onPopInvokedWithResult: (did, _) {
+      if (!did) onHome();
+    },
+    child: ResultScreen(r: r, reward: reward, names: names, cup: cup, levelUp: levelUp, onAgain: onAgain, onHome: onHome),
+  );
 }

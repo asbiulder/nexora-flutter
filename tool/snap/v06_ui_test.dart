@@ -12,7 +12,8 @@ import 'package:nexora/online/link.dart';
 import 'package:nexora/online/room_v6.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'v06_hub_cases.dart';
+import 'package:nexora/net/supabase.dart' show Rec;
+import 'package:nexora/ui/hub.dart';
 
 final _out = Platform.environment['NX_SHOTS'] ?? '/tmp';
 
@@ -102,5 +103,15 @@ void main() {
     await _fonts();
   });
   testWidgets('room', (t) async => snap(t, 'room_screen', roomDemo()));
-  hubCases(snap);
+  final rooms = [
+    for (final (n, h, lv, pl, st, k) in [('فینال کهکشانی', 'Sara', 12, 1, 'waiting', 'casual'), ('Golden League', 'omid', 8, 2, 'playing', 'ranked'), ('تمرین دوستانه', 'REZA', 3, 1, 'waiting', 'casual'), ('NEXORA Night', 'Ghost', 21, 1, 'waiting', 'casual')])
+      Rec({'id': n, 'name': n, 'host_name': h, 'host_level': lv, 'host_avatar': 'club${lv % 9}', 'mode': '1v1', 'kind': k, 'players': pl, 'capacity': 2, 'spectators': lv % 4, 'status': st, 'settings': {'goals': 3, 'turn': 15, 'field': 0}}),
+  ];
+  final a = HubActions(profile: () {}, shop: () {}, daily: () {}, oracle: () {}, settings: () {}, chest: (_) {}, team: (_) {}, social: (_) {}, online: (_, [_]) {}, mode: (_) {}, room: (_) {});
+  Widget hub(HubEdge? e) => Scaffold(backgroundColor: const Color(0xff0a0626), body: MainHub(a: a, dailyReady: true, chestReady: false, initialOpen: e, previewRooms: rooms));
+  testWidgets('hub closed', (t) async => snap(t, 'main_screen', hub(null)));
+  for (final e in HubEdge.values) {
+    testWidgets('hub ${e.name}', (t) async => snap(t, 'main_panel_${e.name}', hub(e)));
+  }
+  testWidgets('hub small', (t) async => snap(t, 'main_screen_720x1280', hub(null), phys: const Size(720, 1280), dpr: 2));
 }

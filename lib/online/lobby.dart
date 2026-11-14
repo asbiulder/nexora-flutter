@@ -615,13 +615,14 @@ class RoomRow extends StatelessWidget {
   final Rec r;
   final String? busy;
   final void Function(String id, bool spectate) onJoin;
-  const RoomRow({super.key, required this.r, required this.busy, required this.onJoin});
+  final EdgeInsets margin;
+  const RoomRow({super.key, required this.r, required this.busy, required this.onJoin, this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 8)});
   @override
   Widget build(BuildContext context) {
     final full = r.i('players') >= r.i('capacity'), playing = r.s('status') == 'playing';
     final (kl, kc) = kKindFa[r.s('kind')] ?? kKindFa['casual']!;
     return Panel(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      margin: margin,
       accent: Colors.transparent,
       child: Column(children: [
         Row(textDirection: TextDirection.rtl, children: [
