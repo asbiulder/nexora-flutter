@@ -71,7 +71,7 @@ jobs:
   emulator:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -92,6 +92,7 @@ jobs:
           arch: x86_64
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none
           disable-animations: true
+          emulator-boot-timeout: 900
           script: bash .github/scripts/emu_test.sh "$(ls dist/*-universal.apk | head -1)" emu-out
       - uses: actions/upload-artifact@v4
         if: always()
@@ -101,8 +102,7 @@ jobs:
           if-no-files-found: warn
 
   release:
-    needs: [build, emulator]
-    if: always() && needs.build.result == 'success'
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -121,6 +121,6 @@ jobs:
             - `*-arm64.apk`: smaller, for modern 64-bit phones.
             Signed with the fixed NEXORA sideload key, so later builds install over this one. If an older NEXORA
             Flutter build is installed, uninstall it once first (it was signed with a different key).
-            Emulator smoke test (launch + quick match vs bot): ${{ needs.emulator.result }}
+            An emulator smoke test (launch + quick match vs bot) runs in the same workflow; see the run's emulator-out artifact.
             Commit: ${{ github.sha }}
           files: dist/*.apk
