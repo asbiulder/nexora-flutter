@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 
+import '../ui/ultra_badge.dart';
 import '../core/assets.dart';
 import '../core/sound.dart';
 import '../core/owned.dart';
@@ -19,8 +20,8 @@ import '../tutorial/keys.dart';
 import '../ui/kit.dart';
 import '../ui/v4.dart';
 
-const kCatFa = {'club': 'باشگاه', 'nat': 'ملی', 'emb': 'نشان', 'leg': 'افسانه', 'vip': 'VIP', 'chrome': 'کروم', 'car': 'خودرو', 'lux': 'لوکس', 'spt': 'ورزشی'};
-const kCatOrder = ['club', 'nat', 'emb', 'leg', 'vip', 'chrome', 'car', 'lux', 'spt'];
+const kCatFa = {'ultra': 'پریمیوم اولترا', 'club': 'باشگاه', 'nat': 'ملی', 'emb': 'نشان', 'leg': 'افسانه', 'vip': 'VIP', 'chrome': 'کروم', 'car': 'خودرو', 'lux': 'لوکس', 'spt': 'ورزشی'};
+const kCatOrder = ['ultra', 'club', 'nat', 'emb', 'leg', 'vip', 'chrome', 'car', 'lux', 'spt'];
 
 class TeamScreen extends StatefulWidget {
   final String initial;
@@ -194,6 +195,7 @@ class _DiscsState extends State<_Discs> {
             decoration: BoxDecoration(color: rc.withValues(alpha: .11), borderRadius: BorderRadius.circular(10), border: Border.all(color: rc.withValues(alpha: .53))),
             child: tHead(rr.n, size: 9, color: rc),
           ),
+          if (isUltra(ft)) const Padding(padding: EdgeInsets.only(top: 4), child: UltraBadge(size: 10)),
           const SizedBox(height: 4),
           tTitle(ft.name.toUpperCase(), size: 20, lines: 1),
           Panel(
@@ -229,7 +231,7 @@ class _DiscsState extends State<_Discs> {
                 if (kCats.any((c) => c.k == k))
                   Chip2(kCatFa[k] ?? k,
                       on: cat == k,
-                      accent: k == 'leg' || k == 'vip' ? C.gold : k == 'emb' || k == 'chrome' ? C.violet : C.cyan,
+                      accent: k == 'ultra' ? const Color(0xffff3df2) : k == 'leg' || k == 'vip' ? C.gold : k == 'emb' || k == 'chrome' ? C.violet : C.cyan,
                       onTap: () => setState(() {
                             cat = k;
                             focus = kTeams.firstWhere((t) => t.cat == k).id;
@@ -268,6 +270,7 @@ class _DiscsState extends State<_Discs> {
                     ]),
                   ),
                   if (!own) const Positioned(top: 4, right: 4, child: Icon(Icons.lock_rounded, size: 11, color: C.dim)),
+                  if (isUltra(t)) const Positioned(top: 3, left: 3, child: UltraBadge(size: 7)),
                 ]),
               ),
             );

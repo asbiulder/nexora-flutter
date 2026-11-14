@@ -51,7 +51,9 @@ final List<Team> kTeams = [
 ];
 final Map<String, String> kCatLabel = {for (final c in kCats) c.k: c.name};
 
-int teamPrice(Team t) => t.cat == 'vip'
+int teamPrice(Team t) => t.cat == 'ultra'
+    ? 900 // v0.6.2 Premium Ultra
+    : t.cat == 'vip'
     ? (t.idx < kVipPrices.length && kVipPrices[t.idx] != 0 ? kVipPrices[t.idx] : 250)
     : t.cat == 'club' || t.cat == 'nat'
         ? 0
@@ -125,6 +127,7 @@ CardStats cardStats(String seed) {
       break;
     }
   }
+  if (cat == 'ultra') return (10.0, 10.0); // v0.6.2 Premium Ultra: accuracy 10, power 10 (statMul 1.0 = game max)
   final (lo, hi) = switch (cat) {
     'leg' => (8.5, 10.0),
     'vip' || 'nx' => (7.5, 9.5),
@@ -141,7 +144,9 @@ CardStats cardStats(String seed) {
   return (r1(pw), r1(ac));
 }
 
-int rarity(Team t) => t.cat == 'vip' || t.cat == 'leg'
+int rarity(Team t) => t.cat == 'ultra'
+    ? 4
+    : t.cat == 'vip' || t.cat == 'leg'
     ? 3
     : t.cat == 'lux' || t.cat == 'car' || t.cat == 'emb' || t.cat == 'chrome'
         ? 2
@@ -155,4 +160,4 @@ class Rarity {
   const Rarity(this.n, this.c);
 }
 
-const kRarity = [Rarity('COMMON', 0xff8ea3d6), Rarity('RARE', 0xff4fe3ff), Rarity('EPIC', 0xffb46bff), Rarity('LEGENDARY', 0xffffd257)];
+const kRarity = [Rarity('COMMON', 0xff8ea3d6), Rarity('RARE', 0xff4fe3ff), Rarity('EPIC', 0xffb46bff), Rarity('LEGENDARY', 0xffffd257), Rarity('PREMIUM ULTRA', 0xffff3df2)];

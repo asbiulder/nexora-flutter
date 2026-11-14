@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 
+import '../ui/ultra_badge.dart';
 import '../core/assets.dart';
 import '../core/sound.dart';
 import '../core/owned.dart';
@@ -18,7 +19,7 @@ import '../ui/kit.dart';
 import '../ui/v4.dart';
 import 'team.dart' show StatBars;
 
-const _rc = [Color(0xff8ea3d6), Color(0xff4fe3ff), Color(0xffb46bff), Color(0xffffd257)];
+const _rc = [Color(0xff8ea3d6), Color(0xff4fe3ff), Color(0xffb46bff), Color(0xffffd257), Color(0xffff3df2)];
 
 String fmtLeft(int ms) {
   final m = (ms / 60000).ceil(), h = m ~/ 60;
@@ -264,7 +265,8 @@ class _ShopScreenState extends State<ShopScreen> {
                 const SizedBox(height: 8),
                 _grid(cell, [
                   for (final t in shopTeams.where((t) => t.cat == (shopTeams.any((x) => x.cat == tcat) ? tcat : shopTeams.first.cat)))
-                    _Pedestal(
+                    Stack(clipBehavior: Clip.none, children: [
+                     _Pedestal(
                       onTap: () => ownsTeam(t.id) ? _equipTeam(t) : _buyTeam(t),
                       color: _rc[rarity(t)],
                       img: teamImg(t),
@@ -273,7 +275,9 @@ class _ShopScreenState extends State<ShopScreen> {
                       name: p.team == t.id ? '● ${t.name}' : t.name,
                       extra: StatBars(power: dz.stats(t.id).power, accuracy: dz.stats(t.id).accuracy, compact: true),
                       price: _Price(v: teamCost(t).$1, gem: teamCost(t).$2),
-                    ),
+                     ),
+                     if (isUltra(t)) const Positioned(top: 4, left: 4, child: IgnorePointer(child: UltraBadge())),
+                    ]),
                 ]),
               ] else ...[
                 _grid(cell, [

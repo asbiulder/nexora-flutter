@@ -33,6 +33,16 @@ const List<Field> kFields = [
   Field('persepolis', 'Persepolis', 1290, 1720, 232, 1056, 151, 1579, 862, 135, 'white'),
   Field('esteghlal', 'Esteghlal', 1216, 1622, 218, 997, 112, 1481, 773, 135, 'gold'),
   Field('mancity', 'Man City', 1216, 1622, 218, 996, 114, 1488, 805, 135, 'red'),
+  // v0.6.2 pitches (owner sheets 2026-11-14; geometry measured on the art's own lines)
+  Field('sansiro', 'San Siro Night', 1086, 1448, 208, 880, 216, 1304, 722, 117, 'white'),
+  Field('blackice', 'Black Ice', 1086, 1448, 206, 880, 114, 1304, 697, 117, 'ice'),
+  Field('autumn', 'Autumn', 1086, 1448, 210, 878, 116, 1304, 695, 116, 'wood'),
+  Field('tropical', 'Tropical', 1086, 1448, 214, 874, 116, 1304, 698, 115, 'gold'),
+  Field('frost', 'Frost Arena', 1086, 1448, 198, 888, 100, 1336, 700, 120, 'ice'),
+  Field('glacier', 'Glacier', 1086, 1448, 208, 888, 116, 1304, 698, 118, 'ice'),
+  Field('campnou', 'Camp Nou Night', 1086, 1448, 194, 892, 104, 1332, 715, 121, 'gold'),
+  Field('blossom', 'Blossom', 1086, 1448, 174, 908, 126, 1238, 653, 128, 'white'),
+  Field('beach', 'Beach Resort', 1086, 1448, 178, 898, 122, 1238, 654, 125, 'rope'),
 ];
 
 const Map<String, List<double>> kGS = {
@@ -56,6 +66,8 @@ const List<Cat> kCats = [
   Cat('emb', 'Emblems', ['Golden Lion', 'Shadow Wolf', 'Azure Dragon', 'Phoenix', 'Viper', 'Silver Eagle', 'Iron Bull', 'Frost Crown', 'Scorpion', 'Tide Shark', 'Evergreen', 'Royal Fleur', 'Compass', 'NX Gold', 'Polaris', 'Grizzly']),
   Cat('leg', 'Legends', ['Inferno Scorpion', 'Dire Wolf', 'Samurai Sun', 'Venom Dragon', 'Bermuda', 'Magma Golem']),
   Cat('chrome', 'Chrome', ['Mercedes Chrome', 'BMW Chrome', 'Toyota Chrome', 'Ferrari Chrome', 'Lambo Chrome', 'Porsche Chrome', 'Tesla Chrome', 'Audi Chrome']),
+  // v0.6.2 PREMIUM ULTRA (owner sheets): 24 clubs, 6 national teams, 21 car brands; accuracy 10, power 10 (= game max)
+  Cat('ultra', 'Premium Ultra', ['Barcelona Ultra', 'Real Madrid Ultra', 'Bayern Munich Ultra', 'Paris Saint-Germain Ultra', 'Chelsea Ultra', 'Borussia Dortmund Ultra', 'Tottenham Ultra', 'Atletico Madrid Ultra', 'Napoli Ultra', 'Roma Ultra', 'Benfica Ultra', 'Marseille Ultra', 'Persepolis Ultra', 'Esteghlal Ultra', 'Boca Juniors Ultra', 'Lyon Ultra', 'Lille Ultra', 'Newcastle United Ultra', 'Inter Miami Ultra', 'Al Hilal Ultra', 'Liverpool Ultra', 'Lazio Ultra', 'Ajax Ultra', 'Villarreal Ultra', 'Italy Ultra', 'France Ultra', 'Brazil Ultra', 'Argentina Ultra', 'Iran Ultra', 'Germany Ultra', 'Lamborghini Ultra', 'Ferrari Ultra', 'Mercedes-Benz Ultra', 'BMW Ultra', 'Porsche Ultra', 'Rolls-Royce Ultra', 'Lamborghini Crown Ultra', 'Ferrari Crown Ultra', 'Mercedes Crown Ultra', 'BMW Crown Ultra', 'Porsche Crown Ultra', 'Rolls-Royce Crown Ultra', 'BMW Orb Ultra', 'Mercedes Orb Ultra', 'Audi Orb Ultra', 'Porsche Orb Ultra', 'Ferrari Orb Ultra', 'Lamborghini Orb Ultra', 'McLaren Orb Ultra', 'Rolls-Royce Orb Ultra', 'Tesla Orb Ultra']),
 ];
 
 const List<Formation> kForms = [
@@ -139,6 +151,15 @@ const Map<String, FieldFx> kFieldFx = {
   'persepolis': FieldFx(5, [0xffff2b3a, 0xffffd86b, 0xffffffff], 0),
   'esteghlal': FieldFx(1, [0xff3b8bff, 0xffffffff, 0xffffd86b], 0),
   'mancity': FieldFx(1, [0xff7fd0ff, 0xffffffff, 0xff3b8bff], 0),
+  'sansiro': FieldFx(1, [0xffff4a4a, 0xffffffff, 0xff1a1a1a], 0),
+  'blackice': FieldFx(1, [0xff9fe8ff, 0xffffffff, 0xff3b8bff], 0),
+  'autumn': FieldFx(1, [0xffffb347, 0xffffe0a0, 0xffd2691e], 0),
+  'tropical': FieldFx(1, [0xff5fffd0, 0xffffffff, 0xffffd257], 0),
+  'frost': FieldFx(1, [0xff7fd0ff, 0xffffffff, 0xff3b8bff], 0),
+  'glacier': FieldFx(1, [0xffbfefff, 0xffffffff, 0xff6fb8ff], 0),
+  'campnou': FieldFx(1, [0xffff3b5c, 0xffffd257, 0xff2b4bff], 0),
+  'blossom': FieldFx(1, [0xffff9fd8, 0xffffffff, 0xff8fff9f], 0),
+  'beach': FieldFx(1, [0xffffe08a, 0xffffffff, 0xff38d8ff], 0),
 };
 
 const List<int> kVipPrices = [260, 275, 290, 255, 300, 265, 280, 270, 0, 295, 285, 250];
