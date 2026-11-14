@@ -124,7 +124,7 @@ const kTuneStars = PhysTune(
   name: 'stars',
   discR: 49, ballR: 21.6, // v6: one fixed ball, 0.8x the v5 radius (27) - owner 2026-11-14
   // v4 retune (phone feedback 2026-11-14: "billiards ball, heavy Soccer Stars pucks"). v3 values in brackets.
-  discM: 4, ballM: 1, // [3] disc 4x the ball: a disc striking the ball sends it off at (1+e)*4/5 = 1.56x its speed
+  discM: 4, ballM: 1, // [3] disc 4x the ball: a disc striking the ball sends it off at (1+e)*4/5 = 1.47x its speed (e .84)
   // v0.6.1 POWER (phone feedback "discs are very weak, shots must be powerful and wild, proportional to the pull"):
   // full-pull speed = discVmax * shotCurve(pull) * statMul(power); discVmax 2400 -> 3500 (x1.46), and the power stat
   // now spans 0.62..1.0 instead of 0.1..1.0, so a typical power-7 club disc leaves at ~3050 px/s (v0.6: 1680).
@@ -134,13 +134,18 @@ const kTuneStars = PhysTune(
   // (55 + .42 v). Now a full-power disc glides ~1.3k px (most of the pitch) in ~1.6 s and a hard-hit ball rests
   // in ~2.5 s. Numbers: tool/snap/sweep_v061_test.dart. [v0.6: disc 210 + 1.05 v, ball 55 + .42 v]
   discFric: 300, discDrag: 2.0,
-  ballFric: 240, ballDrag: 1.3,
+  // v0.6.1b SOFTER BALL (owner: "too fast, flies out of view, bounces back and forth too much"; very small change,
+  // ~12%): ball friction 240 -> 270, drag 1.3 -> 1.45. Shot power / disc stats / max shot untouched.
+  ballFric: 270, ballDrag: 1.45,
   vStop: 2, vSettle: 0, settleK: 1, vSafe: 4200,
-  eDiscDisc: .94, eDiscBall: .95, discDiscK: 1, // near-elastic: equal-mass head-on gives ~97% of the momentum
+  // v0.6.1b softer contacts (~11%): disc-disc .94 -> .84, disc-ball .95 -> .84 (ball leaves a full hit at
+  // (1+e)*4/5 = 1.47x the disc speed instead of 1.56x)
+  eDiscDisc: .84, eDiscBall: .84, discDiscK: 1,
   eSoft: .6, vSoft: 90, // only very light touches are damped (anti-jitter)
   // v0.6.1 CUSHIONS: very little energy lost, almost no friction along the wall (a ball running along the rail keeps
   // its speed). [v0.6: ball .93/.93, disc .86/.86]
-  eWallBall: .94, tWallBall: .985,
+  // v0.6.1b: ball cushion restitution .94 -> .85 and rail grip .985 -> .96 (fewer end-to-end ping-pong bounces)
+  eWallBall: .85, tWallBall: .96,
   eWallDisc: .90, tWallDisc: .97,
   postR: 5, cornerNudge: 90,
   subPx: 4, subMax: 16, stepCap: 14, rollK: 1, // rollK 1: ball spin rate = speed / radius (true rolling)

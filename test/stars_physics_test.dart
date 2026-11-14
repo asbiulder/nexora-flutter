@@ -61,11 +61,11 @@ void main() {
       final bd = _glide(e2, e2.ball);
       // ignore: avoid_print
       print('glide: disc ${dv.round()} px/s -> ${dd.toStringAsFixed(1)} px, ball ${bv.round()} px/s -> ${bd.toStringAsFixed(1)} px');
-      expect(bd, greaterThan(dd * 1.4));
+      expect(bd, greaterThan(dd * 1.25)); // v0.6.1b softer ball: still clearly further than a disc
     }
   });
 
-  test('v0.6.1 ball-cushion rebound: ~0.94 normal, ~0.985 along the wall (little loss, near-mirror angle)', () {
+  test('v0.6.1b ball-cushion rebound: ~0.85 normal, ~0.96 along the wall (near-mirror angle)', () {
     final e = _lab(0), b = e.ball;
     _place(b, e.Fl + 200, e.CY, -1200, 300);
     var pre = (0.0, 0.0);
@@ -81,8 +81,8 @@ void main() {
     final rn = b.vx / -pre.$1, rt = b.vy / pre.$2;
     // ignore: avoid_print
     print('cushion: normal ${rn.toStringAsFixed(3)}, tangential ${rt.toStringAsFixed(3)} (incl. one frame of rolling friction)');
-    expect(rn, inInclusiveRange(.90, .97));
-    expect(rt, inInclusiveRange(.95, 1.0));
+    expect(rn, inInclusiveRange(.78, .90));
+    expect(rt, inInclusiveRange(.92, 1.0));
     final aIn = math.atan2(pre.$2, -pre.$1), aOut = math.atan2(b.vy, b.vx);
     expect((aIn - aOut).abs(), lessThan(.05), reason: 'angle out ~ angle in (within 3 degrees)');
   });

@@ -121,6 +121,7 @@ void main() {
       final (path, t) = _run(e, e.ball);
       _log('| full-power disc strikes the ball (head-on, up the pitch beside the goal) | ${vb.round()} | ${path.round()} | ${t.toStringAsFixed(2)} |');
       expect(vb, greaterThan(3500), reason: 'hits the ball hard');
+      expect(vb, lessThan(4200), reason: 'v0.6.1b: a little softer than v0.6.1 (4188 px/s)');
       expect(t, lessThan(4.5));
     }
     for (final v in [3000.0, 1500.0, 600.0]) {
@@ -159,8 +160,8 @@ void main() {
         final aout = math.atan2(b.vx.abs(), b.vy.abs()) * 180 / math.pi;
         _log('| ${deg.round()}° ${disc ? 'disc' : 'ball'} | ${(sp1 / sp0 * 100).toStringAsFixed(1)}% | ${(kn * 100).toStringAsFixed(1)}% | ${kt.isNaN ? '-' : '${(kt * 100).toStringAsFixed(1)}%'} | ${deg == 90 ? '90°' : '${aout.toStringAsFixed(1)}°'} |');
         if (!disc) {
-          expect(sp1 / sp0, greaterThan(.92));
-          if (!kt.isNaN) expect(kt, greaterThan(.97), reason: 'a ball along the wall keeps its tangential speed');
+          expect(sp1 / sp0, inInclusiveRange(.84, .97), reason: 'v0.6.1b: softer but still lively cushions');
+          if (!kt.isNaN) expect(kt, greaterThan(.95), reason: 'a ball along the wall keeps its tangential speed');
         }
       }
     }
