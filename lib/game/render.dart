@@ -249,18 +249,51 @@ class MatchRenderer {
     final fr = ui.Rect.fromLTWH(0, 0, f.W.toDouble(), f.H.toDouble());
     c.saveLayer(fr.inflate(40), ui.Paint());
     c.drawImageRect(fld, src, fr, ui.Paint()..filterQuality = ui.FilterQuality.medium);
+    // v6 sharp corners: several pitch arts have a rounded inner frame; the play area is a true rectangle, so each
+    // corner is patched with pitch copied from just inside along the same rows (stripes stay aligned) and a crisp
+    // square cushion is drawn on top. Baked once per view, no per-frame cost.
+    {
+      final kx = fld.width / f.W, ky = fld.height / f.H;
+      const S = 64.0;
+      for (final (cx, cy, sx, sy) in [(e.Fl, e.Ft, 1.0, 1.0), (e.Fr, e.Ft, -1.0, 1.0), (e.Fl, e.Fb, 1.0, -1.0), (e.Fr, e.Fb, -1.0, -1.0)]) {
+        final dst = ui.Rect.fromPoints(ui.Offset(cx - sx * 6, cy - sy * 6), ui.Offset(cx + sx * S, cy + sy * S));
+        final from = dst.shift(ui.Offset(sx * (S + 18), 0));
+        c.drawImageRect(fld, ui.Rect.fromLTRB(from.left * kx, from.top * ky, from.right * kx, from.bottom * ky), dst, ui.Paint()..filterQuality = ui.FilterQuality.medium);
+      }
+    }
     final m = ui.Paint()..blendMode = ui.BlendMode.dstIn;
     m.shader = ui.Gradient.linear(ui.Offset.zero, ui.Offset(0, f.H.toDouble()), const [ui.Color(0x00000000), ui.Color(0xff000000), ui.Color(0xff000000), ui.Color(0x00000000)], const [0, .06, .94, 1]);
     c.drawRect(fr, m);
     m.shader = ui.Gradient.linear(ui.Offset.zero, ui.Offset(f.W.toDouble(), 0), const [ui.Color(0x00000000), ui.Color(0xff000000), ui.Color(0xff000000), ui.Color(0x00000000)], const [0, .05, .95, 1]);
     c.drawRect(fr, m);
     c.restore();
-    final o = ui.Paint()
-      ..style = ui.PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..color = const ui.Color(0x5978dcff)
-      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 4);
-    c.drawRRect(ui.RRect.fromRectAndRadius(ui.Rect.fromLTRB(e.Fl, e.Ft, e.Fr, e.Fb), const ui.Radius.circular(70)), o);
+    // v6: straight cushions with sharp 90 degree corners (glow + crisp line), open at the goal mouths
+    final g0 = e.goals[0], g1 = e.goals[1];
+    final rail = ui.Path()
+      ..moveTo(g0.x1, e.Ft)
+      ..lineTo(e.Fl, e.Ft)
+      ..lineTo(e.Fl, e.Fb)
+      ..lineTo(g1.x1, e.Fb)
+      ..moveTo(g0.x2, e.Ft)
+      ..lineTo(e.Fr, e.Ft)
+      ..lineTo(e.Fr, e.Fb)
+      ..lineTo(g1.x2, e.Fb);
+    c.drawPath(
+        rail,
+        ui.Paint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 9
+          ..strokeJoin = ui.StrokeJoin.miter
+          ..color = const ui.Color(0x6678dcff)
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 6));
+    c.drawPath(
+        rail,
+        ui.Paint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = 4
+          ..strokeJoin = ui.StrokeJoin.miter
+          ..strokeCap = ui.StrokeCap.butt
+          ..color = const ui.Color(0xeaf2fbff));
     c.restore();
     _nets[0] = null;
     _nets[1] = null;

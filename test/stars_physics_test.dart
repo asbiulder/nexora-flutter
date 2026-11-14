@@ -65,7 +65,7 @@ void main() {
     }
   });
 
-  test('ball-cushion rebound keeps ~0.9 of the normal speed, tangential kept', () {
+  test('ball-cushion rebound is a mirror reflection (angle in = angle out), ~0.93 of the speed kept', () {
     final e = _lab(0), b = e.ball;
     _place(b, e.Fl + 200, e.CY, -1200, 300);
     var pre = (0.0, 0.0);
@@ -81,8 +81,10 @@ void main() {
     final rn = b.vx / -pre.$1, rt = b.vy / pre.$2;
     // ignore: avoid_print
     print('cushion: normal ${rn.toStringAsFixed(3)}, tangential ${rt.toStringAsFixed(3)} (incl. one frame of rolling friction)');
-    expect(rn, inInclusiveRange(.85, .92));
-    expect(rt, greaterThan(.93));
+    expect(rn, inInclusiveRange(.88, .95));
+    expect(rt, inInclusiveRange(.88, .95));
+    final aIn = math.atan2(pre.$2, -pre.$1), aOut = math.atan2(b.vy, b.vx);
+    expect((aIn - aOut).abs(), lessThan(.02), reason: 'angle out must equal angle in');
   });
 
   test('head-on equal-mass disc collision transfers ~all momentum', () {
@@ -102,6 +104,28 @@ void main() {
     print('head-on: striker ${va.toStringAsFixed(0)} -> ${pa.toStringAsFixed(1)}, target -> ${pc.toStringAsFixed(1)}, share ${frac.toStringAsFixed(3)}');
     expect(frac, greaterThan(.9));
     expect(c.vx.abs() + a.vx.abs(), lessThan(1e-9)); // pure normal impulse on a centred hit
+  });
+
+  test('square corner: ball sent into a corner comes straight back out along mirrored lines', () {
+    final e = _lab(0), b = e.ball;
+    // 45 degree run into the top-left corner (away from the goal mouth): both components flip
+    _place(b, e.Fl + 260, e.Ft + 260, -900, -900);
+    var flipX = false, flipY = false;
+    for (var i = 0; i < 90 && !(flipX && flipY); i++) {
+      e.update(1 / 60);
+      flipX |= b.vx > 0;
+      flipY |= b.vy > 0;
+    }
+    expect(flipX && flipY, isTrue);
+    expect((b.vx - b.vy).abs() / b.vx.abs(), lessThan(.02), reason: 'leaves the corner on the 45 degree diagonal');
+  });
+
+  test('ball size option: small < medium (default) < large', () {
+    final r = [for (final s in [0, 1, 2]) Engine(MatchCfg(field: 0, ball: 0, forms: [0, 0], ai: false, aiLvl: 1, limit: 3, matchTime: 0, turnTime: 0, vip: [false, false], first: 0, ballSize: s)).ball.r];
+    expect(Engine(_cfg()).ball.r, r[1]);
+    expect(r[1], kTuneStars.ballR);
+    expect(r[0], lessThan(r[1]));
+    expect(r[2], greaterThan(r[1]));
   });
 
   test('deterministic: same inputs -> identical outputs (AI vs AI, 3000 frames)', () {

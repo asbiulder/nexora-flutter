@@ -129,16 +129,24 @@ const kTuneStars = PhysTune(
   shotMax: 1900, discVmax: 2400, powerGodot: false,
   // v4.1 smooth stop: velocity-proportional drag dominates at speed (ease-out), a small constant rolling friction
   // ends the tail, no settle boost, rest only below 2 px/s. [v4.0: disc 1100 + .9 v, ball 240 + .35 v, vStop 3, settle x2 < 40]
-  discFric: 330, discDrag: 1.7, // heavy pucks
-  ballFric: 85, ballDrag: .66, // light billiard ball
+  // v6 BILLIARDS (owner 2026-11-14: "like billiards - elastic, low friction, true reflection, very smooth").
+  // Lower cloth friction, near-elastic contacts, and cushions that scale the WHOLE velocity by one factor so the
+  // angle out equals the angle in (mirror reflection, straight lines into and out of the square corners).
+  // [v5: disc 330 + 1.7 v, ball 85 + .66 v, e disc-disc .88, disc-ball .90, cushions ball .92/.99, disc .80/.95]
+  discFric: 210, discDrag: 1.05, // pucks still stop before the ball, but glide noticeably further
+  ballFric: 55, ballDrag: .42, // billiard ball: long, smooth roll
   vStop: 2, vSettle: 0, settleK: 1, vSafe: 4200,
-  eDiscDisc: .88, eDiscBall: .90, discDiscK: 1, // equal-mass head-on: target gets 94% of the momentum
-  eSoft: .5, vSoft: 120, // only very light touches are damped (anti-jitter)
-  eWallBall: .92, tWallBall: .99, // [.90, .98] lively pool cushion: 0.92 normal, tangential nearly kept
-  eWallDisc: .80, tWallDisc: .95, // v5 (owner: walls ate too much disc power) [v4: .55, .85]
+  eDiscDisc: .94, eDiscBall: .95, discDiscK: 1, // near-elastic: equal-mass head-on gives ~97% of the momentum
+  eSoft: .6, vSoft: 90, // only very light touches are damped (anti-jitter)
+  eWallBall: .93, tWallBall: .93, // mirror reflection (same factor on both components)
+  eWallDisc: .86, tWallDisc: .86,
   postR: 5, cornerNudge: 70,
   subPx: 4, subMax: 16, stepCap: 14, rollK: .6,
 );
+
+/// Ball radius multiplier per ball-size option (0 small, 1 medium = default size, 2 large).
+const List<double> kBallSizeMul = [.78, 1.0, 1.28];
+double ballSizeMul(int i) => kBallSizeMul[i.clamp(0, 2)];
 
 PhysTune? tuneFor(String profile) => switch (profile) {
       'classic' => null,
@@ -230,6 +238,9 @@ class MatchCfg {
 
   /// Gameplay profile: 'stars' (default, Soccer Stars feel), 'godot' (Nexora_godot nx8 values) or 'classic' (RN TS engine).
   String profile;
+
+  /// Ball size picked by the room host / match setup: 0 small, 1 medium (default, the classic size), 2 large.
+  int ballSize;
   MatchCfg({
     required this.field,
     required this.ball,
@@ -243,6 +254,7 @@ class MatchCfg {
     required this.first,
     this.stats,
     this.profile = 'stars',
+    this.ballSize = 1,
   });
 }
 
@@ -440,7 +452,7 @@ class Engine {
         bodies.add(godot ? _mk(x, y, cm, tu.discR, tu.discM, cm * 20 + i) : _mk(x, y, cm, PR, 5, cm * 20 + i));
       }
     }
-    ball = godot ? _mk(CX, KY, 2, tu.ballR, tu.ballM, 99) : _mk(CX, KY, 2, BR, 1.5, 99);
+    ball = godot ? _mk(CX, KY, 2, tu.ballR * ballSizeMul(cfg.ballSize), tu.ballM, 99) : _mk(CX, KY, 2, BR, 1.5, 99);
     bodies.add(ball);
     turn = kickTeam;
     phase = Phase.aim;

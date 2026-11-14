@@ -29,15 +29,21 @@ class MatchGame extends FlameGame {
   // v5 smoother motion: vsync deltas jitter by a few ms on Android, which makes the fixed-step interpolation stutter.
   // A light low-pass on dt evens the frame pacing; real hitches (> 2x the average) pass through unfiltered so the
   // simulation never drifts from wall-clock time for more than a frame.
-  double _dtAvg = 1 / 60;
+  // v6: the time the filter holds back (or runs ahead) is carried and paid back a little each frame, so the
+  // simulation stays locked to wall-clock time (no slow drift) while the per-frame step stays even.
+  double _dtAvg = 1 / 60, _carry = 0;
   double _smooth(double dt) {
     if (dt <= 0) return dt;
     if (dt > _dtAvg * 2 || dt < _dtAvg * .5) {
       _dtAvg = _dtAvg * .7 + dt.clamp(1 / 240, 1 / 20) * .3;
+      _carry = 0;
       return dt;
     }
     _dtAvg = _dtAvg * .85 + dt * .15;
-    return _dtAvg;
+    _carry += dt - _dtAvg;
+    final pay = _carry.clamp(-_dtAvg * .1, _dtAvg * .1);
+    _carry -= pay;
+    return _dtAvg + pay;
   }
 
   @override

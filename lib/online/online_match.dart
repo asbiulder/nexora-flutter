@@ -48,7 +48,8 @@ MatchCfg cfgFromRoom(Rec room) {
       matchTime: time,
       turnTime: turn,
       vip: [false, false],
-      first: 0);
+      first: 0,
+      ballSize: s.i('bsize', 1).clamp(0, 2));
 }
 
 String ruleLabel(Rec s) => s.d('time') > 0 ? '${fa((s.d('time') / 60).round())} دقیقه' : 'تا ${fa(s.i('goals', 3))} گل';
