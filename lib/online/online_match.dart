@@ -18,7 +18,6 @@ import '../net/supabase.dart';
 import '../oracle/oracle.dart';
 import '../screens/match.dart';
 import '../ui/kit.dart';
-import '../ui/v4.dart';
 import 'link.dart';
 import 'netcode.dart';
 import 'room_ui.dart';

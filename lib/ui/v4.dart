@@ -57,13 +57,11 @@ class SpaceBg extends StatefulWidget {
   State<SpaceBg> createState() => _SpaceBgState();
 }
 
-class _SpaceBgState extends State<SpaceBg> with SingleTickerProviderStateMixin {
-  late final AnimationController c = AnimationController(vsync: this, duration: const Duration(seconds: 60))..repeat();
-  @override
-  void dispose() {
-    c.dispose();
-    super.dispose();
-  }
+// v5 perf: the backdrop is STATIC. The v4 drift (a full-screen image re-transformed every frame) and the scrolling
+// twinkle stars kept every menu repainting at 60 fps behind its content, which is what made mid-range phones lag.
+// Now the backdrop paints once and stays in its RepaintBoundary's layer.
+class _SpaceBgState extends State<SpaceBg> {
+  static const Animation<double> c = AlwaysStoppedAnimation<double>(.2);
 
   @override
   Widget build(BuildContext context) {
@@ -75,12 +73,8 @@ class _SpaceBgState extends State<SpaceBg> with SingleTickerProviderStateMixin {
           return Stack(fit: StackFit.expand, children: [
             const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xff070b2e), Color(0xff0a0c3a), Color(0xff1a0b3c)]))),
             if (widget.image != null)
-              AnimatedBuilder(
-                animation: c,
-                builder: (_, ch) {
-                  final a = c.value * 2 * math.pi;
-                  return Transform.translate(offset: Offset(math.sin(a) * w * .012, math.cos(a) * h * .008), child: Transform.scale(scale: 1.04, child: ch));
-                },
+              Transform.scale(
+                scale: 1.04,
                 child: Image.asset(widget.image!, fit: BoxFit.cover, alignment: widget.align, width: w, height: h, gaplessPlayback: true, filterQuality: FilterQuality.medium,
                     cacheWidth: (w * MediaQuery.devicePixelRatioOf(ctx)).round().clamp(1, 1080), errorBuilder: (_, __, ___) => const SizedBox.shrink())),
             if (widget.stars && hq) CustomPaint(painter: _StarsPainter(c, 70, 1, 7), size: Size(w, h)),

@@ -110,10 +110,9 @@ class _HomeScreenState extends State<HomeScreen> {
       // five neon tiles
       Padding(
         padding: const EdgeInsets.fromLTRB(SP.l, SP.l, SP.l, 0),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, textDirection: TextDirection.rtl, children: [
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, textDirection: TextDirection.rtl, children: [
           NeonIconButton(key: TourKeys.shop, icon: V4.ic('bag'), label: 'فروشگاه', size: tile, onTap: widget.onShop ?? () => widget.onWorld('shop')),
-          NeonIconButton(key: TourKeys.social, icon: V4.ic('friends'), label: 'دوستان', size: tile, onTap: widget.onSocial ?? () => widget.onWorld('social')),
-          NeonIconButton(key: TourKeys.rank, icon: V4.ic('trophy'), label: 'رتبه‌ها', size: tile, onTap: widget.onRank ?? () => widget.onWorld('online')),
+          NeonIconButton(key: TourKeys.rank, icon: V4.ic('compass'), label: 'حالت‌ها', size: tile, onTap: () => widget.onWorld('arcade')),
           NeonIconButton(key: TourKeys.gift, icon: V4.ic('gift'), label: 'جایزه', size: tile, badge: widget.dailyReady, selected: widget.dailyReady, onTap: widget.onDaily),
           NeonIconButton(key: TourKeys.settings, icon: V4.ic('gear'), label: 'تنظیمات', size: tile, onTap: widget.onSettings ?? () => toast('به‌زودی')),
         ]),
@@ -169,7 +168,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Row(textDirection: TextDirection.rtl, children: [
           _quick(V4.holoBall, 'آنلاین', 'ONLINE', () => widget.onWorld('online')),
           _quick(V4.h('trophy'), 'جام نکسورا', 'CUP', () => widget.onWorld('cup')),
-          _quick(V4.h('shield'), 'تیم من', 'TEAM', () => widget.onWorld('gallery')),
           _quick(V4.h('chest'), 'صندوقچه', 'CHEST', widget.onChest, dot: widget.chestReady),
         ]),
       ),
@@ -231,57 +229,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 }
 
-/// Seven gates on an elliptical platform; the selected gate is centred, larger and lit.
-class _PortalWorld extends StatelessWidget {
-  final int sel;
-  final double drag;
-  final ValueChanged<int> onSel;
-  const _PortalWorld({required this.sel, required this.drag, required this.onSel});
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (ctx, c) {
-      final w = c.maxWidth, h = c.maxHeight;
-      final n = kWorlds.length;
-      final items = <(double, Widget)>[];
-      for (var i = 0; i < n; i++) {
-        var rel = (i - sel) % n;
-        if (rel > n / 2) rel -= n;
-        final a = rel / n * 2 * math.pi + drag / 220;
-        final x = w / 2 + math.sin(a) * w * .40;
-        final depth = (math.cos(a) + 1) / 2; // 1 = front
-        final y = h * .30 + depth * h * .26;
-        final s = .45 + depth * .55;
-        final gw = w * .34 * s;
-        final world = kWorlds[i];
-        items.add((
-          depth,
-          Positioned(
-            left: x - gw / 2,
-            top: y - gw * .6,
-            width: gw,
-            height: gw * 1.25,
-            child: GestureDetector(
-              onTap: () => onSel(i),
-              child: Opacity(
-                opacity: .45 + depth * .55,
-                child: Stack(alignment: Alignment.bottomCenter, children: [
-                  if (i == sel) Positioned.fill(child: Pulse(size: gw * .8, color: world.color.withValues(alpha: .35))),
-                  Img(world.img, w: gw, h: gw * 1.25),
-                ]),
-              ),
-            ),
-          ),
-        ));
-      }
-      items.sort((a, b) => a.$1.compareTo(b.$1));
-      return Stack(clipBehavior: Clip.none, children: [
-        Positioned(left: w * .02, right: w * .02, top: h * .52, child: Img(menu('pedestal'), w: w * .96, h: h * .42, opacity: .95)),
-        Positioned(left: w * .3, right: w * .3, top: h * .02, child: Img(ui2('portal'), w: w * .4, h: h * .34, opacity: .5)),
-        for (final it in items) it.$2,
-      ]);
-    });
-  }
-}
 
 /// Daily challenges summary (signed in) for Home.
 class HomeChallenges extends StatefulWidget {

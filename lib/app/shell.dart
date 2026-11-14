@@ -38,7 +38,6 @@ import '../screens/team.dart';
 import '../social/social.dart' as social;
 import '../ui/chrome.dart';
 import '../tutorial/keys.dart';
-import '../ui/kit.dart';
 import '../ui/v4.dart';
 
 const int kDayMs = 86400000;
