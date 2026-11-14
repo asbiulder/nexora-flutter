@@ -68,9 +68,11 @@ int ballPrice(int i) => i < 6 ? 0 : 60 + (i % 7) * 20;
 int fieldPrice(int i) => i < 5 ? 0 : 80 + ((i - 1) % 5) * 20;
 const int kDefaultField = 0;
 
-/// v0.6.1 uniform play field: every pitch uses this one rectangle (775 x 1424 play area, +7% taller than the v0.6
+/// v0.6.1 uniform play field: every pitch uses this one rectangle (743 x 1424 play area since v0.6.1b; was 775 x 1424, +7% taller than the v0.6
 /// 'pitch' art's 775 x 1331), kick-off spot at its centre, goal mouth 2 x 124 (32% of the width).
-const Field kPlayField = Field('play', 'Play', 835, 1626, 30, 805, 101, 1525, 813, 124, 'white');
+// v0.6.1b (owner): play area a little narrower -> 735 x 1416 inner (aspect 1.93, was 767 x 1416); the pitch art is
+// no longer stretched onto it but scaled uniformly (see MatchRenderer._artXf).
+const Field kPlayField = Field('play', 'Play', 835, 1626, 46, 789, 101, 1525, 813, 124, 'white');
 
 /// v0.6.1 goal depth behind the goal line (shallow standard goal; the ball, r 21.6, still fits fully inside).
 const double kGoalDepth = 58;

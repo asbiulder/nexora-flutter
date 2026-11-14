@@ -62,7 +62,7 @@ void main() {
     if (p != null) File(p).writeAsStringSync(_out.toString());
   });
 
-  test('uniform pitch: every pitch art plays on one identical rectangle, ~7% taller than v0.6', () {
+  test('uniform pitch: every pitch art plays on one identical rectangle, ~12% taller (relative) than v0.6', () {
     final a = _lab(0, field: 0), b = _lab(0, field: 7);
     for (final (x, y) in [(a.Fl, b.Fl), (a.Fr, b.Fr), (a.Ft, b.Ft), (a.Fb, b.Fb), (a.KY, b.KY), (a.goals[0].x1, b.goals[0].x1), (a.DEPTH, b.DEPTH)]) {
       expect(x, y);
@@ -71,7 +71,7 @@ void main() {
     _log('## Pitch\nplay area ${(a.Fr - a.Fl).toStringAsFixed(0)} x ${(a.Fb - a.Ft).toStringAsFixed(0)} px, aspect ${aspect.toStringAsFixed(3)} '
         '(v0.6 pitch ${old.toStringAsFixed(3)}, +${((aspect / old - 1) * 100).toStringAsFixed(1)}%), goal mouth ${(a.goals[0].x2 - a.goals[0].x1).toStringAsFixed(0)} px '
         '(${((a.goals[0].x2 - a.goals[0].x1) / (a.Fr - a.Fl) * 100).toStringAsFixed(0)}% of width), depth ${a.DEPTH.toStringAsFixed(0)} px\n');
-    expect(aspect / old, inInclusiveRange(1.06, 1.08));
+    expect(aspect / old, inInclusiveRange(1.10, 1.14)); // v0.6.1b: narrower + taller
   });
 
   test('shots: full / medium / short pulls (power-7 disc, accuracy 10 so it flies straight)', () {

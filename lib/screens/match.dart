@@ -73,7 +73,8 @@ Future<MatchImages> loadMatchImages(MatchCfg cfg, Team t0, Team t1) async {
   // v4 goal skin (cosmetic, local): the honeycomb net texture of the chosen skin; classic = procedural mesh
   final skin = goalSkin(Store.i.p.goal);
   final net = skin.net == null ? null : await opt(skin.net);
-  return MatchImages(r[0], r[1], r[2], r[3], a[0], a[1], a[2], a[3], skin: net == null ? kGoalSkins[0] : skin, net: net);
+  final aim = await opt(kARROW_IMG['aim']);
+  return MatchImages(r[0], r[1], r[2], r[3], a[0], a[1], a[2], a[3], skin: net == null ? kGoalSkins[0] : skin, net: net, aim: aim);
 }
 
 class HudState {

@@ -484,6 +484,7 @@ const Map<String, String> kARROW_IMG = {
   'head_s': 'assets/g/arrow/head_s.webp',
   'shaft_e': 'assets/g/arrow/shaft_e.webp',
   'shaft_s': 'assets/g/arrow/shaft_s.webp',
+  'aim': 'assets/g/arrow/aim_v061.webp', // v0.6.1 single-sprite aim arrow (head rows 0..152, shaft below)
 };
 
 const Map<String, String> kMENU = {
