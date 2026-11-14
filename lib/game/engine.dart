@@ -124,25 +124,38 @@ const kTuneStars = PhysTune(
   name: 'stars',
   discR: 49, ballR: 21.6, // v6: one fixed ball, 0.8x the v5 radius (27) - owner 2026-11-14
   // v4 retune (phone feedback 2026-11-14: "billiards ball, heavy Soccer Stars pucks"). v3 values in brackets.
-  discM: 4, ballM: 1, // [3] disc 4x the ball: a disc striking the ball sends it off at (1+e)*4/5 = 1.52x its speed
-  // power stat (stars): full-drag speed = discVmax * power/10 (powerFrac, exact + linear); shotMax only without stats
-  shotMax: 1900, discVmax: 2400, powerGodot: false,
-  // v4.1 smooth stop: velocity-proportional drag dominates at speed (ease-out), a small constant rolling friction
-  // ends the tail, no settle boost, rest only below 2 px/s. [v4.0: disc 1100 + .9 v, ball 240 + .35 v, vStop 3, settle x2 < 40]
-  // v6 BILLIARDS (owner 2026-11-14: "like billiards - elastic, low friction, true reflection, very smooth").
-  // Lower cloth friction, near-elastic contacts, and cushions that scale the WHOLE velocity by one factor so the
-  // angle out equals the angle in (mirror reflection, straight lines into and out of the square corners).
-  // [v5: disc 330 + 1.7 v, ball 85 + .66 v, e disc-disc .88, disc-ball .90, cushions ball .92/.99, disc .80/.95]
-  discFric: 210, discDrag: 1.05, // pucks still stop before the ball, but glide noticeably further
-  ballFric: 55, ballDrag: .42, // billiard ball: long, smooth roll
+  discM: 4, ballM: 1, // [3] disc 4x the ball: a disc striking the ball sends it off at (1+e)*4/5 = 1.56x its speed
+  // v0.6.1 POWER (phone feedback "discs are very weak, shots must be powerful and wild, proportional to the pull"):
+  // full-pull speed = discVmax * shotCurve(pull) * statMul(power); discVmax 2400 -> 3500 (x1.46), and the power stat
+  // now spans 0.62..1.0 instead of 0.1..1.0, so a typical power-7 club disc leaves at ~3050 px/s (v0.6: 1680).
+  shotMax: 3500, discVmax: 3500, powerGodot: false,
+  // v0.6.1 SMOOTH DECAY (owner: "slows gradually along the whole path, small constant rolling friction + mild
+  // drag, nothing stops abruptly; the ball must come to rest"). v0.6 billiards values made the ball roll for ~8 s
+  // (55 + .42 v). Now a full-power disc glides ~1.3k px (most of the pitch) in ~1.6 s and a hard-hit ball rests
+  // in ~2.5 s. Numbers: tool/snap/sweep_v061_test.dart. [v0.6: disc 210 + 1.05 v, ball 55 + .42 v]
+  discFric: 300, discDrag: 2.0,
+  ballFric: 240, ballDrag: 1.3,
   vStop: 2, vSettle: 0, settleK: 1, vSafe: 4200,
   eDiscDisc: .94, eDiscBall: .95, discDiscK: 1, // near-elastic: equal-mass head-on gives ~97% of the momentum
   eSoft: .6, vSoft: 90, // only very light touches are damped (anti-jitter)
-  eWallBall: .93, tWallBall: .93, // mirror reflection (same factor on both components)
-  eWallDisc: .86, tWallDisc: .86,
-  postR: 5, cornerNudge: 70,
-  subPx: 4, subMax: 16, stepCap: 14, rollK: .6,
+  // v0.6.1 CUSHIONS: very little energy lost, almost no friction along the wall (a ball running along the rail keeps
+  // its speed). [v0.6: ball .93/.93, disc .86/.86]
+  eWallBall: .94, tWallBall: .985,
+  eWallDisc: .90, tWallDisc: .97,
+  postR: 5, cornerNudge: 90,
+  subPx: 4, subMax: 16, stepCap: 14, rollK: 1, // rollK 1: ball spin rate = speed / radius (true rolling)
 );
+
+/// v0.6.1 shot curve: pull fraction (0..1 of LMAX) -> fraction of the full-pull speed. Smooth and monotonic: a short
+/// pull is a soft touch (10% just past the dead zone), half a pull ~43%, a full pull 100%.
+double shotCurve(double p) {
+  final q = _clamp(p, 0, 1);
+  return .06 + .94 * fpow(q, 1.35); // fdlibm pow: bit-identical on every peer (lockstep)
+}
+
+/// v0.6.1 power stat multiplier (stars): power 1 -> 0.62, power 10 -> 1.0 (linear). Capped at 1: no disc, Premium
+/// Ultra included, ever exceeds discVmax.
+double statMul(double power) => .62 + .38 * (_min(10, _max(1, power)) - 1) / 9;
 
 PhysTune? tuneFor(String profile) => switch (profile) {
       'classic' => null,
@@ -333,7 +346,11 @@ class _Cand {
 typedef Rand = double Function();
 
 class Engine {
+  /// Play geometry (kPlayField for the nx8 profiles, the art's own geometry for 'classic').
   late final Field f;
+
+  /// The selected pitch art (its own L/R/T/B/cs in art units); render-only for the nx8 profiles.
+  late final Field art;
   double Fl = 0, Fr = 0, Ft = 0, Fb = 0;
   double CX = 0, CY = 0, KY = 0;
   late final List<Goal> goals;
@@ -394,8 +411,13 @@ class Engine {
   /// true for the nx8-family profiles ('stars', 'godot'); false for 'classic' (TS parity).
   late final bool godot = _tune != null;
 
+  /// true for the default 'stars' profile (v0.6.1 uniform pitch + shallow goals; 'godot' keeps its parity geometry).
+  late final bool stars = identical(_tune, kTuneStars);
+
   Engine(this.cfg, {Rand? rand}) : rand = rand ?? math.Random().nextDouble {
-    f = (cfg.field >= 0 && cfg.field < kFields.length) ? kFields[cfg.field] : kFields[0];
+    art = (cfg.field >= 0 && cfg.field < kFields.length) ? kFields[cfg.field] : kFields[0];
+    // v0.6.1: every pitch plays on ONE identical rectangle (kPlayField); the art is stretched onto it by the renderer.
+    f = stars ? kPlayField : art;
     Fl = f.L + 4.0;
     Fr = f.R - 4.0;
     Ft = f.T + 4.0;
@@ -409,6 +431,11 @@ class Engine {
     GGh = gw * gi[1] / gi[0] * 1.28;
     GGx = CX - f.g - gi[2] * gw;
     DEPTH = math.max(120, jsRound(GGh * .98)).toDouble();
+    if (stars) {
+      // v0.6.1 standard shallow goals (render + collision share these numbers)
+      DEPTH = kGoalDepth;
+      GGh = kGoalDepth + 10;
+    }
     goals = [Goal(0, Ft, CX - f.g, CX + f.g, -1), Goal(1, Fb, CX - f.g, CX + f.g, 1)];
     mleft = cfg.matchTime;
     tleft = cfg.turnTime;
@@ -557,10 +584,10 @@ class Engine {
   double _shotSpeed(int team, double p) {
     if (godot) {
       if (tu.name == 'stars' && cfg.stats != null) {
-        // v4.1 EXACT LINEAR power: full-drag speed = discVmax * power / 10 (power 5 -> exactly half of power 10).
-        return tu.discVmax * p * powerFrac(statsOf(team).power);
+        // v0.6.1: discVmax * smooth pull curve * power-stat multiplier (0.62..1), never above discVmax
+        return _min(tu.discVmax, tu.discVmax * shotCurve(p) * statMul(statsOf(team).power));
       }
-      var v = tu.shotMax * p;
+      var v = tu.shotMax * (tu.name == 'stars' ? shotCurve(p) : p);
       if (cfg.stats != null) {
         v *= tu.powerGodot ? powerMulGodot(statsOf(team).power) : powerMul(statsOf(team).power);
       } else if (cfg.vip[team]) {

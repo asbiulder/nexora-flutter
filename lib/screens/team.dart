@@ -11,7 +11,7 @@ import '../core/owned.dart';
 import '../core/store.dart';
 import '../core/theme.dart';
 import '../game/data.dart';
-import '../game/engine.dart' show powerFrac, aimDevDeg, aimPreview;
+import '../game/engine.dart' show statMul, aimDevDeg, aimPreview;
 import '../net/auth.dart';
 import '../net/discs.dart';
 import '../ui/chrome.dart';
@@ -205,7 +205,7 @@ class _DiscsState extends State<_Discs> {
               // v4: the numbers that really change play (Engine: powerMul / aimDevDeg / aimPreview)
               Row(textDirection: TextDirection.rtl, children: [
                 for (final (l, v) in [
-                  ('ضربه', '${(powerFrac(ds.power) * 100).toStringAsFixed(0)}٪'),
+                  ('ضربه', '${(statMul(ds.power) * 100).toStringAsFixed(0)}٪'),
                   ('انحراف', '${aimDevDeg(ds.accuracy).toStringAsFixed(1)}°'),
                   ('خط نشانه', '×${aimPreview(ds.accuracy).toStringAsFixed(2)}'),
                 ])

@@ -65,7 +65,7 @@ void main() {
     }
   });
 
-  test('ball-cushion rebound is a mirror reflection (angle in = angle out), ~0.93 of the speed kept', () {
+  test('v0.6.1 ball-cushion rebound: ~0.94 normal, ~0.985 along the wall (little loss, near-mirror angle)', () {
     final e = _lab(0), b = e.ball;
     _place(b, e.Fl + 200, e.CY, -1200, 300);
     var pre = (0.0, 0.0);
@@ -81,10 +81,10 @@ void main() {
     final rn = b.vx / -pre.$1, rt = b.vy / pre.$2;
     // ignore: avoid_print
     print('cushion: normal ${rn.toStringAsFixed(3)}, tangential ${rt.toStringAsFixed(3)} (incl. one frame of rolling friction)');
-    expect(rn, inInclusiveRange(.88, .95));
-    expect(rt, inInclusiveRange(.88, .95));
+    expect(rn, inInclusiveRange(.90, .97));
+    expect(rt, inInclusiveRange(.95, 1.0));
     final aIn = math.atan2(pre.$2, -pre.$1), aOut = math.atan2(b.vy, b.vx);
-    expect((aIn - aOut).abs(), lessThan(.02), reason: 'angle out must equal angle in');
+    expect((aIn - aOut).abs(), lessThan(.05), reason: 'angle out ~ angle in (within 3 degrees)');
   });
 
   test('head-on equal-mass disc collision transfers ~all momentum', () {

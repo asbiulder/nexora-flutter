@@ -42,7 +42,7 @@ void main() {
     expect(mid, greaterThan(lo));
   });
 
-  test('power is exact and linear: launch(5) / launch(10) = 0.5, launch(8) / launch(10) = 0.8', () {
+  test('v0.6.1 power: stat multiplier is linear 0.62..1.0 and power 10 at full pull = discVmax (the cap)', () {
     double launch(double pw) {
       final e = Engine(_cfg([DiscStats(pw, 10), DiscStats.def]), rand: math.Random(1).nextDouble);
       final b = e.bodies.firstWhere((x) => x.team == 0);
@@ -51,8 +51,9 @@ void main() {
     }
 
     final v10 = launch(10), v5 = launch(5), v8 = launch(8), v1 = launch(1);
-    expect(v5 / v10, closeTo(.5, .005));
-    expect(v8 / v10, closeTo(.8, .008));
+    expect(v5 / v10, closeTo(statMul(5), 1e-9));
+    expect(v8 / v10, closeTo(statMul(8), 1e-9));
+    expect(v1 / v10, closeTo(.62, 1e-9));
     expect(v1, greaterThan(0));
     expect(v10, closeTo(kTuneStars.discVmax, 1e-6));
   });
