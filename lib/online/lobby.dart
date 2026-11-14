@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../app/shell.dart' show AppNav;
 import '../core/assets.dart';
 import '../core/sound.dart';
 import '../core/theme.dart';
@@ -18,6 +19,7 @@ import '../oracle/oracle.dart';
 import '../screens/team.dart' show StatBars;
 import '../ui/chrome.dart';
 import '../ui/kit.dart';
+import '../ui/v4.dart' show N;
 import 'link.dart';
 import 'online_match.dart' show ruleLabel;
 import 'room_ui.dart';
@@ -109,7 +111,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
           final t = p.i('team', -1), sl = p.m['slot'] is num ? p.i('slot') : -1;
           if (p.s('role') == 'player' && (t == 0 || t == 1) && sl >= 0 && sl < n) seats[t][sl] = p;
         }
-        final specs = link.players.where((p) => p.s('role') == 'spectator').toList();
         final meP = link.players.where((p) => p.s('user_id') == me).firstOrNull;
         final isHost = room.s('host') == me, amPlayer = meP?.s('role') == 'player';
         final full = seats[0].every((x) => x != null) && seats[1].every((x) => x != null);
@@ -121,166 +122,133 @@ class _LobbyScreenState extends State<LobbyScreen> {
         _checkAuto((kind == 'quick' || kind == 'arena') && room.s('status') == 'waiting' && full && notReady.isEmpty && block == null, isHost);
         final speaking = link.voice.speaking.toSet();
         final reason = block ?? (!full ? 'منتظر پر شدن جایگاه‌ها…' : notReady.isNotEmpty ? 'منتظر آماده شدن ${fa(notReady.length)} بازیکن…' : '');
-        final ins = MediaQuery.paddingOf(context);
+        // v5 room (owner design): a chat-style room. Top: room bar + a row of round avatars of everyone in the
+        // room (players and spectators, no headcount limit), then the compact 1v1 match card, the action button and
+        // the room chat filling the rest of the screen.
+        final all = [...link.players]..sort((a, b) => (a.s('role') == 'player' ? 0 : 1) - (b.s('role') == 'player' ? 0 : 1));
+        final action = playing
+            ? Btn('ورود به بازی زنده', colors: G.red, onTap: widget.onWatch)
+            : (kind == 'quick' || kind == 'arena')
+                ? tBold(full ? 'آماده‌ی شروع…' : 'در جستجوی حریف… (${fa(link.players.where((p) => p.s('role') == 'player').length)}/${fa(n * 2)})', size: 13, color: C.cyan, align: TextAlign.center)
+                : isHost
+                    ? Column(mainAxisSize: MainAxisSize.min, children: [
+                        if (reason.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 6), child: T(reason, size: 11, color: C.dim)),
+                        Btn(busy == 'start' ? 'در حال شروع…' : 'شروع بازی', small: true, disabled: !canStart || busy != null, colors: canStart ? G.gold : G.dark, onTap: () => run('start', () async {
+                              await rpc('start_match', {'p_room': room.s('id')});
+                              buzz('heavy');
+                            })),
+                      ])
+                    : amPlayer
+                        ? Btn(meP!.b('ready') ? 'آماده‌ام ✓' : 'اعلام آمادگی', small: true, colors: meP.b('ready') ? G.green : G.primary, disabled: busy != null, onTap: () => run('ready', () async {
+                              await rpc('set_ready', {'p_room': room.s('id'), 'p_ready': !meP.b('ready')});
+                              sfx(Snd.ready);
+                              buzz('medium');
+                            }))
+                        : const T('برای بازی روی یک جایگاه خالی بزن', size: 12, color: C.dim, align: TextAlign.center);
+        Widget seat(int t) {
+          final p = seats[t][0];
+          final col = t == 0 ? C.cyan : C.red;
+          if (p == null) {
+            return Press(
+              onTap: playing || busy != null ? null : () => run('seat${t}0', () async => rpc('take_seat', {'p_room': room.s('id'), 'p_team': t, 'p_slot': 0})),
+              child: Container(
+                height: 58,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: col.withValues(alpha: .45)), color: col.withValues(alpha: .08)),
+                child: busy == 'seat${t}0' ? const Spinner(size: 18) : T(t == 0 ? '+ تیم آبی' : '+ تیم قرمز', size: 12, color: col),
+              ),
+            );
+          }
+          final uid = p.s('user_id');
+          return _Seat(p: p, team: link.teamFor(uid), me: me, host: room.s('host'), online: link.online.containsKey(uid), talking: speaking.contains(uid), color: col, canKick: false, onKick: () {});
+        }
+
         return Scaffold(
           backgroundColor: C.bg,
+          resizeToAvoidBottomInset: false,
           body: Stack(children: [
-            const Space(theme: SpaceTheme.base, dim: .2),
+            const Space(theme: SpaceTheme.base, dim: .3),
             Column(children: [
-              Header(title: room.s('name'), en: 'LOBBY · ${room.s('mode').toUpperCase()}', onBack: widget.onLeave, right: PingBadge(link: link)),
-              Expanded(
-                child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 150), children: [
-                  if (block != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Panel(accent: C.red, child: Row(textDirection: TextDirection.rtl, children: [
-                        const Icon(Icons.system_update, color: C.red, size: 26),
-                        const SizedBox(width: 10),
-                        Expanded(child: T(block, size: 12, color: Colors.white, align: TextAlign.right)),
-                      ])),
-                    ),
-                  Panel(
-                    accent: C.cyan,
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      Row(textDirection: TextDirection.rtl, children: [
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [const T('کد اتاق', size: 11, color: C.dim), T(room.s('code'), size: 24, family: F.title, weight: 900, spacing: 4, color: C.cyan)])),
-                        _small('کپی', () async {
-                          await Clipboard.setData(ClipboardData(text: room.s('code')));
-                          toast('کد اتاق کپی شد', 'ok');
-                        }),
-                      ]),
-                      const SizedBox(height: 8),
-                      Wrap(textDirection: TextDirection.rtl, runSpacing: 4, children: [
-                        Badge2(ruleLabel(room.rec('settings')), color: C.violet),
-                        Badge2(kFields[room.rec('settings').i('field').clamp(0, kFields.length - 1)].name, color: C.sky),
-                        Badge2(room.b('ranked') ? 'رتبه‌ای' : 'دوستانه', color: room.b('ranked') ? C.gold : C.green),
-                        if (room.b('is_private')) const Badge2('خصوصی', color: C.pink),
-                        if (room.str('tournament_match_id') != null) const Badge2('تورنمنت', color: C.orange),
-                        if (playing) const Badge2('در حال بازی', color: C.red, live: true),
-                      ]),
-                    ]),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(textDirection: TextDirection.rtl, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    for (var t = 0; t < 2; t++) ...[
-                      if (t == 1) const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(children: [
-                          Container(
-                            height: 36,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: (t == 0 ? C.cyan : C.red).withValues(alpha: .4)), color: (t == 0 ? C.cyan : C.red).withValues(alpha: .12)),
-                            child: tBold(t == 0 ? 'تیم آبی' : 'تیم قرمز', size: 14, color: t == 0 ? C.cyan : C.red),
-                          ),
-                          for (var i = 0; i < n; i++)
-                            seats[t][i] != null
-                                ? _Seat(p: seats[t][i]!, team: link.teamFor(seats[t][i]!.s('user_id')), me: me, host: room.s('host'), online: link.online.containsKey(seats[t][i]!.s('user_id')), talking: speaking.contains(seats[t][i]!.s('user_id')),
-                                    color: t == 0 ? C.cyan : C.red, canKick: isHost && seats[t][i]!.s('user_id') != me && !playing,
-                                    onKick: () => run('kick', () async => rpc('kick', {'p_room': room.s('id'), 'p_user': seats[t][i]!.s('user_id')}), 'بازیکن اخراج شد'))
-                                : Press(
-                                    onTap: playing || busy != null ? null : () => run('seat$t$i', () async => rpc('take_seat', {'p_room': room.s('id'), 'p_team': t, 'p_slot': i})),
-                                    child: Container(
-                                      height: 64,
-                                      margin: const EdgeInsets.only(top: 8),
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: C.line)),
-                                      child: busy == 'seat$t$i' ? const Spinner(size: 20) : const T('+ نشستن', size: 12, color: C.dim),
-                                    ),
-                                  ),
-                        ]),
-                      ),
-                    ],
-                  ]),
-                  Panel(
-                    margin: const EdgeInsets.only(top: 12),
-                    accent: Colors.transparent,
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      Row(textDirection: TextDirection.rtl, children: [
-                        Expanded(child: tBold('تماشاگرها (${fa(specs.length)})', size: 12)),
-                        if (amPlayer && !playing) _small('فقط تماشا', () => run('spec', () async => rpc('spectate', {'p_room': room.s('id')}))),
-                      ]),
-                      const SizedBox(height: 6),
-                      specs.isEmpty
-                          ? const T('کسی تماشا نمی‌کند', size: 11, color: C.dim2, align: TextAlign.right)
-                          : SizedBox(
-                              height: 62,
-                              child: ListView(scrollDirection: Axis.horizontal, reverse: true, children: [
-                                for (final p in specs)
-                                  SizedBox(
-                                      width: 64,
-                                      child: Column(children: [
-                                        Avatar(avatar: p.rec('profiles').str('equipped_disc'), url: p.rec('profiles').str('avatar_url'), size: 40, ring: speaking.contains(p.s('user_id')) ? C.green : C.dim2, dim: !link.online.containsKey(p.s('user_id'))),
-                                        T(p.rec('profiles').s('username', '…'), size: 10, color: C.dim, lines: 1),
-                                      ])),
-                              ]),
-                            ),
-                    ]),
-                  ),
-                  Panel(
-                    margin: const EdgeInsets.only(top: 12),
-                    accent: Colors.transparent,
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [tBold('چت صوتی', size: 12, align: TextAlign.right), const SizedBox(height: 8), VoiceBar(link: link, enabled: room.b('voice'))]),
-                  ),
-                  Press(
-                    onTap: () => showSheet(context, title: 'گفتگو', en: 'ROOM CHAT', height: .72, child: (_) => ChatPanel(link: link)),
-                    scaleTo: .98,
-                    child: Panel(
-                      margin: const EdgeInsets.only(top: 12),
-                      accent: Colors.transparent,
-                      child: Row(textDirection: TextDirection.rtl, children: [
-                        Img(ui2('c_bell'), w: 32, h: 32),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                            tBold('گفتگوی اتاق', size: 12),
-                            T(link.chat.isNotEmpty ? '${link.chat.last.name}: ${link.chat.last.text}' : 'برای نوشتن پیام لمس کن', size: 11, color: C.dim, lines: 1),
-                          ]),
-                        ),
-                        if (link.unread > 0)
-                          Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: C.red, borderRadius: BorderRadius.circular(10)),
-                              child: tBold(fa(link.unread.clamp(0, 99)), size: 10, color: Colors.white)),
-                      ]),
-                    ),
-                  ),
+              Header(
+                title: room.s('name'),
+                en: 'ROOM · ${room.s('code')}',
+                onBack: widget.onLeave,
+                right: Row(mainAxisSize: MainAxisSize.min, children: [
+                  PingBadge(link: link),
+                  _small('کد', () async {
+                    await Clipboard.setData(ClipboardData(text: room.s('code')));
+                    toast('کد اتاق کپی شد: ${room.s('code')}', 'ok');
+                  }),
                   if (isHost && !playing && room.str('tournament_match_id') == null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Btn('تنظیمات اتاق', small: true, colors: G.dark, onTap: () => showSheet(context, title: 'تنظیمات اتاق', en: 'ROOM SETTINGS', height: .8, child: (ctx) => _RoomSettings(link: link))),
+                    Press(
+                      onTap: () => showSheet(context, title: 'تنظیمات اتاق', en: 'ROOM SETTINGS', height: .8, child: (ctx) => _RoomSettings(link: link)),
+                      child: const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.tune_rounded, color: N.amber, size: 24)),
                     ),
                 ]),
               ),
-            ]),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding: EdgeInsets.fromLTRB(16, 20, 16, ins.bottom < 12 ? 12 : ins.bottom),
-                decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x0002040e), Color(0xeb02040e), Color(0xfa02040e)])),
-                child: playing
-                    ? Btn('ورود به بازی زنده', colors: G.red, onTap: widget.onWatch)
-                    : (kind == 'quick' || kind == 'arena')
-                        ? tBold(full ? 'آماده‌ی شروع…' : 'در جستجوی حریف… (${fa(link.players.where((p) => p.s('role') == 'player').length)}/${fa(n * 2)})', size: 14, color: C.cyan, align: TextAlign.center)
-                        : isHost
-                            ? Column(mainAxisSize: MainAxisSize.min, children: [
-                                if (reason.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 8), child: T(reason, size: 11, color: C.dim)),
-                                Btn(busy == 'start' ? 'در حال شروع…' : 'شروع بازی',
-                                    disabled: !canStart || busy != null, colors: canStart ? G.gold : G.dark, onTap: () => run('start', () async {
-                                          await rpc('start_match', {'p_room': room.s('id')});
-                                          buzz('heavy');
-                                        })),
-                              ])
-                            : amPlayer
-                                ? Btn(meP!.b('ready') ? 'آماده‌ام ✓' : 'اعلام آمادگی', colors: meP.b('ready') ? G.green : G.primary, disabled: busy != null, onTap: () => run('ready', () async {
-                                      await rpc('set_ready', {'p_room': room.s('id'), 'p_ready': !meP.b('ready')});
-                                      sfx(Snd.ready);
-                                      buzz('medium');
-                                    }))
-                                : const T('برای بازی روی یک جایگاه خالی بزن', size: 12, color: C.dim, align: TextAlign.center),
+              // everyone in the room
+              SizedBox(
+                height: 82,
+                child: ListView(scrollDirection: Axis.horizontal, reverse: true, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
+                  for (final p in all)
+                    Builder(builder: (context) {
+                      final uid = p.s('user_id'), pr = p.rec('profiles'), t = p.i('team', -1);
+                      final ring = speaking.contains(uid) ? C.green : p.s('role') == 'player' ? (t == 0 ? C.cyan : C.red) : C.dim2;
+                      final canKick = isHost && uid != me && !playing;
+                      return Press(
+                        onTap: canKick
+                            ? () async {
+                                if (await confirm(context, 'اخراج ${pr.s('username', '')}؟', 'این بازیکن از اتاق بیرون می‌رود.', yes: 'اخراج', no: 'نه')) {
+                                  run('kick', () async => rpc('kick', {'p_room': room.s('id'), 'p_user': uid}), 'بازیکن اخراج شد');
+                                }
+                              }
+                            : null,
+                        child: SizedBox(
+                          width: 64,
+                          child: Column(children: [
+                            Stack(clipBehavior: Clip.none, children: [
+                              Avatar(avatar: link.teamFor(uid) ?? pr.str('equipped_disc') ?? pr.str('avatar'), url: link.teamFor(uid) != null ? null : pr.str('avatar_url'), size: 52, ring: ring, dim: !link.online.containsKey(uid)),
+                              if (uid == room.s('host')) const Positioned(top: -6, right: -2, child: Text('👑', style: TextStyle(fontSize: 14))),
+                            ]),
+                            const SizedBox(height: 3),
+                            T(uid == me ? 'من' : pr.s('username', '…'), size: 10, color: uid == me ? N.amber : C.dim, lines: 1),
+                          ]),
+                        ),
+                      );
+                    }),
+                ]),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+                child: Panel(
+                  accent: Colors.transparent,
+                  padding: const EdgeInsets.all(10),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    if (block != null) Padding(padding: const EdgeInsets.only(bottom: 6), child: T(block, size: 11, color: C.red, align: TextAlign.right)),
+                    Row(textDirection: TextDirection.rtl, crossAxisAlignment: CrossAxisAlignment.center, children: [
+                      Expanded(child: seat(0)),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: tTitle('VS', size: 16, color: N.amber)),
+                      Expanded(child: seat(1)),
+                    ]),
+                    const SizedBox(height: 6),
+                    Wrap(textDirection: TextDirection.rtl, runSpacing: 4, children: [
+                      Badge2(ruleLabel(room.rec('settings')), color: C.violet),
+                      Badge2(kFields[room.rec('settings').i('field').clamp(0, kFields.length - 1)].name, color: C.sky),
+                      Badge2(room.b('ranked') ? 'رتبه‌ای' : 'دوستانه', color: room.b('ranked') ? C.gold : C.green),
+                      if (room.b('is_private')) const Badge2('خصوصی', color: C.pink),
+                      if (playing) const Badge2('در حال بازی', color: C.red, live: true),
+                      Press(onTap: AppNav.openTeam, child: Badge2('تیم و ترکیب من ›', color: N.amber)),
+                    ]),
+                    if (room.b('voice')) Padding(padding: const EdgeInsets.only(top: 6), child: VoiceBar(link: link, enabled: true)),
+                    if (amPlayer && !playing)
+                      Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(top: 4), child: _small('فقط تماشا', () => run('spec', () async => rpc('spectate', {'p_room': room.s('id')}))))),
+                    const SizedBox(height: 8),
+                    action,
+                  ]),
+                ),
+              ),
+              Expanded(child: ChatPanel(link: link)),
+            ]),
             if (count > 0)
               Positioned.fill(
                 child: IgnorePointer(
