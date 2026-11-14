@@ -116,7 +116,7 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context), sz = mq.size, ins = mq.padding;
     final k = (sz.width / 400).clamp(.86, 1.15);
-    final sideW = math.min(sz.width * .86, 380.0), topH = math.min(sz.height * .64, 600.0), botH = math.min(sz.height * .66, 620.0);
+    final sideW = math.min(sz.width - 2 * 30.0 * k - 18, 380.0), topH = math.min(sz.height * .64, 600.0), botH = math.min(sz.height * .66, 620.0);
     final tabT = 30.0 * k; // tab thickness
     final anyOpen = Listenable.merge(c.values.toList());
     return PopScope(
@@ -170,7 +170,7 @@ class MainHubState extends State<MainHub> with TickerProviderStateMixin {
   static const _titles = {
     HubEdge.top: ('پروفایل و اعلان‌ها', 'PROFILE'),
     HubEdge.left: ('تیم من', 'MY TEAM'),
-    HubEdge.right: ('دوستان و رتبه‌ها', 'SOCIAL'),
+    HubEdge.right: ('دوستان و رتبه', 'SOCIAL'),
     HubEdge.bottom: ('حالت‌های بازی', 'PLAY'),
   };
   static const _tabLabel = {HubEdge.top: 'پروفایل', HubEdge.left: 'تیم', HubEdge.right: 'دوستان', HubEdge.bottom: 'بازی'};
