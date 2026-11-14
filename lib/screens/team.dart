@@ -19,8 +19,8 @@ import '../tutorial/keys.dart';
 import '../ui/kit.dart';
 import '../ui/v4.dart';
 
-const kCatFa = {'club': 'باشگاه', 'nat': 'ملی', 'elite': 'الیت', 'emb': 'نشان', 'leg': 'افسانه', 'vip': 'VIP', 'chrome': 'کروم', 'car': 'خودرو', 'lux': 'لوکس', 'spt': 'ورزشی'};
-const kCatOrder = ['club', 'nat', 'elite', 'emb', 'leg', 'vip', 'chrome', 'car', 'lux', 'spt'];
+const kCatFa = {'club': 'باشگاه', 'nat': 'ملی', 'emb': 'نشان', 'leg': 'افسانه', 'vip': 'VIP', 'chrome': 'کروم', 'car': 'خودرو', 'lux': 'لوکس', 'spt': 'ورزشی'};
+const kCatOrder = ['club', 'nat', 'emb', 'leg', 'vip', 'chrome', 'car', 'lux', 'spt'];
 
 class TeamScreen extends StatefulWidget {
   final String initial;
@@ -129,7 +129,7 @@ class _DiscsState extends State<_Discs> {
         toast('برای خرید باید آنلاین باشی', 'err');
         return;
       }
-      final price = dz.catalog[ft.id]?.priceGems ?? (dz.isFree(ft.id) ? 0 : teamPrice(ft));
+      final price = dz.rowFor(ft.id)?.priceGems ?? (dz.isFree(ft.id) ? 0 : teamPrice(ft));
       final g = Auth.i.profile?.i('gems') ?? 0;
       if (Auth.i.profile != null && g < price) {
         toast('${fa(price - g)} الماس دیگر لازم داری · چالش‌های روزانه و تورنمنت‌ها الماس می‌دهند', 'err');

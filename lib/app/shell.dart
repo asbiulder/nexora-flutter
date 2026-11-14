@@ -410,7 +410,7 @@ class _ShellState extends State<NexoraApp> with SingleTickerProviderStateMixin {
 
   void nextCup() {
     final l = launch!, st = l.stage + 1;
-    final pool = kTeams.where((t) => t.cat == 'club' || t.cat == 'nat' || t.cat == 'elite').toList();
+    final pool = kTeams.where((t) => t.cat == 'club' || t.cat == 'nat').toList();
     startMatch(buildLaunch(ModeKey.cup, p, lvl: 1, rule: 'g3', tt: p.turnTime, opp: pool[math.Random().nextInt(pool.length)], stage: st));
   }
 

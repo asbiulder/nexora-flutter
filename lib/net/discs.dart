@@ -37,16 +37,42 @@ class Discs extends ChangeNotifier {
   String? _for;
 
   bool get loaded => catalog.isNotEmpty;
+
+  // v5: the server's disc ids do NOT line up with the app's team ids (server club0 = Barcelona, app club0 = Real
+  // Madrid; the server has no elite/vip/emb/leg/chrome/spt rows). Rows are matched to a team by category + name.
+  Map<String, DiscRow> _byName = {};
+  Map<String, DiscRow>? _byNameFor;
+  static String _norm(String n) => n.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  DiscRow? rowFor(String? localId) {
+    if (localId == null) return null;
+    if (!identical(_byNameFor, catalog)) {
+      _byNameFor = catalog;
+      _byName = {};
+      for (final r in catalog.values) {
+        _byName.putIfAbsent('${r.cat}|${_norm(r.name)}', () => r);
+      }
+    }
+    final t = kTeams.where((t) => t.id == localId).firstOrNull;
+    if (t == null) return catalog[localId]; // a server id (equipped_disc of a non-Flutter peer)
+    return _byName['${t.cat}|${_norm(t.name)}'];
+  }
+
+  /// the server id of a local team (for equip/buy), or null when the server does not sell it
+  String? serverId(String localId) => rowFor(localId)?.id;
   String? get equipped => Auth.i.profile?.str('equipped_disc');
 
   DiscStats stats(String? id) {
-    final d = id != null ? catalog[id] : null;
+    final d = rowFor(id);
     return d != null ? DiscStats(d.power, d.accuracy) : _fallback(id ?? 'club0');
   }
 
-  int price(String id) => catalog[id]?.priceGems ?? 0;
-  bool isFree(String id) => catalog[id] != null ? catalog[id]!.priceGems == 0 : RegExp(r'^(club|nat)\d+$').hasMatch(id) || id == 'elite0';
-  bool has(String id) => kUnlockAllShop || isFree(id) || owned.contains(id);
+  int price(String id) => rowFor(id)?.priceGems ?? 0;
+  bool isFree(String id) {
+    final r = rowFor(id);
+    return r != null ? r.priceGems == 0 : RegExp(r'^(club|nat)\d+$').hasMatch(id);
+  }
+
+  bool has(String id) => kUnlockAllShop || isFree(id) || owned.contains(serverId(id) ?? id);
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -102,8 +128,9 @@ class Discs extends ChangeNotifier {
 
   Future<(bool, String?, int?)> buy(String id) async {
     try {
-      final g = await rpc('buy_disc', {'p_disc': id});
-      owned = {...owned, id};
+      final sid = serverId(id) ?? id;
+      final g = await rpc('buy_disc', {'p_disc': sid});
+      owned = {...owned, sid};
       notifyListeners();
       return (true, null, g is num ? g.toInt() : null);
     } catch (e) {
@@ -115,10 +142,12 @@ class Discs extends ChangeNotifier {
   /// the server equip RPC is only called for discs the account really owns, and a 'not owned' reply is a soft
   /// failure (the local selection stays) - the server would otherwise reject every unlocked-for-testing disc.
   Future<(bool, String?)> equip(String id) async {
-    final serverOwned = isFree(id) || owned.contains(id);
-    if (kUnlockAllShop && (!serverOwned || !catalog.containsKey(id))) return (true, null);
+    final sid = serverId(id);
+    if (sid == null) return (true, null); // not sold by the server: local-only selection
+    final serverOwned = isFree(id) || owned.contains(sid);
+    if (kUnlockAllShop && !serverOwned) return (true, null);
     try {
-      await rpc('equip_disc', {'p_disc': id});
+      await rpc('equip_disc', {'p_disc': sid});
       return (true, null);
     } catch (e) {
       if (kUnlockAllShop || e.toString().toLowerCase().contains('not owned')) return (true, null);

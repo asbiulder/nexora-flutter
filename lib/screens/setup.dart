@@ -38,7 +38,7 @@ class Launch {
 }
 
 final _rng = math.Random();
-List<Team> _pool() => kTeams.where((t) => t.cat == 'club' || t.cat == 'nat' || t.cat == 'elite').toList();
+List<Team> _pool() => kTeams.where((t) => t.cat == 'club' || t.cat == 'nat').toList();
 Team pickOpp() {
   final p = _pool();
   return p[_rng.nextInt(p.length)];

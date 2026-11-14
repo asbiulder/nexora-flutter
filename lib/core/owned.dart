@@ -13,7 +13,7 @@ bool ownsGoal(int i) => kUnlockAllShop || i == 0 || Store.i.p.ownedGoals.contain
 
 /// Price label of a team: gems when the online catalog sells it, else coins (local purchase).
 (int, bool) teamCost(Team t) {
-  final row = Discs.i.catalog[t.id];
+  final row = Discs.i.rowFor(t.id);
   if (row != null) return (row.priceGems, true);
   return (teamPrice(t), false);
 }

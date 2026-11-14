@@ -53,7 +53,6 @@ const List<Cat> kCats = [
   Cat('car', 'Cars', ['Lamborghini', 'Ferrari', 'Rolls-Royce', 'Mercedes-Benz', 'BMW', 'Porsche', 'Maserati', 'Aston Martin', 'Bentley', 'Bugatti', 'Lexus', 'Cadillac', 'McLaren', 'Tesla']),
   Cat('lux', 'Luxury', ['Louis Vuitton', 'Chanel', 'Gucci', 'Hermes', 'Prada', 'Dior', 'Versace', 'Rolex', 'Cartier', 'Fendi', 'Valentino', 'Burberry', 'Saint Laurent', 'Swarovski']),
   Cat('spt', 'Sports', ['Nike', 'Adidas', 'Puma', 'Under Armour', 'New Balance', 'Reebok', 'Jordan', 'Asics', 'Wilson', 'Speedo', 'Converse', 'Vans', 'NBA', 'Umbro']),
-  Cat('elite', 'Elite', ['NX Prime', 'Real Madrid', 'Barcelona', 'Juventus', 'Liverpool', 'Manchester United', 'Paris SG', 'Bayern Munich', 'Atletico Madrid', 'Inter Milan', 'AC Milan', 'Chelsea', 'Manchester City', 'Arsenal', 'Tottenham', 'Dortmund', 'Leverkusen', 'Napoli', 'Roma', 'Lazio', 'Fiorentina', 'Monaco', 'Marseille', 'Benfica', 'Porto', 'Sporting CP', 'Galatasaray', 'Besiktas', 'Fenerbahce', 'Ajax', 'Al Hilal', 'Al Nassr', 'Al Ittihad', 'Al Ain', 'Al Ahly', 'Zamalek']),
   Cat('emb', 'Emblems', ['Golden Lion', 'Shadow Wolf', 'Azure Dragon', 'Phoenix', 'Viper', 'Silver Eagle', 'Iron Bull', 'Frost Crown', 'Scorpion', 'Tide Shark', 'Evergreen', 'Royal Fleur', 'Compass', 'NX Gold', 'Polaris', 'Grizzly']),
   Cat('leg', 'Legends', ['Inferno Scorpion', 'Dire Wolf', 'Samurai Sun', 'Venom Dragon', 'Bermuda', 'Magma Golem']),
   Cat('chrome', 'Chrome', ['Mercedes Chrome', 'BMW Chrome', 'Toyota Chrome', 'Ferrari Chrome', 'Lambo Chrome', 'Porsche Chrome', 'Tesla Chrome', 'Audi Chrome']),

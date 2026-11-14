@@ -83,7 +83,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   void _equipTeam(Team t) {
     Store.i.set((q) => q.team = t.id);
-    if (Auth.i.uid != null && Discs.i.catalog.containsKey(t.id)) Discs.i.equip(t.id);
+    if (Auth.i.uid != null && Discs.i.rowFor(t.id) != null) Discs.i.equip(t.id);
     buzz('success');
     toast('${t.name} انتخاب شد', 'ok');
   }
