@@ -68,6 +68,15 @@ class PhysTune {
   final double subPx; // max travel per substep (px) -> adaptive substeps
   final int subMax, stepCap; // substep cap per 240 Hz step; physics steps per frame
   final double rollK; // visual ball roll rate (render only)
+  // ---- v0.6.3 'stars' solver (_simS) only; the defaults leave the godot profile untouched ----
+  final double discKeepN, discKeepT; // disc-ball contact: share of the DISC's post-impact normal / tangential velocity kept
+  final double slop; // resting overlap (px) left alone by the positional correction (no contact jitter)
+  final double cornerZone; // corner pocket: within r + cornerZone of both walls
+  final double cornerEn; // corner: normal restitution on the wall being struck (damped -> the ball slides along it)
+  final double cornerTurn; // corner: at least this share of the struck normal speed is turned along the wall
+  final double nudgeV, nudgeK; // corner jam: ease a slow jammed body out towards nudgeV px/s at rate nudgeK 1/s
+  final double spinCap, spinK; // visual ball spin: omega -> min(v / r, spinCap) rad/s, approached at spinK 1/s
+  final double sqDisc, sqBall; // hit squash pulse scale (render) on discs / ball
   const PhysTune({
     required this.name,
     required this.discR,
@@ -100,6 +109,18 @@ class PhysTune {
     required this.subMax,
     required this.stepCap,
     required this.rollK,
+    this.discKeepN = 1,
+    this.discKeepT = 1,
+    this.slop = 0,
+    this.cornerZone = 0,
+    this.cornerEn = 1,
+    this.cornerTurn = 0,
+    this.nudgeV = 0,
+    this.nudgeK = 0,
+    this.spinCap = 1e9,
+    this.spinK = 0,
+    this.sqDisc = 1,
+    this.sqBall = 1,
   });
 }
 
@@ -123,32 +144,38 @@ const kTuneGodot = PhysTune(
 const kTuneStars = PhysTune(
   name: 'stars',
   discR: 49, ballR: 21.6, // v6: one fixed ball, 0.8x the v5 radius (27) - owner 2026-11-14
-  // v4 retune (phone feedback 2026-11-14: "billiards ball, heavy Soccer Stars pucks"). v3 values in brackets.
-  discM: 4, ballM: 1, // [3] disc 4x the ball: a disc striking the ball sends it off at (1+e)*4/5 = 1.47x its speed (e .84)
-  // v0.6.1 POWER (phone feedback "discs are very weak, shots must be powerful and wild, proportional to the pull"):
-  // full-pull speed = discVmax * shotCurve(pull) * statMul(power); discVmax 2400 -> 3500 (x1.46), and the power stat
-  // now spans 0.62..1.0 instead of 0.1..1.0, so a typical power-7 club disc leaves at ~3050 px/s (v0.6: 1680).
+  // v0.6.3 STANDARD SOLVER (_simS: fixed 240 Hz step, adaptive substeps, time-of-impact contacts, mass-based impulses).
+  // Owner brief 2026-11-15: same rolling feel, discs wobble less, a disc that shoots the ball stays near the contact
+  // point, smooth gentle motion, corner shots slide along the wall, discs 2-3x the ball, sane ball spin, shot power
+  // unchanged. Values before v0.6.3 in brackets. Numbers: tool/snap/sweep_v063_test.dart.
+  discM: 3, ballM: 1, // [4 : 1] owner range 2-3x; contacts below make the disc behave heavy (it barely moves when hit)
+  // POWER unchanged (owner rule: never nerf shot power / disc stats / max shot): full pull = discVmax * statMul(power).
   shotMax: 3500, discVmax: 3500, powerGodot: false,
-  // v0.6.1 SMOOTH DECAY (owner: "slows gradually along the whole path, small constant rolling friction + mild
-  // drag, nothing stops abruptly; the ball must come to rest"). v0.6 billiards values made the ball roll for ~8 s
-  // (55 + .42 v). Now a full-power disc glides ~1.3k px (most of the pitch) in ~1.6 s and a hard-hit ball rests
-  // in ~2.5 s. Numbers: tool/snap/sweep_v061_test.dart. [v0.6: disc 210 + 1.05 v, ball 55 + .42 v]
+  // ROLLING: velocity-dependent decel = fric + drag * v (constant rolling friction + linear damping), unchanged feel.
   discFric: 300, discDrag: 2.0,
-  // v0.6.1b SOFTER BALL (owner: "too fast, flies out of view, bounces back and forth too much"; very small change,
-  // ~12%): ball friction 240 -> 270, drag 1.3 -> 1.45. Shot power / disc stats / max shot untouched.
   ballFric: 270, ballDrag: 1.45,
   vStop: 2, vSettle: 0, settleK: 1, vSafe: 4200,
-  // v0.6.1b softer contacts (~11%): disc-disc .94 -> .84, disc-ball .95 -> .84 (ball leaves a full hit at
-  // (1+e)*4/5 = 1.47x the disc speed instead of 1.56x)
-  eDiscDisc: .84, eDiscBall: .84, discDiscK: 1,
+  // CONTACTS: ball pops off the disc with e .92 [.84]; the disc then keeps only 20% of its normal and 80% of its
+  // tangential velocity [100% / 100%]: it loses most of its speed on impact and stays near the contact point (and a
+  // ball striking a still disc barely moves it). A full head-on hit still sends the ball off at ~1.43x the disc speed.
+  eDiscDisc: .84, eDiscBall: .92, discDiscK: 1,
   eSoft: .6, vSoft: 90, // only very light touches are damped (anti-jitter)
-  // v0.6.1 CUSHIONS: very little energy lost, almost no friction along the wall (a ball running along the rail keeps
-  // its speed). [v0.6: ball .93/.93, disc .86/.86]
-  // v0.6.1b: ball cushion restitution .94 -> .85 and rail grip .985 -> .96 (fewer end-to-end ping-pong bounces)
+  discKeepN: .2, discKeepT: .8,
+  slop: .25, // [0] resting contacts are not pushed apart every substep (no jiggle)
+  // CUSHIONS unchanged: ball .85 normal / .96 along the rail, disc .90 / .97.
   eWallBall: .85, tWallBall: .96,
   eWallDisc: .90, tWallDisc: .97,
-  postR: 5, cornerNudge: 90,
-  subPx: 4, subMax: 16, stepCap: 14, rollK: 1, // rollK 1: ball spin rate = speed / radius (true rolling)
+  postR: 5,
+  // CORNERS [mirror off both walls = straight back]: in the corner pocket the struck wall damps the normal speed to
+  // 25%, the along-wall speed is kept (x tWall) and turned away from the corner; at least 55% of the struck normal
+  // speed is redirected along the wall, so a ball driven into a corner always slides out up/down the side.
+  cornerZone: 14, cornerEn: .25, cornerTurn: .55,
+  cornerNudge: 0, nudgeV: 110, nudgeK: 10, // [instant 90 px/s kick] a jammed slow body is eased out
+  subPx: 4, subMax: 16, stepCap: 14, rollK: 1,
+  // VISUAL SPIN [omega = v / r uncapped: 185 rad/s, ~175 deg per frame at 4000 px/s]: omega follows v / r, capped
+  // at 24 rad/s (~23 deg per 60 fps frame), eased at 20 1/s; no extra spin from contacts or cushions.
+  spinCap: 24, spinK: 20,
+  sqDisc: 0, sqBall: .35, // [1 / 1] no squash pulse on discs, a softer one on the ball (less wobble)
 );
 
 /// v0.6.1 shot curve: pull fraction (0..1 of LMAX) -> fraction of the full-pull speed. Smooth and monotonic: a short
@@ -284,6 +311,7 @@ class Body {
   double spin = 0, ang = 0;
   final Float64List R = Float64List.fromList([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   double sq = 0, tvx = 0, tvy = 0, ramp = 0, boost = 0, vox = 0, voy = 0;
+  double w = 0, wax = 0, way = 0; // v0.6.3 visual roll: angular speed (rad/s) about the axis (wax, way, 0)
   Goal? gout;
   // per-disc motion trail: ring of at most 13 points (TS keeps <= 12 after shift)
   final Float64List trX = Float64List(16), trY = Float64List(16);
@@ -894,6 +922,10 @@ class Engine {
   }
 
   void _sim(double dt) {
+    if (stars) {
+      _simS(dt);
+      return;
+    }
     if (godot) {
       _sim8(dt);
       return;
@@ -1290,6 +1322,322 @@ class Engine {
     for (final b in B) {
       _walls8(b);
     }
+  }
+
+  // =====================================================================================================
+  // v0.6.3 'stars' solver: clean standard rigid-disc physics on the fixed 240 Hz step.
+  //  * adaptive substeps from the fastest body (no body moves more than tu.subPx per substep), deterministic
+  //  * rolling: decel = fric + drag * v along the direction of motion (smooth, velocity dependent, no jumps)
+  //  * contacts: time-of-impact rewind + mass-weighted normal impulse; the disc of a disc-ball pair then keeps
+  //    tu.discKeepN / discKeepT of its velocity (heavy puck on cloth: it stays near the contact point)
+  //  * cushions: normal x eWall, tangential x tWall; corner pocket slides the body along the struck wall
+  //  * visual ball spin: omega eased towards min(v / r, spinCap), no extra spin
+  // =====================================================================================================
+
+  void _simS(double dt) {
+    var vmax = 0.0;
+    for (final b in bodies) {
+      final s2 = b.vx * b.vx + b.vy * b.vy;
+      if (s2 > vmax) vmax = s2;
+    }
+    vmax = math.sqrt(vmax);
+    final n = (vmax * dt / tu.subPx).ceil().clamp(1, tu.subMax);
+    final h = dt / n;
+    final ball = this.ball;
+    for (var i = 0; i < n; i++) {
+      _subS(h);
+      if (phase == Phase.move && !slave) {
+        for (var gi = 0; gi < 2; gi++) {
+          final g = goals[gi];
+          if (ball.x > g.x1 && ball.x < g.x2 && (g.d < 0 ? ball.y < g.y - ball.r * .8 : ball.y > g.y + ball.r * .8)) {
+            _scored(g.team);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  void _subS(double h) {
+    final ball = this.ball, B = bodies;
+    for (final b in B) {
+      b.vox = 0;
+      b.voy = 0;
+      b.spin = 0;
+      b.x += b.vx * h;
+      b.y += b.vy * h;
+      final bl = identical(b, ball);
+      final sp = math.sqrt(b.vx * b.vx + b.vy * b.vy);
+      if (sp > 0) {
+        final ns = sp - ((bl ? tu.ballFric : tu.discFric) + (bl ? tu.ballDrag : tu.discDrag) * sp) * h;
+        if (ns < tu.vStop) {
+          b.vx = 0;
+          b.vy = 0;
+        } else {
+          final k = _min(ns, tu.vSafe) / sp;
+          b.vx *= k;
+          b.vy *= k;
+        }
+      }
+      if (bl) {
+        b.sq *= 1 - 9 * h;
+        _spinS(b, h);
+      }
+      _wallsS(b, h);
+    }
+    final n = B.length;
+    for (var it = 0; it < 2; it++) {
+      for (var a = 0; a < n; a++) {
+        final ba = B[a];
+        for (var c = a + 1; c < n; c++) {
+          final bc = B[c];
+          final mm = ba.r + bc.r;
+          final ddx = bc.x - ba.x;
+          if (ddx >= mm || ddx <= -mm) continue;
+          final ddy = bc.y - ba.y;
+          if (ddy >= mm || ddy <= -mm) continue;
+          _hitS(ba, bc, it == 0 ? h : 0);
+        }
+      }
+    }
+    for (var gi = 0; gi < 2; gi++) {
+      final g = goals[gi];
+      _post8(ball, g.x1, g.y);
+      _post8(ball, g.x2, g.y);
+    }
+    for (final b in B) {
+      _wallsS(b, h);
+    }
+  }
+
+  /// visual roll: omega follows min(v / r, spinCap), axis perpendicular to the motion; keeps turning down smoothly
+  /// about the last axis after the ball stops.
+  void _spinS(Body b, double h) {
+    final sp = math.sqrt(b.vx * b.vx + b.vy * b.vy);
+    if (sp > 0) {
+      b.wax = -b.vy / sp;
+      b.way = b.vx / sp;
+    }
+    final target = _min(sp * tu.rollK / b.r, tu.spinCap);
+    b.w += (target - b.w) * _min(1, h * tu.spinK);
+    if (b.w < .01 && target == 0) b.w = 0;
+    if (b.w > 0) _rotate(b.R, b.wax * b.w, b.way * b.w, 0, h);
+  }
+
+  void _hitS(Body a, Body b, double h) {
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var dd = dx * dx + dy * dy;
+    final m = a.r + b.r;
+    if (dd >= m * m) return;
+    final ball = this.ball;
+    final rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+    final dv = dx * rvx + dy * rvy;
+    final sm = a.im + b.im;
+    final isB = identical(a, ball) || identical(b, ball);
+    var vn = 0.0;
+    if (dv < 0) {
+      final vv = rvx * rvx + rvy * rvy;
+      var s = 0.0;
+      if (vv > 1e-9) {
+        s = (dv + math.sqrt(_max(0, dv * dv - vv * (dd - m * m)))) / vv;
+        s = _clamp(s, 0, h);
+      }
+      a.x -= a.vx * s;
+      a.y -= a.vy * s;
+      b.x -= b.vx * s;
+      b.y -= b.vy * s;
+      dx = b.x - a.x;
+      dy = b.y - a.y;
+      var d = math.sqrt(dx * dx + dy * dy);
+      if (d < 1e-4) {
+        dx = 0;
+        dy = -1;
+        d = 1;
+      }
+      final nx = dx / d, ny = dy / d;
+      vn = rvx * nx + rvy * ny;
+      if (vn < 0) {
+        final eFull = isB ? tu.eDiscBall : tu.eDiscDisc;
+        final e0 = _min(tu.eSoft, eFull);
+        final soft = _min(1, -vn / tu.vSoft);
+        final ee = e0 + (eFull - e0) * soft;
+        var j = -(1 + ee) * vn / sm;
+        if (!isB) j *= tu.discDiscK;
+        a.vx -= j * nx * a.im;
+        a.vy -= j * ny * a.im;
+        b.vx += j * nx * b.im;
+        b.vy += j * ny * b.im;
+        if (isB) {
+          // the disc absorbs most of its own post-impact motion (light touches less so: no sticky dribbles)
+          final dsc = identical(a, ball) ? b : a, sgn = identical(dsc, a) ? 1.0 : -1.0; // n points away from the disc
+          final kn = 1 - (1 - tu.discKeepN) * soft, kt = 1 - (1 - tu.discKeepT) * soft;
+          final dn = dsc.vx * nx + dsc.vy * ny, tx = dsc.vx - dn * nx, ty = dsc.vy - dn * ny;
+          var dn2 = dn * kn;
+          final bn = ball.vx * nx + ball.vy * ny;
+          // never let the disc close in on the ball again after the impulse (separating along the normal)
+          if (sgn > 0 ? dn2 > bn : dn2 < bn) dn2 = bn;
+          dsc.vx = tx * kt + dn2 * nx;
+          dsc.vy = ty * kt + dn2 * ny;
+        }
+        _gcap(a);
+        _gcap(b);
+      }
+      a.x += a.vx * s;
+      a.y += a.vy * s;
+      b.x += b.vx * s;
+      b.y += b.vy * s;
+    }
+    // leftover overlap beyond the slop removed positionally (no velocity change)
+    dx = b.x - a.x;
+    dy = b.y - a.y;
+    dd = dx * dx + dy * dy;
+    final ms = m - tu.slop;
+    if (dd < ms * ms) {
+      final d2 = math.sqrt(dd);
+      var ux = 0.0, uy = -1.0;
+      if (d2 > 1e-4) {
+        ux = dx / d2;
+        uy = dy / d2;
+      }
+      final pen = ms - d2;
+      a.x -= ux * pen * a.im / sm;
+      a.y -= uy * pen * a.im / sm;
+      b.x += ux * pen * b.im / sm;
+      b.y += uy * pen * b.im / sm;
+    }
+    if (vn < -150) {
+      final ev = _push(EvType.hit);
+      ev.ball = isB;
+      ev.power = -vn / 1900;
+      if (!isB && vn < -520 && tu.sqDisc > 0) {
+        final q = _min(1, -vn / 1900) * .5 * tu.sqDisc;
+        a.sq = _max(a.sq, q);
+        b.sq = _max(b.sq, q);
+      }
+      if (isB) {
+        final pw = _min(1, -vn / 2100);
+        if (pw > .2) {
+          final o = identical(ball, b) ? a : b;
+          ball.sq = _max(ball.sq, pw * .6 * tu.sqBall);
+          o.sq = _max(o.sq, pw * .25 * tu.sqDisc);
+          if (pw > .45) burst((a.x + b.x) / 2, (a.y + b.y) / 2, jsRound(4 + pw * 8), 200 + pw * 260, _hitCols, .3, 2);
+        }
+      }
+    }
+  }
+
+  /// corner pocket (both walls within r + cornerZone, outside the goal mouth): the struck wall damps its normal
+  /// speed (cornerEn) and the along-wall speed is kept and pointed away from the corner (at least cornerTurn of the
+  /// struck normal speed). Returns true when it handled the body.
+  bool _cornerS(Body b, bool bl) {
+    final r = b.r, z = tu.cornerZone;
+    if (z <= 0) return false;
+    final gL = b.x - r - Fl, gR = Fr - r - b.x;
+    final sx = gL < gR ? 1.0 : -1.0; // inward normal of the nearer side wall
+    final gx = sx > 0 ? gL : gR;
+    if (gx >= z) return false;
+    if (b.x > goals[0].x1 - r && b.x < goals[0].x2 + r) return false; // never at the goal mouth
+    final gT = b.y - r - Ft, gB = Fb - r - b.y;
+    final sy = gT < gB ? 1.0 : -1.0;
+    final gy = sy > 0 ? gT : gB;
+    if (gy >= z) return false;
+    if (gx > 0 && gy > 0) return false; // in the pocket but touching neither wall yet
+    final inX = -b.vx * sx, inY = -b.vy * sy; // speed into the side wall / into the end wall
+    final et = bl ? tu.tWallBall : tu.tWallDisc;
+    if (inX > 0 || inY > 0) {
+      final vs = math.sqrt(b.vx * b.vx + b.vy * b.vy);
+      if (bl && vs > 200) _push(EvType.wall).power = vs / 1800;
+      if (inX >= inY) {
+        // struck the side wall: slide up / down the side, away from the end wall
+        b.vx = sx * tu.cornerEn * inX;
+        b.vy = sy * _max(b.vy.abs() * et, tu.cornerTurn * inX);
+      } else {
+        // struck the end wall: slide along it, away from the side wall
+        b.vy = sy * tu.cornerEn * inY;
+        b.vx = sx * _max(b.vx.abs() * et, tu.cornerTurn * inY);
+      }
+    }
+    if (gx < 0) b.x -= sx * gx;
+    if (gy < 0) b.y -= sy * gy;
+    return true;
+  }
+
+  /// a slow body jammed against both walls of a corner is eased out along the diagonal (no velocity jump)
+  void _nudgeS(Body b, double h) {
+    final r = b.r;
+    const gap = 1.5;
+    final atL = b.x - r <= Fl + gap, atR = b.x + r >= Fr - gap;
+    if (!(atL || atR)) return;
+    final atT = b.y - r <= Ft + gap && (b.x < goals[0].x1 || b.x > goals[0].x2);
+    final atB = b.y + r >= Fb - gap && (b.x < goals[1].x1 || b.x > goals[1].x2);
+    if (!(atT || atB)) return;
+    if (b.vx * b.vx + b.vy * b.vy > tu.nudgeV * tu.nudgeV) return;
+    final t = tu.nudgeV * .70710678118654752, k = _min(1, h * tu.nudgeK);
+    b.vx += ((atL ? t : -t) - b.vx) * k;
+    b.vy += ((atT ? t : -t) - b.vy) * k;
+  }
+
+  void _wallsS(Body b, double h) {
+    final ball = this.ball;
+    if (!identical(b, ball) && b.gout != null) {
+      final g = b.gout!, dq = g.d * (b.y - g.y);
+      if (dq > -b.r * 1.05) {
+        b.vy = -g.d * 270 * K;
+        b.vx *= .6;
+      } else {
+        b.vy = 0;
+        b.vx *= .2;
+        b.gout = null;
+      }
+    }
+    final bl = identical(b, ball), r = b.r;
+    if (_cornerS(b, bl)) {
+      _nudgeS(b, h);
+      return;
+    }
+    final en = bl ? tu.eWallBall : tu.eWallDisc, et = bl ? tu.tWallBall : tu.tWallDisc;
+    _cushionX(b, Fl + r, 1);
+    _cushionX(b, Fr - r, -1);
+    final vs = math.sqrt(b.vx * b.vx + b.vy * b.vy);
+    for (var gi = 0; gi < 2; gi++) {
+      final g = goals[gi];
+      final dp = g.d * (b.y - g.y);
+      if (dp <= -r) continue;
+      final lo = g.x1 + (bl ? 0 : r), hi = g.x2 - (bl ? 0 : r);
+      final inside = bl ? (b.x > g.x1 && b.x < g.x2) : (dp > 0 || (b.x >= lo && b.x <= hi));
+      if (inside) {
+        final gl = phase == Phase.goal && bl;
+        final back = g.y + g.d * DEPTH;
+        if (!bl && dp > r * .3 && vs < 150 * K && b.gout == null) b.gout = g;
+        if (dp + r > DEPTH) {
+          b.y = back - g.d * r;
+          if (g.d * b.vy > 0) {
+            b.vy = -b.vy * (gl ? .2 : en);
+            b.vx *= gl ? .6 : et;
+          }
+        }
+        if (dp > (bl ? r * .6 : 0)) {
+          final ee = gl ? .3 : en, te = gl ? 1.0 : et;
+          if (b.x < g.x1 + r) {
+            b.x = g.x1 + r;
+            if (b.vx < 0) {
+              b.vx = -b.vx * ee;
+              b.vy *= te;
+            }
+          }
+          if (b.x > g.x2 - r) {
+            b.x = g.x2 - r;
+            if (b.vx > 0) {
+              b.vx = -b.vx * ee;
+              b.vy *= te;
+            }
+          }
+        }
+      } else {
+        _cushionY(b, g.y - g.d * r, -g.d.toDouble());
+      }
+    }
+    _nudgeS(b, h);
   }
 
   void _scored(int t) {

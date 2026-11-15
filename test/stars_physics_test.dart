@@ -106,18 +106,17 @@ void main() {
     expect(c.vx.abs() + a.vx.abs(), lessThan(1e-9)); // pure normal impulse on a centred hit
   });
 
-  test('square corner: ball sent into a corner comes straight back out along mirrored lines', () {
+  test('v0.6.3 square corner: a 45 degree shot into a corner slides out up the side wall (not straight back)', () {
     final e = _lab(0), b = e.ball;
-    // 45 degree run into the top-left corner (away from the goal mouth): both components flip
     _place(b, e.Fl + 260, e.Ft + 260, -900, -900);
-    var flipX = false, flipY = false;
-    for (var i = 0; i < 90 && !(flipX && flipY); i++) {
+    var out = false;
+    for (var i = 0; i < 90 && !out; i++) {
       e.update(1 / 60);
-      flipX |= b.vx > 0;
-      flipY |= b.vy > 0;
+      out = b.vy > 0;
     }
-    expect(flipX && flipY, isTrue);
-    expect((b.vx - b.vy).abs() / b.vx.abs(), lessThan(.02), reason: 'leaves the corner on the 45 degree diagonal');
+    expect(out, isTrue, reason: 'left the corner');
+    expect(b.vy.abs(), greaterThan(b.vx.abs() * 2), reason: 'runs along the side wall');
+    expect(b.x - b.r - e.Fl, lessThan(30), reason: 'stays close to the side wall');
   });
 
   test('single fixed ball size: 0.8x the v5 radius (27)', () {

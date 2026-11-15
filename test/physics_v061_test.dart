@@ -227,17 +227,16 @@ void main() {
     expect(nudged, 4);
   });
 
-  test('45° corner run leaves on the mirrored diagonal (straight lines)', () {
+  test('v0.6.3: a 45° corner run leaves along a wall, never straight back', () {
     final e = _lab(0), b = e.ball;
     _place(b, e.Fl + 260, e.Ft + 260, -1200, -1200);
-    var fx = false, fy = false;
-    for (var i = 0; i < 90 && !(fx && fy); i++) {
+    var fy = false;
+    for (var i = 0; i < 90 && !fy; i++) {
       e.update(1 / 60);
-      fx |= b.vx > 0;
-      fy |= b.vy > 0;
+      fy = b.vy > 0;
     }
-    expect(fx && fy, isTrue);
+    expect(fy, isTrue);
     final ang = math.atan2(b.vy, b.vx) * 180 / math.pi;
-    expect(ang, inInclusiveRange(40, 50));
+    expect(ang, inInclusiveRange(60, 90), reason: 'mostly along the side wall (90° = straight up/down the side)');
   });
 }

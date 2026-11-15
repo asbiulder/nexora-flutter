@@ -265,15 +265,20 @@ void main() {
 
     // ---------------- 7. visual spin + wobble ----------------
     _log('## 7. Visual ball spin and disc wobble');
-    _log('| ball px/s | v/r rad/s | measured spin rad/s | rotation per 60 fps frame |');
-    _log('|---|---|---|---|');
+    _log('| ball shot at px/s | measured after s | ball px/s then | v/r rad/s | measured spin rad/s | rotation per 60 fps frame |');
+    _log('|---|---|---|---|---|---|');
     for (final v in [300.0, 1000.0, 2500.0, 4000.0]) {
-      final e = _lab(0), b = e.ball;
-      _place(b, e.CX, e.Fb - 60, 0, -v);
-      final r0 = List<double>.of(b.R);
-      e.update(1 / 60);
-      final ang = _rotAng(r0, b.R);
-      _log('| ${_f(v)} | ${_f(v / b.r, 1)} | ${_f(ang * 60, 1)} | ${_f(ang * 180 / math.pi, 1)}° |');
+      for (final pre in [1, 6, 15]) {
+        final e = _lab(0), b = e.ball;
+        _place(b, e.CX, e.Fb - 60, 0, -v);
+        for (var i = 0; i < pre - 1; i++) {
+          e.update(1 / 60);
+        }
+        final r0 = List<double>.of(b.R), s0 = _spd(b);
+        e.update(1 / 60);
+        final ang = _rotAng(r0, b.R), s1 = (s0 + _spd(b)) / 2;
+        _log('| ${_f(v)} | ${_f(pre / 60, 3)} | ${_f(s1)} | ${_f(s1 / b.r, 1)} | ${_f(ang * 60, 1)} | ${_f(ang * 180 / math.pi, 1)}° |');
+      }
     }
     {
       // squash pulse on a disc during a full-power strike, and jitter of a resting disc + ball in light contact
