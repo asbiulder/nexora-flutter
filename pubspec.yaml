@@ -54,6 +54,8 @@ flutter:
       fonts:
         - asset: assets/fonts/Lalezar-Regular.ttf
   assets:
+    - assets/luxe/
+    - assets/luxe/icons/
     - assets/arcade/pedestals/
     - assets/avatar/gear/
     - assets/characters/oracle/

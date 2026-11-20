@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -14,26 +15,26 @@ import 'nx2_assets.dart';
 import '../../worlds/oracle_core/persona/oracle_tour.dart';
 import '../../worlds/hub/hub_search.dart';
 
-/// NX2 colour tokens: deep cosmic violet, neon magenta/cyan, gold for legendary.
+/// NX2 colour tokens, re-based on the ANIX PRO Station Luxe palette (deep black, gold, champagne).
 class Nx2 {
   Nx2._();
-  static const Color deep = Color(0xFF07031A);
-  static const Color night = Color(0xFF120A33);
-  static const Color plum = Color(0xFF1E0F4D);
-  static const Color violet = Color(0xFF8B3DFF);
-  static const Color magenta = Color(0xFFE040FB);
-  static const Color cyan = Color(0xFF35D6FF);
-  static const Color gold = Color(0xFFFFC857);
-  static const Color goldDeep = Color(0xFFB9772A);
-  static const Color text = Color(0xFFF4F0FF);
-  static const Color muted = Color(0xFFBFB3E6);
+  static const Color deep = Color(0xFF07080C);
+  static const Color night = Color(0xFF11100C);
+  static const Color plum = Color(0xFF1C1912);
+  static const Color violet = Color(0xFF8A6A2C);
+  static const Color magenta = Color(0xFFD9B872);
+  static const Color cyan = Color(0xFFF6E7BD);
+  static const Color gold = Color(0xFFD9B872);
+  static const Color goldDeep = Color(0xFF8A6A2C);
+  static const Color text = Color(0xFFF4EAD2);
+  static const Color muted = Color(0xFFB9AE95);
   static const Color success = Color(0xFF4BE3A0);
   static const Color danger = Color(0xFFFF5A7A);
 
   static const LinearGradient neon =
       LinearGradient(colors: <Color>[cyan, violet, magenta]);
   static const LinearGradient goldGrad =
-      LinearGradient(colors: <Color>[Color(0xFFFFE7A3), gold, goldDeep]);
+      LinearGradient(colors: <Color>[Color(0xFFF6E7BD), gold, goldDeep]);
 
   static const TextStyle title = TextStyle(
       fontSize: 18,
@@ -733,144 +734,258 @@ class Nx2Dock extends StatelessWidget {
   const Nx2Dock({super.key, required this.current});
   final Nx2Tab? current;
 
+  static const Color _gold = Color(0xFFD9B872);
+  static const Color _gold2 = Color(0xFFF6E7BD);
+  static const Color _mute = Color(0x99F4EAD2);
+
+  bool get _moreOn => const <Nx2Tab>{Nx2Tab.shop, Nx2Tab.rewards, Nx2Tab.profile, Nx2Tab.oracle}.contains(current);
+
+  void _more(BuildContext context) {
+    final List<(Nx2Tab?, String, String, String, String?)> rows = <(Nx2Tab?, String, String, String, String?)>[
+      (Nx2Tab.shop, 'r4c1', 'فروشگاه', 'Shop', null),
+      (Nx2Tab.rewards, 'r3c6', 'جایزه‌ها و ماموریت‌ها', 'Rewards & missions', null),
+      (Nx2Tab.profile, 'r4c4', 'پروفایل', 'Profile', null),
+      (Nx2Tab.oracle, 'r5c2', 'هوش مصنوعی اوراکل', 'ORACLE AI', null),
+      (null, 'r3c5', 'رویدادها', 'Events', '/station/events'),
+      (null, 'r2c6', 'رده‌بندی', 'Leaderboard', '/leaderboard'),
+      (null, 'r4c2', 'تنظیمات', 'Settings', '/settings'),
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0x8C030306),
+      builder: (BuildContext ctx) => Container(
+        padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.paddingOf(ctx).bottom + 18),
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: <Color>[Color(0xFF14130F), Color(0xFF0A0A0D)]),
+          border: Border(top: BorderSide(color: Color(0x33D9B872))),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+          Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(color: const Color(0x40F6E7BD), borderRadius: BorderRadius.circular(4))),
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 0.95,
+            children: <Widget>[
+              for (final (Nx2Tab?, String, String, String, String?) r in rows)
+                _Pressable(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    if (r.$1 != null) {
+                      nx2GoTab(context, r.$1!, current);
+                    } else {
+                      context.push(r.$5!);
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      gradient: const LinearGradient(
+                          begin: Alignment(-0.6, -1),
+                          end: Alignment(0.6, 1),
+                          colors: <Color>[Color(0x13FFFFFF), Color(0x04FFFFFF)]),
+                      border: Border.all(color: r.$1 == current && current != null ? _gold : const Color(0x33D9B872)),
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+                      Expanded(
+                        child: Image.asset('assets/luxe/icons/${r.$2}.webp',
+                            cacheWidth: 180, errorBuilder: (_, __, ___) => const SizedBox()),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(context.tx(r.$3, r.$4),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFFF4EAD2))),
+                    ]),
+                  ),
+                ),
+            ],
+          ),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final double bottom = MediaQuery.paddingOf(context).bottom;
-    Widget item(Nx2Tab t, String? nav, IconData icon, String fa, String en) {
-      final bool on = t == current;
+
+    Widget cell({required String id, required bool on, required String fa, required String en, String? icon,
+        IconData? glyph, required VoidCallback onTap}) {
       return Expanded(
         child: OracleTourTarget(
-          id: 'dock.${t.name}',
+          id: id,
           child: _Pressable(
-          onTap: () => nx2GoTab(context, t, current),
-          child: Semantics(
-            selected: on,
-            button: true,
-            label: context.tx(fa, en),
-            child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.all(3),
+            onTap: onTap,
+            child: Semantics(
+              selected: on,
+              button: true,
+              label: context.tx(fa, en),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 450),
+                curve: const Cubic(.22, .8, .2, 1),
+                padding: const EdgeInsets.symmetric(vertical: 3),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: on
-                      ? <BoxShadow>[BoxShadow(color: Nx2.gold.withValues(alpha: 0.45), blurRadius: 16)]
-                      : const <BoxShadow>[],
+                  borderRadius: BorderRadius.circular(22),
+                  gradient: on
+                      ? const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: <Color>[Color(0x33D9B872), Color(0x08D9B872)])
+                      : null,
+                  border: Border.all(color: on ? const Color(0x40D9B872) : Colors.transparent),
                 ),
-                child: nav != null
-                    ? AnixNavIcon(icon: nav, active: on, size: 26)
-                    : AnixTintedIcon(icon: icon, active: on, size: 24),
-              ),
-              SizedBox(
-                height: 16,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(context.tx(fa, en),
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 8.5, height: 1.05, fontWeight: FontWeight.w800, color: on ? Nx2.text : Nx2.muted)),
-                ),
-              ),
-            ]),
-          ),
-        ),
-        ),
-      );
-    }
-
-    // The centre action is raised, but its footprint is bounded so it cannot
-    // push the surrounding destinations into each other.
-    const double center = 70;
-    final bool gameOn = current == Nx2Tab.games;
-    return OracleTourTarget(
-      id: 'dock',
-      child: SizedBox(
-      height: 78 + bottom + 18,
-      child: Stack(clipBehavior: Clip.none, children: <Widget>[
-        Positioned(
-          left: 6,
-          right: 6,
-          bottom: bottom + 4,
-          height: 76,
-          child: Stack(fit: StackFit.expand, children: <Widget>[
-            Image.asset(Nx2Assets.framesDock,
-                fit: BoxFit.fill, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-            CustomPaint(
-              painter: Nx2FramePainter(
-                  cut: 18,
-                  glow: 0.5,
-                  gems: false,
-                  fill: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: <Color>[Color(0xE02A1468), Color(0xF00C0529)])),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
-                child: Row(children: <Widget>[
-                  Expanded(
-                    child: Row(children: <Widget>[
-                      item(Nx2Tab.social, 'chat', Icons.perm_media_rounded, 'چت و رسانه', 'Chat+Media'),
-                      item(Nx2Tab.oracle, null, Icons.auto_awesome_rounded, 'اوراکل', 'ORACLE'),
-                      item(Nx2Tab.tournaments, null, Icons.emoji_events_rounded, 'تورنمنت', 'Tournaments'),
-                    ]),
+                child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: icon != null
+                        ? DecoratedBox(
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: on
+                                    ? const <BoxShadow>[BoxShadow(color: Color(0x88D9B872), blurRadius: 12)]
+                                    : const <BoxShadow>[]),
+                            child: Image.asset('assets/luxe/icons/$icon.webp',
+                                cacheWidth: 96, errorBuilder: (_, __, ___) => Icon(glyph, color: on ? _gold2 : _mute)),
+                          )
+                        : Icon(glyph, size: 24, color: on ? _gold2 : _mute),
                   ),
-                  const SizedBox(width: center - 2),
-                  Expanded(
-                    child: Row(children: <Widget>[
-                      item(Nx2Tab.shop, 'shop', Icons.storefront_rounded, 'فروشگاه', 'Shop'),
-                      item(Nx2Tab.rewards, 'rewards', Icons.card_giftcard_rounded, 'جایزه و پک', 'Rewards'),
-                      item(Nx2Tab.profile, 'profile', Icons.person_rounded, 'پروفایل', 'Profile'),
-                    ]),
+                  const SizedBox(height: 2),
+                  SizedBox(
+                    height: 14,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(context.tx(fa, en),
+                          maxLines: 1,
+                          style: TextStyle(fontSize: 10, color: on ? _gold2 : _mute, fontWeight: FontWeight.w500)),
+                    ),
                   ),
                 ]),
               ),
             ),
-          ]),
+          ),
         ),
-        Positioned(
-          bottom: bottom + 21,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: OracleTourTarget(
-              id: 'dock.games',
-              child: _Pressable(
-              onTap: () => nx2GoTab(context, Nx2Tab.games, current),
-              child: Semantics(
-                button: true,
-                label: context.tx('بازی‌ها', 'GAMES'),
-                child: SizedBox(
-                  width: center,
-                  height: center,
-                  child: Stack(alignment: Alignment.center, children: <Widget>[
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const RadialGradient(colors: <Color>[Color(0xFF7B3CFF), Color(0xFF1A0A4A)]),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(color: (gameOn ? Nx2.cyan : Nx2.magenta).withValues(alpha: 0.75), blurRadius: 24),
-                        ],
-                      ),
-                    ),
-                    Image.asset(Nx2Assets.framesRingGold,
-                        width: center, height: center, cacheWidth: 220, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-                    Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                      AnixNavIcon(icon: 'arcade', active: gameOn, size: 28),
-                      Text(context.tx('بازی', 'GAME'),
-                          style: const TextStyle(
-                              fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.7, color: Colors.white)),
-                    ]),
+      );
+    }
+
+    const double center = 72;
+    final bool gameOn = current == Nx2Tab.games;
+    return OracleTourTarget(
+      id: 'dock',
+      child: SizedBox(
+        height: 74 + bottom + 26,
+        child: Stack(clipBehavior: Clip.none, children: <Widget>[
+          Positioned(
+            left: 14,
+            right: 14,
+            bottom: bottom + 10,
+            height: 70,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(30),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: const Color(0x8C0E0E12),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: const Color(0x33D9B872)),
+                  ),
+                  child: Row(children: <Widget>[
+                    cell(
+                        id: 'dock.home',
+                        on: current == Nx2Tab.home,
+                        fa: 'خانه',
+                        en: 'Home',
+                        glyph: Icons.home_rounded,
+                        onTap: () => nx2GoTab(context, Nx2Tab.home, current)),
+                    cell(
+                        id: 'dock.social',
+                        on: current == Nx2Tab.social,
+                        fa: 'چت',
+                        en: 'Chat',
+                        icon: 'r3c3',
+                        glyph: Icons.chat_bubble_rounded,
+                        onTap: () => nx2GoTab(context, Nx2Tab.social, current)),
+                    const SizedBox(width: center),
+                    cell(
+                        id: 'dock.tournaments',
+                        on: current == Nx2Tab.tournaments,
+                        fa: 'تورنمنت',
+                        en: 'Cups',
+                        icon: 'r2c5',
+                        glyph: Icons.emoji_events_rounded,
+                        onTap: () => nx2GoTab(context, Nx2Tab.tournaments, current)),
+                    cell(
+                        id: 'dock.more',
+                        on: _moreOn,
+                        fa: 'بیشتر',
+                        en: 'More',
+                        icon: 'r4c1',
+                        glyph: Icons.apps_rounded,
+                        onTap: () => _more(context)),
                   ]),
                 ),
               ),
             ),
+          ),
+          Positioned(
+            bottom: bottom + 26,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: OracleTourTarget(
+                id: 'dock.games',
+                child: _Pressable(
+                  onTap: () => nx2GoTab(context, Nx2Tab.games, current),
+                  child: Semantics(
+                    button: true,
+                    label: context.tx('بازی‌ها', 'GAMES'),
+                    child: Container(
+                      width: center,
+                      height: center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const RadialGradient(
+                            center: Alignment(-0.3, -0.4),
+                            colors: <Color>[Color(0xFF2A2418), Color(0xFF0B0A08)]),
+                        border: Border.all(color: _gold, width: 1.4),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(color: _gold.withValues(alpha: gameOn ? 0.75 : 0.45), blurRadius: gameOn ? 26 : 18),
+                          const BoxShadow(color: Colors.black, blurRadius: 20, offset: Offset(0, 10)),
+                        ],
+                      ),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+                        Image.asset('assets/luxe/icons/r4c5.webp',
+                            width: 38,
+                            height: 38,
+                            cacheWidth: 120,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.sports_esports_rounded, color: _gold2)),
+                        Text(context.tx('بازی', 'GAME'),
+                            style: const TextStyle(
+                                fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: _gold2)),
+                      ]),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      ]),
-    ),
+        ]),
+      ),
     );
   }
 }

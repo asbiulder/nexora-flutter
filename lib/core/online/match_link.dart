@@ -400,19 +400,30 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
     debugPrint('ANIX desync at seq $seq: expected $expected got $actual');
   }
 
-  /// Report the final result (first report wins server-side; all phones computed the same state).
+  /// Report the final result. The server finalizes only when every player's report agrees (or the others are gone);
+  /// until then it answers `{ok: true, pending: true}` and this waits (re-reporting now and then) for the final row.
+  /// Conflicting reports end the match as 'disputed' (no rewards).
   Future<MatchEnd?> report(List<int> winners, List<int>? scores, {String? hash}) async {
+    final Map<String, dynamic> params = <String, dynamic>{
+      'p_match': matchId,
+      'p_winners': winners,
+      'p_scores': scores,
+      'p_hash': hash,
+      'p_reason': 'finished',
+    };
     try {
-      await _c.rpc('nx_finish_match', params: <String, dynamic>{
-        'p_match': matchId,
-        'p_winners': winners,
-        'p_scores': scores,
-        'p_hash': hash,
-        'p_reason': 'finished',
-      });
+      dynamic r = await _c.rpc('nx_finish_match', params: params);
+      for (int i = 0; i < 9 && !_disposed && r is Map && r['pending'] == true; i++) {
+        await Future<void>.delayed(const Duration(seconds: 5));
+        if (_disposed) break;
+        final Map<String, dynamic>? m =
+            await _c.from('nx_matches').select('status').eq('id', matchId).maybeSingle();
+        if (m != null && '${m['status']}' != 'playing') break;
+        if (i.isOdd) r = await _c.rpc('nx_finish_match', params: params);
+      }
       final Map<String, dynamic>? m =
           await _c.from('nx_matches').select('status, winner_seats, reason, scores').eq('id', matchId).maybeSingle();
-      if (m != null) {
+      if (m != null && '${m['status']}' != 'playing') {
         _status = '${m['status']}';
         _end = _endFrom(m);
       }

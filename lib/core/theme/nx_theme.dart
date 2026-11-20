@@ -66,16 +66,17 @@ class NxThemeColors extends ThemeExtension<NxThemeColors> {
   );
 
   /// NX2 cosmic neon skin (deep violet, neon cyan/magenta) — the app skin.
+  /// App skin: ANIX PRO Station Luxe (black / gold / champagne). Name kept for settings compatibility.
   static const neon = NxThemeColors(
-    accent: Color(0xFF35D6FF),
-    accentSecondary: Color(0xFFB04DFF),
-    background: Color(0xFF07031A),
-    backgroundMid: Color(0xFF140A3A),
-    surface: Color(0xE61A0C45),
-    surfaceRaised: Color(0xF0241158),
-    border: Color(0xFF7A45E6),
-    text: Color(0xFFF4F0FF),
-    muted: Color(0xFFBFB3E6),
+    accent: Color(0xFFD9B872),
+    accentSecondary: Color(0xFF8A6A2C),
+    background: Color(0xFF07080C),
+    backgroundMid: Color(0xFF12110D),
+    surface: Color(0xE6141310),
+    surfaceRaised: Color(0xF01C1A14),
+    border: Color(0xFF8A6A2C),
+    text: Color(0xFFF4EAD2),
+    muted: Color(0xFFB9AE95),
   );
 
   static const neonLight = NxThemeColors(

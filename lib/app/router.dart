@@ -20,6 +20,7 @@ import '../worlds/arcade/online/online_lobby_page.dart';
 import '../worlds/auth/auth_page.dart';
 import '../worlds/auth/signin_required_page.dart';
 import '../worlds/hub/hub_page.dart';
+import '../worlds/hub/luxe_station_page.dart';
 import '../worlds/intro/intro_video_page.dart';
 import '../worlds/nexora_exchange/exchange_page.dart';
 import '../worlds/nova_gallery/nova_gallery_page.dart';
@@ -104,6 +105,10 @@ GoRouter buildRouter(WidgetRef ref) {
       ),
       GoRoute(path: '/onboarding', pageBuilder: (context, state) => _fade(state, const OnboardingPage())),
       GoRoute(path: '/hub', pageBuilder: (context, state) => _fade(state, const HubPage())),
+      GoRoute(
+        path: '/station/:k',
+        pageBuilder: (context, state) => _warp(state, LuxeStationPage(k: state.pathParameters['k'] ?? '')),
+      ),
       GoRoute(path: '/rooms', pageBuilder: (context, state) => _warp(state, const RoomsPage())),
       GoRoute(path: '/room/:id', builder: (context, state) => TalkRoomPage(roomId: state.pathParameters['id'] ?? '')),
       GoRoute(path: '/social', pageBuilder: (context, state) => _warp(state, const SocialHubPage())),
