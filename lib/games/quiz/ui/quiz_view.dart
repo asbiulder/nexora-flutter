@@ -224,7 +224,8 @@ class _QuizViewState extends State<QuizView> with TickerProviderStateMixin {
     if (_engine.submit(player, choice, ms)) {
       if (_online) {
         _l.net!.send(
-            <String, dynamic>{'a': 'ans', 'r': round, 'c': choice, 'ms': ms});
+            // answers are keyed by round: order-independent, so a seq race re-posts instead of a full resync
+            <String, dynamic>{'a': 'ans', 'r': round, 'c': choice, 'ms': ms, kNetFloat: true});
       }
       _haptic();
       _afterAnswer();
@@ -249,7 +250,8 @@ class _QuizViewState extends State<QuizView> with TickerProviderStateMixin {
           'a': 'ans',
           'r': _engine.roundIndex,
           'c': -1,
-          'ms': QuizEngine.timeLimitMs
+          'ms': QuizEngine.timeLimitMs,
+          kNetFloat: true
         });
       }
       _afterAnswer();

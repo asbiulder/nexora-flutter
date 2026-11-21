@@ -798,10 +798,6 @@ class _BermudaViewState extends State<BermudaView>
     setState(() {});
   }
 
-  /// Seconds this phone waits, after sending its own setup, for the other side's (v5: both phones open the formation
-  /// screen on the same logged team pick and it times out after 15 s; this covers a phone that left or never opened
-  /// the picks). Was 75 with the v4 45 s team screen.
-  static const int kOnlineSetupWaitSeconds = 25;
 
   /// ANIX PRO watchdog: after this many seconds without a match the waiting screen offers to leave.
   static const int kOnlineStallSeconds = 75;
@@ -815,7 +811,7 @@ class _BermudaViewState extends State<BermudaView>
   Timer? _stallTimer;
   int _waitedSeconds = 0;
 
-  /// The pre-match watchdog (every phone, every seat): every [kOnlineSetupWaitSeconds] without a match it logs a
+  /// The pre-match watchdog (every phone, every seat): every 20 s (from [kOnlineFirstFillSeconds]) without a match it logs a
   /// default setup FOR each side (0 / 1) that still has none, so an absent or silent side can never hold the match
   /// on the pick screens. The first setup per side in the log wins on every phone, so this never desyncs.
   void _armSetupFallback() {
