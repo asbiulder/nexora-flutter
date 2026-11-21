@@ -98,12 +98,18 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
     } else {
       await _loadOpen();
     }
-    _poll = Timer.periodic(const Duration(seconds: 6), (_) {
+    _poll = Timer.periodic(const Duration(seconds: 4), (_) {
       if (_roomId != null) {
         unawaited(_refresh());
         // Heartbeat: quick match only pairs with players whose lobby is still open on their phone.
         if (_room?['status'] == 'lobby' && !_inMatch) {
-          unawaited(_c?.rpc('nx_lobby_ping', params: <String, dynamic>{'p_room': _roomId}).then((_) {}, onError: (Object _) {}));
+          if (_room?['quick'] == true) {
+            // ANIX PRO: keep matchmaking while waiting. Two players who tapped at the same moment each opened a
+            // lobby; re-calling nx_quick moves the newer one into the older lobby (and starts it), so they pair.
+            unawaited(_requeue());
+          } else {
+            unawaited(_c?.rpc('nx_lobby_ping', params: <String, dynamic>{'p_room': _roomId}).then((_) {}, onError: (Object _) {}));
+          }
         }
       } else {
         unawaited(_loadOpen());
@@ -114,6 +120,11 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
   @override
   void dispose() {
     _poll?.cancel();
+    // Leaving the screen while still waiting in a quick lobby: drop out of matchmaking at once (no ghost seat).
+    final String? rid = _roomId;
+    if (rid != null && !_inMatch && _room?['quick'] == true && _room?['status'] == 'lobby') {
+      unawaited(_c?.rpc('nx_quick_cancel', params: <String, dynamic>{'p_room': rid}).then((_) {}, onError: (Object _) {}));
+    }
     _code.dispose();
     final RealtimeChannel? ch = _ch;
     final SupabaseClient? c = _c;
@@ -185,6 +196,51 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
           .map((dynamic r) => Map<String, dynamic>.from(r as Map))
           .toList());
     } catch (_) {}
+  }
+
+  bool _requeueBusy = false;
+
+  /// Quick lobby heartbeat + re-match (see the poll in _boot).
+  Future<void> _requeue() async {
+    final SupabaseClient? c = _c;
+    if (c == null || _requeueBusy || _inMatch) return;
+    _requeueBusy = true;
+    try {
+      // Only the NEWER of two waiting lobbies moves (works with the old nx_quick too, which would otherwise let two
+      // waiting players swap into each other's lobby forever); the older one just keeps its heartbeat.
+      final String? mineAt = _room?['created_at'] as String?;
+      final List<dynamic> older = mineAt == null
+          ? const <dynamic>[]
+          : await c
+              .from('nx_rooms')
+              .select('id')
+              .eq('game', widget.gameId)
+              .eq('status', 'lobby')
+              .eq('quick', true)
+              .eq('is_private', false)
+              .eq('seats', _wantSeats)
+              .neq('id', _roomId ?? '')
+              .lt('created_at', mineAt)
+              .gte('updated_at', DateTime.now().toUtc().subtract(const Duration(seconds: 40)).toIso8601String())
+              .limit(1);
+      if (older.isEmpty) {
+        await c.rpc('nx_lobby_ping', params: <String, dynamic>{'p_room': _roomId});
+        return;
+      }
+      final dynamic r = await c.rpc('nx_quick', params: <String, dynamic>{'p_game': widget.gameId, 'p_seats': _wantSeats});
+      if (!mounted || r is! Map) return;
+      final String rid = '${r['room_id']}';
+      if (rid != _roomId && rid != 'null') {
+        await _enter(rid);
+      } else {
+        final String? mid = r['match_id'] as String?;
+        if (mid != null && !_inMatch && mid != _lastMatchSeen) unawaited(_openMatch(mid));
+      }
+    } catch (_) {
+      // never block the lobby on a failed heartbeat
+    } finally {
+      _requeueBusy = false;
+    }
   }
 
   Future<void> _quick() => _guard(() async {

@@ -662,13 +662,22 @@ class _BermudaViewState extends State<BermudaView>
           }
           if (_setups.containsKey(mySeat)) {
             stage = 'waiting';
-            _armSetupFallback();
           } else if (mySeat > 1) {
             // team games: seats 0 and 1 pick their side's team / formation; the others wait for them.
             stage = 'waiting';
           }
+          // ANIX PRO watchdog on every phone from the moment the log is replayed (picks included).
+          _armSetupFallback();
         }
       }
+      if (mounted) setState(() {});
+      return;
+    }
+    if (m.kind == 'ownSetup') {
+      // our own setup (or a fallback we logged for a side) is confirmed in the log at this point of the stream
+      final _Setup? s = _Setup.fromJson(m.data);
+      if (s != null && !_setups.containsKey(m.seat)) _setups[m.seat] = s;
+      _maybeStartOnline();
       if (mounted) setState(() {});
       return;
     }
@@ -771,11 +780,21 @@ class _BermudaViewState extends State<BermudaView>
   void _sendSetup() {
     final NetLink? net = launch.net;
     if (net == null) return;
-    _setups[mySeat] = _Setup(GemShop.instance.usableTeam(my.team), my.form, my.field, my.ball);
-    net.send(_setups[mySeat]!.toJson());
+    final _Setup mine = _Setup(GemShop.instance.usableTeam(my.team), my.form, my.field, my.ball);
+    // ANIX PRO: the setup counts only once it is in the server log (order-independent 'fl' move, re-posted after a
+    // seq race). A default setup logged FOR this side before it (fallback of another phone) wins on every phone, so
+    // this phone adopts the log instead of its local pick: both phones always start from the same setups.
     stage = 'waiting';
-    _maybeStartOnline();
     _armSetupFallback();
+    unawaited(net.send(<String, dynamic>{...mine.toJson(), kNetFloat: true}).then((bool ok) {
+      if (_disposed) return;
+      if (ok) {
+        _inbox?.add(NetMove(seq: -2, seat: mySeat, kind: 'ownSetup', data: mine.toJson()));
+      } else {
+        _setupSendFailed = true;
+        if (mounted) setState(() {});
+      }
+    }));
     setState(() {});
   }
 
@@ -784,16 +803,60 @@ class _BermudaViewState extends State<BermudaView>
   /// the picks). Was 75 with the v4 45 s team screen.
   static const int kOnlineSetupWaitSeconds = 25;
 
+  /// ANIX PRO watchdog: after this many seconds without a match the waiting screen offers to leave.
+  static const int kOnlineStallSeconds = 75;
+
+  /// Seconds from the end of the log replay (the picks open) before missing setups are filled in: the shared pick
+  /// time (team 15 s + grace 3 s + formation 15 s) plus a margin, so a slow but present opponent always gets to pick.
+  static const int kOnlineFirstFillSeconds = 45;
+
+  /// A send of this phone's setup was refused (offline / match over): the waiting screen shows retry / leave.
+  bool _setupSendFailed = false;
+  Timer? _stallTimer;
+  int _waitedSeconds = 0;
+
+  /// The pre-match watchdog (every phone, every seat): every [kOnlineSetupWaitSeconds] without a match it logs a
+  /// default setup FOR each side (0 / 1) that still has none, so an absent or silent side can never hold the match
+  /// on the pick screens. The first setup per side in the log wins on every phone, so this never desyncs.
   void _armSetupFallback() {
-    if (_setupFallback != null || mySeat > 1 || stage == 'match') return;
-    _setupFallback = Timer(const Duration(seconds: kOnlineSetupWaitSeconds), () {
-      final NetLink? net = launch.net;
-      final int opp = 1 - mySeat;
-      if (_disposed || net == null || stage == 'match' || _setups.containsKey(opp)) return;
-      final _Setup d = (_roomPrefs != null ? _prefSetup(opp) : null) ??
-          _Setup(opp == 0 ? 'club0' : 'club1', 0, my.field, my.ball);
-      net.send(<String, dynamic>{...d.toJson(), 'for': opp});
+    if (_stallTimer != null || stage == 'match') return;
+    _stallTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      if (_disposed || stage == 'match') {
+        t.cancel();
+        return;
+      }
+      _waitedSeconds++;
+      // seats 0 / 1 fill in after the shared pick time; seats 2+ (team games) a little later
+      final int first = kOnlineFirstFillSeconds + (mySeat > 1 ? 10 : 0);
+      if (_waitedSeconds >= first && (_waitedSeconds - first) % 20 == 0) _fillMissingSetups();
+      if (_waitedSeconds == kOnlineStallSeconds && mounted) setState(() {});
     });
+  }
+
+  void _fillMissingSetups() {
+    final NetLink? net = launch.net;
+    if (_disposed || net == null || stage == 'match') return;
+    for (final int side in <int>[0, 1]) {
+      if (_setups.containsKey(side)) continue;
+      // our own side: our real pick is in flight (or about to be); only fill the OTHER sides
+      if (side == mySeat) continue;
+      final _Setup d = (_roomPrefs != null ? _prefSetup(side) : null) ??
+          _Setup(side == 0 ? 'club0' : 'club1', 0, my.field, my.ball);
+      unawaited(net.send(<String, dynamic>{...d.toJson(), 'for': side, kNetFloat: true}).then((bool ok) {
+        if (ok && !_disposed) {
+          _inbox?.add(NetMove(seq: -2, seat: side, kind: 'ownSetup', data: d.toJson()));
+        }
+      }));
+    }
+  }
+
+  /// Shown on the waiting screen after [kOnlineStallSeconds] (or a refused send): never a dead end.
+  bool get _stalled => _setupSendFailed || _waitedSeconds >= kOnlineStallSeconds;
+
+  void _leaveStalled() {
+    final NetLink? net = launch.net;
+    if (net != null) unawaited(net.send(<String, dynamic>{'a': 'leave', 'seat': mySeat}, kind: 'forfeit'));
+    _report(forfeit: true);
   }
 
   /// v4: the online team / formation screens (seats 0 and 1, before their setup is logged).
@@ -820,7 +883,7 @@ class _BermudaViewState extends State<BermudaView>
         if (_disposed || n == null || _teamPicks.containsKey(mySeat) || _setups.containsKey(mySeat)) return;
         final String team = GemShop.instance.usableTeam(t);
         _teamPicks[mySeat] = team;
-        n.send(<String, dynamic>{'a': 'tpick', 'team': team});
+        n.send(<String, dynamic>{'a': 'tpick', 'team': team, kNetFloat: true});
         if (mounted) setState(() {});
       },
       players: <FsSidePlayer>[
@@ -976,6 +1039,7 @@ class _BermudaViewState extends State<BermudaView>
   void dispose() {
     _disposed = true;
     _setupFallback?.cancel();
+    _stallTimer?.cancel();
     unawaited(_liveSub?.cancel());
     WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
@@ -991,6 +1055,59 @@ class _BermudaViewState extends State<BermudaView>
     super.dispose();
   }
 
+  /// ANIX PRO: the pre-match screen is never a dead end. After [kOnlineStallSeconds] without a match (or a refused
+  /// send) it says so and offers to try again (re-logs any missing setup) or to leave.
+  Widget _stallBar() => Positioned(
+        left: 18,
+        right: 18,
+        bottom: 28 + MediaQuery.paddingOf(context).bottom,
+        child: Material(
+          key: const ValueKey<String>('online-stall'),
+          color: const Color(0xF0141210),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+              Text(
+                  _setupSendFailed
+                      ? 'ارسال انتخابت به سرور ناموفق بود.'
+                      : 'حریف هنوز آماده نشده یا اتصالش قطع است.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5)),
+              const SizedBox(height: 10),
+              Row(children: <Widget>[
+                Expanded(
+                  child: FilledButton(
+                    key: const ValueKey<String>('online-stall-retry'),
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: Colors.black),
+                    onPressed: () {
+                      setState(() {
+                        _waitedSeconds = 0;
+                        if (_setupSendFailed && !_setups.containsKey(mySeat)) {
+                          _setupSendFailed = false;
+                          _sendSetup();
+                        }
+                      });
+                      _fillMissingSetups();
+                    },
+                    child: const Text('تلاش دوباره'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    key: const ValueKey<String>('online-stall-leave'),
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+                    onPressed: _leaveStalled,
+                    child: const Text('خروج'),
+                  ),
+                ),
+              ]),
+            ]),
+          ),
+        ),
+      );
+
   // ------------------------------------------------------------------ build
   @override
   Widget build(BuildContext context) {
@@ -998,8 +1115,9 @@ class _BermudaViewState extends State<BermudaView>
       // v4: no menu soundtrack on the screen that only hands over to an auto-started match (offline intro), and
       // none during a match; it comes back on the setup screen after leaving a match.
       if (launch.soundOn && !_paused && _visible && !widget.autoStart) unawaited(audio.music(true));
-      if (_onlinePicking) return _onlinePick();
-      return _setupScreen(context);
+      final Widget pre = _onlinePicking ? _onlinePick() : _setupScreen(context);
+      if (!online || !_stalled) return pre;
+      return Stack(fit: StackFit.expand, children: <Widget>[pre, _stallBar()]);
     }
     final double dpr = math.min(MediaQuery.devicePixelRatioOf(context), 1.75);
     // Layout only: centre the pitch (goals included) in the space between the scoreboard and the
