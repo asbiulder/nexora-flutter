@@ -4,6 +4,7 @@
 // recording (2026-11-20, see the comments on each constant). Retune only from new measurements.
 // World = the field image's own pixel space scaled by FS (see geo()).
 import 'dart:math' as math;
+import 'dart:ui' show Offset;
 
 import 'bm_data.dart';
 
@@ -251,6 +252,10 @@ class BmBody {
   /// v6: render-only offset (world units) from the kickoff slot back to where the piece stood when the goal was
   /// scored; drawn as gx * BmEngine.glideK so the piece glides home (see kBmResetGlide).
   double gx = 0, gy = 0;
+  /// Render-only interpolation state (ANIX PRO): the position / sprite angle at the start of the last fixed physics
+  /// step. The painter draws `prev + (now - prev) * BmEngine.renderAlpha`, so motion is smooth between 240 Hz steps on
+  /// any frame rate. Never read by sim(), the bot, snapshots or the sync hash.
+  double px = double.nan, py = double.nan, pang = 0;
   BmGoal? gout;
   final List<BmTrailPt> tr = <BmTrailPt>[];
 }
@@ -438,6 +443,36 @@ class BmEngine {
     if (glide <= 0) return 0;
     final double u = _mn(1, glide / kBmResetGlide);
     return u * u * (3 - 2 * u);
+  }
+
+  // ---------------------------------------------------------------- render interpolation (visual only)
+  /// Fraction 0..1 of the next fixed step already accumulated: how far the painter blends from each body's previous
+  /// step position to its current one. Pure read of the accumulator; sim() never depends on it.
+  double get renderAlpha => (acc / STEP).clamp(0.0, 1.0).toDouble();
+
+  void _snapPrev() {
+    for (final BmBody b in bodies) {
+      b.px = b.x;
+      b.py = b.y;
+      b.pang = b.ang;
+    }
+  }
+
+  /// Interpolated draw position of [b] (world units). A body that jumped further than a fast step could move it
+  /// (kickoff reset, formation change, snapshot) is drawn where it is, never smeared across the jump.
+  Offset renderPos(BmBody b) {
+    if (b.px.isNaN) return Offset(b.x, b.y);
+    final double dx = b.x - b.px, dy = b.y - b.py;
+    if (dx * dx + dy * dy > b.r * b.r * 4) return Offset(b.x, b.y);
+    final double a = renderAlpha;
+    return Offset(b.px + dx * a, b.py + dy * a);
+  }
+
+  /// Interpolated sprite angle of [b] (render-only spin).
+  double renderAng(BmBody b) {
+    final double d = b.ang - b.pang;
+    if (d.abs() > 1.5) return b.ang;
+    return b.pang + d * renderAlpha;
   }
 
   void reset(int k, {bool glideIn = false}) {
@@ -1422,6 +1457,7 @@ class BmEngine {
       int n = 0;
       if (phase != 'over') {
         while (acc >= STEP && n++ < 14) {
+          _snapPrev();
           sim(STEP);
           acc -= STEP;
         }

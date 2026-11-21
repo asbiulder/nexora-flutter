@@ -136,6 +136,94 @@ void bmPaintTurnRing(Canvas c, Offset o, double r, bool mine) {
     ..color = hi.withValues(alpha: .7));
 }
 
+// ---------------------------------------------------------------- 3D pieces (ANIX PRO, render only)
+/// Height of a puck's visible side wall in disc radii. The top face stays on the collider; the wall hangs below it,
+/// as if seen from a camera slightly in front of the table. Pieces never lift, land or shake.
+const double kBmPuckWall = .15;
+
+/// Soft contact shadow under a piece that sits on the felt: a tight dark core at the rim and a wider ambient
+/// falloff, both at a fixed small offset away from the top-left light.
+void bmPaintContactShadow(Canvas c, Offset o, double r, bool ball) {
+  final Offset core = o + Offset(r * .10, r * (ball ? .22 : .26));
+  final double w = r * (ball ? 1.02 : 1.12);
+  c.drawOval(
+      Rect.fromCenter(center: core, width: w * 2, height: w * 1.86),
+      Paint()
+        ..shader = ui.Gradient.radial(core, w, <Color>[_rgba(0, 0, 0, .58), _rgba(0, 0, 0, .42), _rgba(0, 0, 0, 0)],
+            <double>[0, .72, 1]));
+  final Offset amb = o + Offset(r * .22, r * .42);
+  final double aw = r * 1.55;
+  c.drawCircle(
+      amb,
+      aw,
+      Paint()
+        ..shader = ui.Gradient.radial(amb, aw, <Color>[_rgba(0, 0, 0, .22), _rgba(0, 0, 0, 0)], <double>[.35, 1]));
+}
+
+final Map<double, Path> _wallPaths = <double, Path>{};
+
+/// The crescent of the side wall (wall height [h] below a face of radius [r]), cached per size.
+Path _puckWallPath(double r, double h) => _wallPaths.putIfAbsent(r * 1000 + h, () {
+      final Path cyl = Path()
+        ..addOval(Rect.fromCircle(center: Offset(0, h), radius: r))
+        ..addRect(Rect.fromLTRB(-r, 0, r, h));
+      return Path.combine(PathOperation.difference, cyl, Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r)));
+    });
+
+/// Side lighting on the wall: lit on the light side, falling to shadow on the far side, with a thin bright edge
+/// where the wall meets the felt.
+void bmPaintPuckWallLight(Canvas c, double r, double h) {
+  final Path p = _puckWallPath(r, h);
+  c.drawPath(
+      p,
+      Paint()
+        ..shader = ui.Gradient.linear(Offset(-r, 0), Offset(r, 0),
+            <Color>[_rgba(255, 255, 255, .20), _rgba(255, 255, 255, .02), _rgba(0, 0, 0, .38)], <double>[0, .45, 1]));
+  c.drawArc(Rect.fromCircle(center: Offset(0, h), radius: r - .6), .35, math.pi - .7, false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = r * .035
+        ..color = _rgba(0, 0, 0, .5));
+}
+
+/// Bevel ring and glossy rim on a puck's top face (unrotated: the light does not turn with the disc).
+void bmPaintPuckBevel(Canvas c, double r) {
+  final Rect rc = Rect.fromCircle(center: Offset.zero, radius: r * .955);
+  c.drawCircle(
+      Offset.zero,
+      r * .955,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = r * .09
+        ..shader = ui.Gradient.linear(Offset(-r * .7, -r * .7), Offset(r * .7, r * .7),
+            <Color>[_rgba(255, 255, 255, .55), _rgba(255, 255, 255, .08), _rgba(0, 0, 0, .42)], <double>[0, .5, 1]));
+  // glossy specular arc on the lit rim
+  c.drawArc(rc, math.pi * 1.06, math.pi * .42, false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = r * .05
+        ..color = _rgba(255, 255, 255, .78));
+  // soft sheen across the face
+  final Offset g = Offset(-r * .34, -r * .40);
+  c.drawCircle(
+      Offset.zero,
+      r * .9,
+      Paint()..shader = ui.Gradient.radial(g, r * .95, <Color>[_rgba(255, 255, 255, .16), _rgba(255, 255, 255, 0)]));
+}
+
+/// Ball shading: darker toward the far rim and a small specular highlight (fixed top-left light).
+void bmPaintBallGloss(Canvas c, Offset o, double r) {
+  c.drawCircle(
+      o,
+      r,
+      Paint()
+        ..shader = ui.Gradient.radial(o + Offset(-r * .3, -r * .35), r * 1.35,
+            <Color>[_rgba(0, 0, 0, 0), _rgba(0, 0, 0, 0), _rgba(0, 0, 0, .34)], <double>[0, .55, 1]));
+  final Offset h = o + Offset(-r * .36, -r * .42);
+  c.drawCircle(h, r * .34, Paint()..shader = ui.Gradient.radial(h, r * .34, <Color>[_rgba(255, 255, 255, .72), _rgba(255, 255, 255, 0)]));
+}
+
 class BmPainter extends CustomPainter {
   BmPainter(this.e, this.im, this.view, this.now, this.dpr, this.fancy, {required Listenable repaint, this.debugColliders = false})
       : super(repaint: repaint);
@@ -158,26 +246,22 @@ class BmPainter extends CustomPainter {
     if (e.bodies.isEmpty) return;
     final double t = now();
     final double s = view.s;
-    final math.Random r = e.rnd;
-    final double cs = e.cam * e.cam * 9, cx = fancy ? (r.nextDouble() - .5) * cs : 0, cy = fancy ? (r.nextDouble() - .5) * cs : 0;
+    // ANIX PRO: no camera shake (owner request) and never a draw from the simulation RNG here: painting must not
+    // consume e.rnd, or the bot / online stream would depend on the frame rate.
     canvas.save();
-    canvas.translate(view.ox + cx * s, view.oy + cy * s);
+    canvas.translate(view.ox, view.oy);
     canvas.scale(s);
     // Reference motion marks: a grey tapered streak behind the rolling ball, a blue water ribbon behind each
     // sliding disc (both under the pieces).
     _drawTrail(canvas, t);
     _discTrails(canvas, t);
-    // soft shadows (SPR.shadow)
-    for (final BmBody b in e.bodies) {
-      final double visualRadius = b.r;
-      final double w = visualRadius * 2.6;
-      final Offset c = Offset(b.x + 5, b.y + 11);
-      canvas.drawCircle(
-          c,
-          w / 2,
-          Paint()
-            ..shader = ui.Gradient.radial(c, w / 2, <Color>[_rgba(0, 0, 0, .6), _rgba(0, 0, 0, .6), _rgba(0, 0, 0, 0)],
-                <double>[0, .18, 1]));
+    // Soft contact shadows, drawn where the piece is DRAWN (interpolated + post-goal glide), so nothing dark is left
+    // on the kickoff slots while the pieces glide home after a goal. Pieces never leave the ground: fixed offset.
+    final bool over0 = e.phase == 'over';
+    if (!over0) {
+      for (final BmBody b in e.bodies) {
+        bmPaintContactShadow(canvas, drawPos(b), b.r, b == e.ball);
+      }
     }
     // Pull circle of the aim (translucent, under the pieces like the reference).
     _aimUnder(canvas);
@@ -185,12 +269,12 @@ class BmPainter extends CustomPainter {
     if (bmRingVisible(e) && e.phase != 'over') {
       for (final BmBody b in e.bodies) {
         if (b != e.ball && b.team == e.turn) {
-          bmPaintTurnRing(canvas, Offset(b.x + b.gx * e.glideK, b.y + b.gy * e.glideK), b.r, bmRingMine(e));
+          bmPaintTurnRing(canvas, drawPos(b), b.r, bmRingMine(e));
         }
       }
     }
     // v6 (reference): at the final whistle the pieces leave the pitch (the score table follows).
-    final bool over = e.phase == 'over';
+    final bool over = over0;
     for (final BmBody b in e.bodies) {
       if (b != e.ball && !over) _sprite(canvas, b, t);
     }
@@ -292,16 +376,15 @@ class BmPainter extends CustomPainter {
     final Rect dst = Rect.fromLTWH(-half, -half, half * 2, half * 2);
     canvas.save();
     // v6: post-goal glide back to the kickoff slots (render only, BmEngine.glideK).
-    final double gk = e.glideK;
-    final double bx = b.x + b.gx * gk, by = b.y + b.gy * gk;
+    final Offset dp = drawPos(b);
+    final double bx = dp.dx, by = dp.dy;
     final double drawY = by;
+    final double ang = e.renderAng(b);
     if (isBall) {
-      final double sv = math.sqrt(b.vx * b.vx + b.vy * b.vy), fast = math.min(1.0, sv / (1700 * K));
+      final double sv = math.sqrt(b.vx * b.vx + b.vy * b.vy);
       final BmBallRenderer? br = im.ballR;
       if (br != null && br.ready) br.update(b.R, b.rv);
-      final double so = b.r * (.55 + .25 * fast);
-      canvas.drawOval(Rect.fromCenter(center: Offset(bx + so * .35, by + so), width: b.r * .86 * 2, height: b.r * .34 * 2),
-          Paint()..color = _rgba(8, 14, 24, .42 * .8));
+      // (contact shadow: bmPaintContactShadow, drawn with every piece's shadow before the sprites)
       // The reference ball stays round while it rolls: no speed stretch, only the 3D roll below.
       canvas.translate(bx, by);
       final ui.Image? sheet = im.ballSheet;
@@ -320,17 +403,17 @@ class BmPainter extends CustomPainter {
       } else if (sheet != null && im.ballFrames > 0) {
         // distance-driven roll (one frame per ~0.45 radius) + idle spin at a quarter of the GIF speed
         if (!im.animX.isNaN) {
-          final double dx = b.x - im.animX, dy = b.y - im.animY;
+          final double dx = bx - im.animX, dy = by - im.animY;
           im.animPhase += math.sqrt(dx * dx + dy * dy) / (b.r * .45);
         }
         if (im.animT > 0) im.animPhase += (t - im.animT).clamp(0, 100) / (im.ballFrameMs * 4);
-        im.animX = b.x;
-        im.animY = b.y;
+        im.animX = bx;
+        im.animY = by;
         im.animT = t;
         final int fi = im.animPhase.floor() % im.ballFrames;
         final double fw = sheet.width / im.ballFrames;
         // v5: the ball's own spin (b.ang, from glancing hits / walls) turns the sprite on top of the roll direction.
-        canvas.rotate((sv > 40 ? math.atan2(b.vy, b.vx) + math.pi / 2 : 0) + b.ang);
+        canvas.rotate((sv > 40 ? math.atan2(b.vy, b.vx) + math.pi / 2 : 0) + ang);
         canvas.drawImageRect(sheet, Rect.fromLTWH(fi * fw, 0, fw, sheet.height.toDouble()), dst,
             Paint()..filterQuality = FilterQuality.medium);
       } else if (rendered != null) {
@@ -338,40 +421,56 @@ class BmPainter extends CustomPainter {
         canvas.drawImageRect(rendered, Rect.fromLTWH(0, 0, rendered.width.toDouble(), rendered.height.toDouble()),
             Rect.fromCircle(center: Offset.zero, radius: b.r), Paint()..filterQuality = FilterQuality.medium);
       } else {
-        canvas.rotate(b.ang);
+        canvas.rotate(ang);
         canvas.drawImageRect(sp, src, Rect.fromCircle(center: Offset.zero, radius: b.r), Paint()..filterQuality = FilterQuality.medium);
       }
       canvas.restore();
+      // Sphere shading + a fixed specular highlight (light from the top left), drawn unrotated over the art.
+      bmPaintBallGloss(canvas, Offset(bx, by), b.r);
       return;
     }
     // No idle bobbing: the sprite stays exactly on its collider.
     // v5 (owner request 2026-11-20): the disc turns with its spin (b.ang, picked up from glancing hits and rails), so
     // a struck disc visibly rotates; a small rim notch keeps the turn visible on a crest that looks the same rotated.
     canvas.translate(bx, drawY);
+    // 3D puck (ANIX PRO, render only, the piece never lifts): a bevelled side wall below the top face, the top face
+    // (the collider, exactly where it is drawn), a lit bevel ring and a glossy rim highlight from a fixed top-left
+    // light, then the small white notch that turns with the disc's spin.
     final Paint dark = Paint()
       ..filterQuality = FilterQuality.medium
-      ..colorFilter = const ColorFilter.mode(Color.fromRGBO(6, 8, 24, .66), BlendMode.srcATop);
-    // Thin coin edge (3 px-ish) so the top face - the collider - stays where it is drawn.
-    for (int k = 3; k >= 1; k--) {
+      ..colorFilter = const ColorFilter.mode(Color.fromRGBO(6, 8, 18, .72), BlendMode.srcATop);
+    final double wall = renderRadius * kBmPuckWall;
+    for (int k = 5; k >= 1; k--) {
       canvas.save();
-      canvas.translate(0, renderRadius * .03 * k);
-      canvas.rotate(b.ang);
+      canvas.translate(0, wall * k / 5);
+      canvas.rotate(ang);
       canvas.drawImageRect(sp, src, dst, dark);
       canvas.restore();
     }
-    canvas.rotate(b.ang);
+    bmPaintPuckWallLight(canvas, renderRadius, wall);
+    canvas.save();
+    canvas.rotate(ang);
     canvas.drawImageRect(sp, src, dst, Paint()..filterQuality = FilterQuality.medium);
     canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: renderRadius * .86),
-        -math.pi / 2 - .2,
-        .4,
+        -math.pi / 2 - .16,
+        .32,
         false,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
-          ..strokeWidth = renderRadius * .1
-          ..color = const Color(0xD9FFFFFF));
+          ..strokeWidth = renderRadius * .08
+          ..color = const Color(0xBFFFFFFF));
     canvas.restore();
+    bmPaintPuckBevel(canvas, renderRadius);
+    canvas.restore();
+  }
+
+  /// Where [b] is drawn: interpolated between fixed physics steps, plus the post-goal glide home.
+  Offset drawPos(BmBody b) {
+    final Offset p = e.renderPos(b);
+    final double gk = e.glideK;
+    return Offset(p.dx + b.gx * gk, p.dy + b.gy * gk);
   }
 
   // ------------------------------------------------------------ debug collider overlay
@@ -464,7 +563,7 @@ class BmPainter extends CustomPainter {
       al.add(q.a.clamp(0.0, 1.0).toDouble());
     }
     if (pts.isEmpty) return;
-    final Offset head = Offset(bl.x, bl.y);
+    final Offset head = e.renderPos(bl);
     if ((head - pts.last).distance < bl.r * 3) {
       pts.add(head);
       al.add(al.last);
@@ -490,7 +589,7 @@ class BmPainter extends CustomPainter {
         final Offset o = Offset(q.x, q.y);
         if (raw.isEmpty || (o - raw.last).distance >= 2) raw.add(o);
       }
-      final Offset head = Offset(b.x, b.y);
+      final Offset head = e.renderPos(b);
       if ((head - raw.last).distance >= 2) raw.add(head);
       // keep the newest kBmDiscTrailLen * r of path
       final double maxLen = b.r * kBmDiscTrailLen;
