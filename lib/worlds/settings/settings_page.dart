@@ -98,6 +98,8 @@ class SettingsPage extends ConsumerWidget {
                 value: s.appearanceMode == NxAppearanceMode.light,
                 onChanged: (v) => s.appearanceMode =
                     v ? NxAppearanceMode.light : NxAppearanceMode.dark,
+                // Testing hook: the row's title text alone is what a test taps, and a title tap
+                // must toggle the switch exactly like the switch itself.
                 title: Text(context.tx('نمایش روشن', 'Light appearance')),
               ),
               Text(context.tx('کیفیت گرافیک', 'Graphics quality'),

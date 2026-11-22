@@ -227,9 +227,9 @@ class NxPageShell extends StatelessWidget {
       ),
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: bottom,
-      body: backdrop
-          ? NxBrandBackground(scene: scene, child: content)
-          : content,
+      // NxBrandBackground paints the art as a Stack and appends the child last, so the page
+      // body is always above the art with a single image decode per screen.
+      body: backdrop ? NxBrandBackground(scene: scene, child: content) : content,
     );
   }
 }
