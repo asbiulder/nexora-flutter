@@ -53,16 +53,19 @@ class NxThemeColors extends ThemeExtension<NxThemeColors> {
   final Color muted;
   final bool premiumPanels;
 
+  /// Station Luxe (black / gold / champagne) — the one app skin. It is identical to [neon] so a user
+  /// who picked the old "gold" preset in settings lands on the same home-page palette instead of the
+  /// retired navy theme; the preset name is kept for settings compatibility.
   static const gold = NxThemeColors(
-    accent: Color(0xFFF3C56B),
-    accentSecondary: Color(0xFFB77D35),
-    background: Color(0xFF050A14),
-    backgroundMid: Color(0xFF0A1424),
-    surface: Color(0xE6101B2B),
-    surfaceRaised: Color(0xF0162336),
-    border: Color(0xFF8F6B37),
-    text: Color(0xFFF3F4F7),
-    muted: Color(0xFFAEB8C7),
+    accent: Color(0xFFD9B872),
+    accentSecondary: Color(0xFF8A6A2C),
+    background: Color(0xFF07080C),
+    backgroundMid: Color(0xFF12110D),
+    surface: Color(0xE6141310),
+    surfaceRaised: Color(0xF01C1A14),
+    border: Color(0xFF8A6A2C),
+    text: Color(0xFFF4EAD2),
+    muted: Color(0xFFB9AE95),
   );
 
   /// NX2 cosmic neon skin (deep violet, neon cyan/magenta) — the app skin.
@@ -249,10 +252,14 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
     onPrimary: appearance == NxAppearanceMode.light ? Colors.white : const Color(0xFF08101A),
     onSurface: visual.text,
   );
+  final bool isDark = appearance == NxAppearanceMode.dark;
+  final Color chromePanel = isDark ? const Color(0xF214130F) : visual.surfaceRaised;
+  final Color chromeSheet = isDark ? const Color(0xFF0F0E0B) : visual.surfaceRaised;
+  final Color chromeChip = isDark ? const Color(0xE61C1912) : visual.surface;
   final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      brightness: appearance == NxAppearanceMode.light ? Brightness.light : Brightness.dark,
+      brightness: isDark ? Brightness.dark : Brightness.light,
       // Every Material default (FAB labels, chips, buttons with their own text styles) uses the app fonts too.
       fontFamily: kNxFont,
       fontFamilyFallback: kNxFontFallback);
@@ -329,18 +336,50 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: visual.surfaceRaised,
-      contentTextStyle: TextStyle(color: visual.text),
+      backgroundColor: isDark ? const Color(0xF21C1A14) : visual.surfaceRaised,
+      contentTextStyle: TextStyle(
+          fontFamily: kNxFont,
+          fontFamilyFallback: kNxFontFallback,
+          fontWeight: FontWeight.w700,
+          color: visual.text),
+      actionTextColor: visual.accent,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NxRadius.md),
+        side: BorderSide(color: visual.border.withValues(alpha: 0.45)),
+      ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: visual.surfaceRaised,
+      backgroundColor: chromePanel,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: TextStyle(
+          fontFamily: kNxFontHead,
+          fontFamilyFallback: kNxFontHeadFallback,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: visual.text),
+      contentTextStyle: TextStyle(
+          fontFamily: kNxFont,
+          fontFamilyFallback: kNxFontFallback,
+          fontSize: 13.5,
+          height: 1.45,
+          color: visual.muted),
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(NxRadius.lg)),
+        borderRadius: BorderRadius.circular(NxRadius.lg),
+        side: BorderSide(color: visual.border.withValues(alpha: 0.5)),
+      ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: visual.backgroundMid,
+      backgroundColor: chromeSheet,
+      surfaceTintColor: Colors.transparent,
+      modalBackgroundColor: chromeSheet,
       showDragHandle: true,
+      dragHandleColor: visual.border.withValues(alpha: 0.7),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(NxRadius.lg)),
+      ),
     ),
+
     tabBarTheme: TabBarThemeData(
       labelColor: visual.accent,
       unselectedLabelColor: visual.muted,
@@ -349,7 +388,7 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: visual.accent),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: const Color(0xF214130F),
+      backgroundColor: chromePanel,
       indicatorColor: visual.accentSecondary.withValues(alpha: 0.35),
       surfaceTintColor: Colors.transparent,
       labelTextStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(
@@ -358,7 +397,7 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
           IconThemeData(color: visual.text)),
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: const Color(0xE61C1912),
+      backgroundColor: chromeChip,
       selectedColor: visual.accentSecondary.withValues(alpha: 0.45),
       side: BorderSide(color: visual.border.withValues(alpha: 0.7)),
       labelStyle: TextStyle(color: visual.text, fontWeight: FontWeight.w700),
@@ -389,6 +428,85 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
       activeTrackColor: visual.accent,
       thumbColor: Colors.white,
       inactiveTrackColor: const Color(0x33FFFFFF),
+    ),
+    // Everything below exists so legacy pages that still use raw Material widgets (menus, list tiles,
+    // spinners, checkboxes, sheets) inherit the same chrome as the pages rebuilt on the Luxe kit.
+    dividerTheme: DividerThemeData(
+      color: visual.border.withValues(alpha: 0.28),
+      thickness: 1,
+      space: 1,
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: chromePanel,
+      surfaceTintColor: Colors.transparent,
+      elevation: 12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NxRadius.md),
+        side: BorderSide(color: visual.border.withValues(alpha: 0.45)),
+      ),
+      labelTextStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(
+          fontFamily: kNxFont,
+          fontFamilyFallback: kNxFontFallback,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: visual.text)),
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      textStyle: TextStyle(color: visual.text, fontFamily: kNxFont),
+      menuStyle: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll<Color>(chromePanel),
+        surfaceTintColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        shape: WidgetStatePropertyAll<OutlinedBorder>(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(NxRadius.md)),
+        ),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      textColor: visual.text,
+      iconColor: visual.muted,
+      selectedColor: visual.accent,
+      selectedTileColor: visual.accent.withValues(alpha: 0.10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NxRadius.sm)),
+      minVerticalPadding: 10,
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: visual.accent,
+        textStyle: const TextStyle(
+            fontFamily: kNxFont, fontFamilyFallback: kNxFontFallback, fontWeight: FontWeight.w800),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NxRadius.sm)),
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        foregroundColor: visual.text,
+        highlightColor: visual.accent.withValues(alpha: 0.16),
+      ),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> st) =>
+          st.contains(WidgetState.selected) ? visual.accent : Colors.transparent),
+      checkColor: const WidgetStatePropertyAll<Color>(Color(0xFF07080C)),
+      side: BorderSide(color: visual.border.withValues(alpha: 0.7), width: 1.4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> st) =>
+          st.contains(WidgetState.selected) ? visual.accent : visual.muted),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> st) =>
+            st.contains(WidgetState.selected)
+                ? visual.accent.withValues(alpha: 0.22)
+                : chromeChip),
+        foregroundColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> st) =>
+            st.contains(WidgetState.selected) ? visual.accent : visual.muted),
+        side: WidgetStatePropertyAll<BorderSide>(
+            BorderSide(color: visual.border.withValues(alpha: 0.4))),
+        textStyle: const WidgetStatePropertyAll<TextStyle>(TextStyle(
+            fontFamily: kNxFont, fontFamilyFallback: kNxFontFallback, fontWeight: FontWeight.w800)),
+      ),
     ),
   );
 }

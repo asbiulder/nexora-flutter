@@ -39,8 +39,11 @@ class GameCapacity {
   final int max;
   final RoomCategory category;
 
-  /// Every legal capacity the manager can pick.
-  List<int> get options => <int>[for (int n = min; n <= max; n++) n];
+  /// Every legal capacity the manager can pick (team games only offer even sizes).
+  List<int> get options => <int>[
+        for (int n = min; n <= max; n++)
+          if (category != RoomCategory.team || n.isEven) n,
+      ];
 
   int clamp(int n) => n < min ? min : (n > max ? max : n);
 
@@ -65,8 +68,8 @@ RoomCategory categoryOf(String gameId) => switch (gameId) {
 /// Bounds derived from the game registry (which the server mirrors in `nx_game_bounds`).
 GameCapacity capacityOf(String gameId) {
   final GameInfo? g = gameById(gameId);
-  final int min = g?.onlineMin ?? 2;
-  final int max = g?.onlineMax ?? 2;
+  final int min = g?.onlineMinPlayers ?? 2;
+  final int max = g?.onlineMaxPlayers ?? 2;
   return GameCapacity(min, max < min ? min : max, categoryOf(gameId));
 }
 

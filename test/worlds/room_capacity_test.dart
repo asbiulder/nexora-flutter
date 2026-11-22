@@ -8,6 +8,7 @@ void main() {
       'finger_soccer': (2, 6),
       'carrom': (2, 2),
       'billiards': (2, 2),
+      'pool8': (2, 2),
       'backgammon': (2, 2),
       'quiz': (2, 2),
       'ludo': (2, 4),
@@ -41,7 +42,8 @@ void main() {
       final GameCapacity fs = capacityOf('finger_soccer');
       expect(fs.clamp(0), 2);
       expect(fs.clamp(9), 6);
-      expect(fs.options, <int>[2, 3, 4, 5, 6]);
+      expect(fs.options, <int>[2, 4, 6]);
+      expect(capacityOf('ludo').options, <int>[2, 3, 4]);
     });
   });
 

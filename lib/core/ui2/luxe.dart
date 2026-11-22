@@ -956,7 +956,7 @@ Future<String?> showLuxePrompt(
       Row(children: <Widget>[
         Expanded(
           child: LuxeButton(
-            label: 'Cancel',
+            label: Localizations.localeOf(context).languageCode == 'fa' ? 'انصراف' : 'Cancel',
             kind: LuxeButtonKind.ghost,
             height: 46,
             onTap: () => Navigator.of(context).pop(),

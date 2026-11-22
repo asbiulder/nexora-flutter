@@ -598,7 +598,7 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
       decoration: BoxDecoration(
         color: Nx2.night.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Nx2.violet.withValues(alpha: 0.5)),
+        border: Border.all(color: Luxe.line),
       ),
       child: Column(children: <Widget>[
         Row(children: <Widget>[
@@ -732,8 +732,9 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
                       margin: const EdgeInsets.symmetric(vertical: 3),
                       padding: const EdgeInsets.fromLTRB(10, 6, 10, 7),
                       decoration: BoxDecoration(
-                        color: mine ? Nx2.violet.withValues(alpha: 0.55) : Nx2.night.withValues(alpha: 0.8),
+                        color: mine ? Nx2.goldDeep.withValues(alpha: 0.45) : Nx2.night.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: mine ? Luxe.gold.withValues(alpha: 0.35) : Luxe.line),
                       ),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
                         if (!mine)
@@ -859,54 +860,40 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
 
   /// Member card: big avatar, name, follower / following counts and a follow button (shared follows table).
   void _showMember(RoomMember m) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Nx2.night,
-      builder: (BuildContext ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-            NxUserAvatar(avatar: m.avatar, name: m.name, size: 84, ring: m.isManager ? Nx2.gold : Nx2.violet),
-            const SizedBox(height: 8),
-            Text(m.name, style: const TextStyle(color: Nx2.text, fontSize: 18, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            NovaFollowBar(uid: m.userId, self: m.userId == _me),
-            if (m.userId != _me)
-              TextButton.icon(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  final TextEditingController t = TextEditingController();
-                  final bool? ok = await showDialog<bool>(
-                    context: context,
-                    builder: (BuildContext d) => AlertDialog(
-                      title: Text(context.tx('گزارش ${m.name}', 'Report ${m.name}')),
-                      content: TextField(controller: t, maxLength: 300,
-                          decoration: InputDecoration(hintText: context.tx('چه اتفاقی افتاد؟', 'What happened?'))),
-                      actions: <Widget>[
-                        TextButton(onPressed: () => Navigator.pop(d, false), child: Text(context.tx('انصراف', 'Cancel'))),
-                        FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(context.tx('ارسال', 'Send'))),
-                      ],
-                    ),
-                  );
-                  if (ok == true && t.text.trim().length >= 2) {
-                    try {
-                      await ref.read(onlineProvider).rpc('nx_report_user', <String, dynamic>{
-                        'p_target': m.userId, 'p_kind': 'room', 'p_target_id': widget.roomId, 'p_reason': t.text.trim(),
-                      });
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(context.tx('گزارش برای مدیران فرستاده شد', 'Report sent to the admins'))));
-                      }
-                    } catch (_) {}
+    showLuxeSheet<void>(
+      context,
+      builder: (BuildContext ctx) => Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        NxUserAvatar(avatar: m.avatar, name: m.name, size: 84, ring: m.isManager ? Nx2.gold : Nx2.goldDeep),
+        const SizedBox(height: 8),
+        Text(m.name, style: const TextStyle(color: Luxe.ink, fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        NovaFollowBar(uid: m.userId, self: m.userId == _me),
+        if (m.userId != _me)
+          TextButton.icon(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final String? reason = await showLuxePrompt(
+                context,
+                title: context.tx('گزارش ${m.name}', 'Report ${m.name}'),
+                hint: context.tx('چه اتفاقی افتاد؟', 'What happened?'),
+                confirm: context.tx('ارسال', 'Send'),
+                maxLength: 300,
+              );
+              if (reason != null && reason.trim().length >= 2) {
+                try {
+                  await ref.read(onlineProvider).rpc('nx_report_user', <String, dynamic>{
+                    'p_target': m.userId, 'p_kind': 'room', 'p_target_id': widget.roomId, 'p_reason': reason.trim(),
+                  });
+                  if (mounted) {
+                    luxeToast(context, context.tx('گزارش برای مدیران فرستاده شد', 'Report sent to the admins'));
                   }
-                  t.dispose();
-                },
-                icon: const Icon(Icons.flag_rounded, color: Nx2.muted, size: 18),
-                label: Text(context.tx('گزارش تخلف', 'Report'), style: const TextStyle(color: Nx2.muted)),
-              ),
-          ]),
-        ),
-      ),
+                } catch (_) {}
+              }
+            },
+            icon: const Icon(Icons.flag_rounded, color: Luxe.mute, size: 18),
+            label: Text(context.tx('گزارش تخلف', 'Report'), style: const TextStyle(color: Luxe.mute)),
+          ),
+      ]),
     );
   }
 

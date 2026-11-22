@@ -8,10 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/online/online_service.dart';
+import '../../../core/online/room_capacity.dart';
 import '../../../core/online/room_voice.dart';
 import '../../../core/online/social_api.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/nx_theme.dart';
+import '../../../core/ui2/luxe.dart';
 import '../../../core/widgets/nx_widgets.dart';
 import '../../../games/game_registry.dart';
 import 'online_match_page.dart';
@@ -76,7 +78,13 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
     // Keep the default inside the game's online range (mafia defaults to 8, spy to 6 …): a default outside the
     // bounds would never match a lobby and quick match would create impossible rooms.
     final GameInfo? g = _game;
-    if (g != null) _wantSeats = _wantSeats.clamp(g.onlineMinPlayers, g.onlineMaxPlayers);
+    if (g != null) {
+      final GameCapacity bounds = capacityOf(g.id);
+      _wantSeats = bounds.clamp(_wantSeats);
+      if (bounds.category == RoomCategory.team && _wantSeats.isOdd) {
+        _wantSeats = bounds.clamp(_wantSeats + 1);
+      }
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_boot()));
   }
 
@@ -422,13 +430,43 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
       });
 
   Future<void> _setSeats(int n) => _guard(() async {
-        await _c!.rpc('nx_update_room', params: <String, dynamic>{
-          'p_room': _roomId,
-          'p_seats': n,
-          'p_settings': null
-        });
+        try {
+          await _c!.rpc('nx_room_set_capacity',
+              params: <String, dynamic>{'p_room': _roomId, 'p_capacity': n});
+        } catch (_) {
+          await _c!.rpc('nx_update_room', params: <String, dynamic>{
+            'p_room': _roomId,
+            'p_seats': n,
+            'p_settings': null
+          });
+        }
         await _refresh();
       });
+
+  Future<void> _setLocked(bool locked) => _guard(() async {
+        await _c!.rpc('nx_room_set_locked',
+            params: <String, dynamic>{'p_room': _roomId, 'p_locked': locked});
+        await _refresh();
+      });
+
+  Future<void> _kick(_Seat p) async {
+        final bool? ok = await showLuxeConfirm(
+          context,
+          title: context.tx(
+              'حذف ${p.name} از اتاق؟', 'Remove ${p.name} from the room?'),
+          message: context.tx(
+              'این بازیکن از اتاق خارج می‌شود و اگر ورود باز باشد می‌تواند دوباره برگردد.',
+              'They leave the lobby and can rejoin while admission is open.'),
+          confirm: context.tx('حذف', 'Remove'),
+          danger: true,
+        );
+        if (ok != true || !mounted) return;
+        await _guard(() async {
+          await _c!.rpc('nx_room_kick',
+              params: <String, dynamic>{'p_room': _roomId, 'p_user': p.userId});
+          await _refresh();
+        });
+      }
 
   Future<void> _toggleReady(bool v) => _guard(() async {
         await _c!.rpc('nx_set_ready',
@@ -560,16 +598,18 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
   }
 
   Widget _seatPicker(BuildContext context, GameInfo game, int value,
-      ValueChanged<int> onPick) {
-    // Online seat range of the game itself (finger soccer plays 1v1, 2v2 and 3v3 online, mafia 6–12,
-    // duels two). No per-game special cases here any more: the registry is the single source and the
-    // server mirrors it in nx_game_bounds.
-    final int min = game.onlineMinPlayers;
-    final int max = game.onlineMaxPlayers;
-    if (max <= min) return const SizedBox.shrink();
+      ValueChanged<int> onPick, {int minAllowed = 0}) {
+    // Online seat options of the game itself (finger soccer plays 1v1, 2v2 and 3v3 online, mafia 6–12,
+    // duels two). No per-game special cases here any more: capacityOf reads the registry and mirrors
+    // nx_game_bounds on the server.
+    final List<int> opts = capacityOf(game.id)
+        .options
+        .where((int n) => n >= minAllowed)
+        .toList();
+    if (opts.length <= 1) return const SizedBox.shrink();
     final NxThemeColors visual = NxThemeColors.of(context);
     return Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
-      for (int n = min; n <= max; n++)
+      for (final int n in opts)
         ChoiceChip(
           label: Text(context.tx('$n نفره', '$n players')),
           selected: value == n,
@@ -744,11 +784,15 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
     if (r == null) return const Center(child: CircularProgressIndicator());
     final NxThemeColors visual = NxThemeColors.of(context);
     final bool host = r['host'] == _me;
-    final int seats = (r['seats'] as num?)?.toInt() ?? 2;
+    final GameCapacity bounds = capacityOf(widget.gameId);
+    final int seats = bounds.clamp((r['seats'] as num?)?.toInt() ?? bounds.min);
     final bool quick = r['quick'] == true;
-    final int minSeats = widget.gameId == 'mafia' ? 6 : (game?.minPlayers ?? 2);
+    final bool locked = r['join_locked'] == true;
+    final int minSeats = bounds.min;
+    final bool evenOk =
+        bounds.category != RoomCategory.team || _seats.length.isEven;
     final bool canStart =
-        host && _seats.length >= minSeats && r['status'] == 'lobby';
+        host && _seats.length >= minSeats && evenOk && r['status'] == 'lobby';
     final _Seat? mine = _seats.where((_Seat s) => s.userId == _me).firstOrNull;
     final bool allReady = _seats.every((_Seat s) => s.ready || s.seat == 0);
     return ListView(
@@ -802,12 +846,23 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
                       const SizedBox(height: 7),
                       Text(
                         context.tx(
-                            '${_present.length} از ${_seats.length} بازیکن متصل · ${_seats.length}/$seats جایگاه',
-                            '${_present.length} of ${_seats.length} connected · ${_seats.length}/$seats seats'),
+                            '${_present.length} از ${_seats.length} بازیکن متصل · ${_seats.length}/$seats جایگاه${locked ? ' · ورود بسته' : ''}',
+                            '${_present.length} of ${_seats.length} connected · ${_seats.length}/$seats seats${locked ? ' · locked' : ''}'),
                         style: TextStyle(color: visual.muted, fontSize: 11),
                       ),
                     ]),
               ),
+              if (host && !quick && r['status'] == 'lobby')
+                IconButton(
+                  tooltip: locked
+                      ? context.tx('ورود بسته است — باز کن', 'Admission closed — open it')
+                      : context.tx('ورود آزاد است — ببند', 'Admission open — close it'),
+                  icon: Icon(
+                    locked ? Icons.lock_rounded : Icons.lock_open_rounded,
+                    color: locked ? NxColors.danger : visual.accent,
+                  ),
+                  onPressed: _busy ? null : () => unawaited(_setLocked(!locked)),
+                ),
               IconButton(
                 tooltip: context.tx('کپی', 'Copy'),
                 icon: const Icon(Icons.copy_rounded),
@@ -820,8 +875,9 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
             ]),
           ),
           const SizedBox(height: NxSpace.sm),
-          if (host && !quick && game != null)
-            _seatPicker(context, game, seats, (int n) => _setSeats(n)),
+          if (host && !quick && game != null && r['status'] == 'lobby')
+            _seatPicker(context, game, seats, (int n) => _setSeats(n),
+                minAllowed: _seats.length),
           const SizedBox(height: NxSpace.sm),
           for (int s = 0; s < seats; s++) _seatTile(context, s, r),
           const SizedBox(height: NxSpace.md),
@@ -844,10 +900,13 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
               label: Text(_seats.length < minSeats
                   ? context.tx('منتظر بازیکن‌ها (${_seats.length}/$minSeats)',
                       'Waiting for players (${_seats.length}/$minSeats)')
-                  : allReady
-                      ? context.tx('شروع بازی', 'Start match')
-                      : context.tx('شروع (همه آماده نیستند)',
-                          'Start (not everyone is ready)')),
+                  : !evenOk
+                      ? context.tx('بازی تیمی — تعداد زوج لازم است',
+                          'Team game — even player count needed')
+                      : allReady
+                          ? context.tx('شروع بازی', 'Start match')
+                          : context.tx('شروع (همه آماده نیستند)',
+                              'Start (not everyone is ready)')),
             )
           else if (mine != null)
             FilledButton.icon(
@@ -932,6 +991,19 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
                     ? Icons.check_circle_rounded
                     : Icons.hourglass_empty_rounded,
                 color: p.ready ? NxColors.success : NxColors.textDim),
+            if (r['host'] == _me &&
+                r['quick'] != true &&
+                r['status'] == 'lobby' &&
+                p.userId != _me) ...<Widget>[
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: context.tx('حذف از اتاق', 'Remove from room'),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.person_remove_rounded,
+                    size: 18, color: NxColors.danger),
+                onPressed: _busy ? null : () => unawaited(_kick(p)),
+              ),
+            ],
           ],
         ]),
       ),

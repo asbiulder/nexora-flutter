@@ -180,7 +180,7 @@ class GlassPanel extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        splashColor: Nx2.violet.withValues(alpha: 0.18),
+        splashColor: Nx2.gold.withValues(alpha: 0.18),
         highlightColor: Colors.transparent,
         child: panel,
       ),

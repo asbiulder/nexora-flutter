@@ -453,11 +453,11 @@ class _BarPainter extends CustomPainter {
     final Rect r = Offset.zero & size;
     final double c = size.height / 2;
     final Path track = Nx2FramePainter.chamfer(r, c);
-    canvas.drawPath(track, Paint()..color = const Color(0xCC0A0524));
+    canvas.drawPath(track, Paint()..color = const Color(0xCC11100C));
     canvas.drawPath(
         track,
         Paint()
-          ..color = Nx2.violet.withValues(alpha: 0.7)
+          ..color = Nx2.goldDeep.withValues(alpha: 0.7)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1);
     if (v <= 0) return;
@@ -470,7 +470,7 @@ class _BarPainter extends CustomPainter {
           ..shader = (gold
                   ? Nx2.goldGrad
                   : const LinearGradient(
-                      colors: <Color>[Nx2.violet, Nx2.cyan]))
+                      colors: <Color>[Nx2.goldDeep, Nx2.cyan]))
               .createShader(f));
     canvas.drawPath(
         fill,

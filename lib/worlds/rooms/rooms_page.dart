@@ -52,8 +52,9 @@ class _RoomsPageState extends ConsumerState<RoomsPage> {
   }
 
   Future<void> _load({bool silent = false}) async {
+    if (!mounted) return;
     final OnlineService o = ref.read(onlineProvider);
-    if (!silent && mounted) setState(() => _loading = true);
+    if (!silent) setState(() => _loading = true);
     try {
       if (!o.isOnline) await o.ensureSession();
       final SupabaseClient? c = o.games;
@@ -294,7 +295,7 @@ class _RoomsPageState extends ConsumerState<RoomsPage> {
   Widget _roomTile(Map<String, dynamic> r) {
     final GameInfo? g = gameById('${r['game']}');
     final int n = _count(r), seats = (r['seats'] as num?)?.toInt() ?? 2;
-    final Color accent = g == null ? Luxe.gold : Luxe.gold;
+    const Color accent = Luxe.gold;
     return LuxeListRow(
       onTap: () async {
         await context.push('/online/${r['game']}?room=${r['id']}');
