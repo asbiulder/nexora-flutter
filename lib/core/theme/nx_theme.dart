@@ -349,7 +349,7 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: visual.accent),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: const Color(0xF2140A3A),
+      backgroundColor: const Color(0xF214130F),
       indicatorColor: visual.accentSecondary.withValues(alpha: 0.35),
       surfaceTintColor: Colors.transparent,
       labelTextStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(
@@ -358,7 +358,7 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
           IconThemeData(color: visual.text)),
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: const Color(0xE61A0C45),
+      backgroundColor: const Color(0xE61C1912),
       selectedColor: visual.accentSecondary.withValues(alpha: 0.45),
       side: BorderSide(color: visual.border.withValues(alpha: 0.7)),
       labelStyle: TextStyle(color: visual.text, fontWeight: FontWeight.w700),

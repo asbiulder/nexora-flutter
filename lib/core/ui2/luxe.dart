@@ -399,3 +399,610 @@ class LuxeOption extends StatelessWidget {
         ),
       );
 }
+
+// =====================================================================================
+// SHARED COMPONENTS
+// Every secondary screen (rooms, lobbies, settings, tournaments, profiles, dialogs,
+// sheets, empty/loading states) is built from these, so the Station Luxe identity of
+// the home page carries through the whole app instead of each page inventing its own
+// buttons, panels and colours.
+// =====================================================================================
+
+/// Spacing / radius / motion scale of the Station Luxe system (8-pt based).
+class LuxeSpace {
+  LuxeSpace._();
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 14;
+  static const double lg = 20;
+  static const double xl = 28;
+}
+
+class LuxeRadius {
+  LuxeRadius._();
+  static const double sm = 12;
+  static const double md = 18;
+  static const double lg = 26;
+  static const double pill = 99;
+}
+
+/// Frosted gold-hairline card: the standard surface for content, list rows and tiles.
+class LuxeCard extends StatelessWidget {
+  const LuxeCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(LuxeSpace.md),
+    this.radius = LuxeRadius.lg,
+    this.onTap,
+    this.semantics,
+    this.glow,
+    this.tint,
+    this.borderColor,
+    this.blur = 12,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+  final VoidCallback? onTap;
+  final String? semantics;
+  final Color? glow;
+  final Color? tint;
+  final Color? borderColor;
+  final double blur;
+
+  @override
+  Widget build(BuildContext context) {
+    final BorderRadius r = BorderRadius.circular(radius);
+    final Widget panel = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: r,
+        border: Border.all(color: borderColor ?? (glow ?? Luxe.gold).withValues(alpha: 0.28)),
+        gradient: tint == null
+            ? const LinearGradient(
+                begin: Alignment(-0.6, -1),
+                end: Alignment(0.6, 1),
+                colors: <Color>[Color(0x14FFFFFF), Color(0x05FFFFFF)])
+            : LinearGradient(colors: <Color>[tint!.withValues(alpha: 0.18), const Color(0x0AFFFFFF)]),
+        boxShadow: <BoxShadow>[
+          BoxShadow(color: (glow ?? Luxe.gold).withValues(alpha: 0.10), blurRadius: 22, spreadRadius: -10),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: r,
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+    if (onTap == null) return panel;
+    return LuxePress(onTap: onTap, semantics: semantics, child: panel);
+  }
+}
+
+enum LuxeButtonKind {
+  /// Gold gradient, dark ink — one per screen.
+  primary,
+
+  /// Gold hairline on glass — secondary actions.
+  ghost,
+
+  /// Destructive action.
+  danger,
+}
+
+/// The app button: same geometry, typography and press animation everywhere.
+class LuxeButton extends StatelessWidget {
+  const LuxeButton({
+    super.key,
+    required this.label,
+    this.onTap,
+    this.icon,
+    this.kind = LuxeButtonKind.primary,
+    this.height = 52,
+    this.fontSize = 14,
+    this.loading = false,
+    this.expand = true,
+    this.uppercase = true,
+  });
+
+  final String label;
+  final VoidCallback? onTap;
+  final IconData? icon;
+  final LuxeButtonKind kind;
+  final double height;
+  final double fontSize;
+  final bool loading;
+  final bool expand;
+  final bool uppercase;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool enabled = onTap != null && !loading;
+    final Color fg = switch (kind) {
+      LuxeButtonKind.primary => const Color(0xFF14120C),
+      LuxeButtonKind.ghost => Luxe.ink,
+      LuxeButtonKind.danger => const Color(0xFFFFE9EC),
+    };
+    final Gradient? fill = switch (kind) {
+      LuxeButtonKind.primary => enabled
+          ? Luxe.goldGrad
+          : const LinearGradient(colors: <Color>[Color(0x4DF6E7BD), Color(0x33D9B872)]),
+      LuxeButtonKind.ghost => null,
+      LuxeButtonKind.danger => const LinearGradient(colors: <Color>[Color(0xFFB3313F), Color(0xFF7A1F2A)]),
+    };
+    final Border? border = switch (kind) {
+      LuxeButtonKind.primary => null,
+      LuxeButtonKind.ghost => Border.all(color: enabled ? Luxe.line : const Color(0x1AFFFFFF)),
+      LuxeButtonKind.danger => Border.all(color: const Color(0x66FF8A9A)),
+    };
+    final Widget content = loading
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF14120C)),
+          )
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (icon != null) ...<Widget>[
+                Icon(icon, size: fontSize + 6, color: fg),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  uppercase ? label.toUpperCase() : label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'ChakraPetch',
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: uppercase ? 1.1 : 0.2,
+                    color: fg,
+                  ),
+                ),
+              ),
+            ],
+          );
+    final Widget body = Container(
+      height: height,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        gradient: fill,
+        borderRadius: BorderRadius.circular(height / 2),
+        border: border,
+      ),
+      child: content,
+    );
+    final Widget sized = expand ? SizedBox(width: double.infinity, child: body) : body;
+    if (!enabled) return Opacity(opacity: 0.62, child: sized);
+    return LuxePress(onTap: loading ? null : onTap, semantics: label, child: sized);
+  }
+}
+
+/// Round glass icon button (back, close, share…).
+class LuxeIconButton extends StatelessWidget {
+  const LuxeIconButton({super.key, required this.icon, this.onTap, this.tooltip, this.size = 42, this.color});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+  final String? tooltip;
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget button = LuxePress(
+      onTap: onTap,
+      semantics: tooltip,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0x0FFFFFFF),
+            border: Border.all(color: Luxe.line),
+          ),
+          child: Icon(icon, size: size * 0.45, color: color ?? Luxe.ink),
+        ),
+      ),
+    );
+    if (tooltip == null) return button;
+    return Tooltip(message: tooltip!, child: button);
+  }
+}
+
+/// Small-caps section label, with an optional trailing action.
+class LuxeSection extends StatelessWidget {
+  const LuxeSection({super.key, required this.title, this.trailing, this.top = LuxeSpace.lg});
+
+  final String title;
+  final Widget? trailing;
+  final double top;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: EdgeInsets.only(top: top, bottom: LuxeSpace.sm),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                title.toUpperCase(),
+                style: const TextStyle(
+                  fontFamily: 'ChakraPetch',
+                  letterSpacing: 2.0,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                  color: Luxe.gold,
+                ),
+              ),
+            ),
+            if (trailing != null) trailing!,
+          ],
+        ),
+      );
+}
+
+/// Gold pill with an icon — counts, states, tags.
+class LuxeStat extends StatelessWidget {
+  const LuxeStat({super.key, required this.label, this.icon, this.color, this.onTap});
+
+  final String label;
+  final IconData? icon;
+  final Color? color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color c = color ?? Luxe.gold;
+    return LuxePress(
+      onTap: onTap,
+      semantics: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(LuxeRadius.pill),
+          color: c.withValues(alpha: 0.12),
+          border: Border.all(color: c.withValues(alpha: 0.42)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+          if (icon != null) ...<Widget>[Icon(icon, size: 13, color: c), const SizedBox(width: 5)],
+          Text(label,
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color.lerp(c, Luxe.ink, 0.45))),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Standard list row: avatar/icon, title, subtitle, trailing widget.
+class LuxeListRow extends StatelessWidget {
+  const LuxeListRow({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+    this.onTap,
+    this.selected = false,
+    this.tint,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool selected;
+  final Color? tint;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: LuxeSpace.sm),
+        child: LuxeCard(
+          radius: LuxeRadius.md,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          onTap: onTap,
+          semantics: title,
+          glow: selected ? (tint ?? Luxe.gold) : null,
+          borderColor: selected ? (tint ?? Luxe.gold).withValues(alpha: 0.7) : null,
+          child: Row(children: <Widget>[
+            if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Luxe.ink)),
+                if (subtitle != null && subtitle!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(subtitle!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11.5, color: Luxe.mute, height: 1.35)),
+                  ),
+              ]),
+            ),
+            if (trailing != null) ...<Widget>[const SizedBox(width: 10), trailing!],
+          ]),
+        ),
+      );
+}
+
+/// Hairline divider.
+class LuxeDivider extends StatelessWidget {
+  const LuxeDivider({super.key, this.vertical = LuxeSpace.md});
+  final double vertical;
+  @override
+  Widget build(BuildContext context) =>
+      Padding(padding: EdgeInsets.symmetric(vertical: vertical), child: const Divider(height: 1, color: Luxe.line));
+}
+
+/// Empty state used by lists, rooms, lobbies and record tabs.
+class LuxeEmpty extends StatelessWidget {
+  const LuxeEmpty({super.key, required this.title, this.message, this.icon = Icons.auto_awesome_outlined, this.action});
+
+  final String title;
+  final String? message;
+  final IconData icon;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => LuxeCard(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Luxe.line),
+              gradient: RadialGradient(colors: <Color>[Luxe.gold.withValues(alpha: 0.18), Colors.transparent]),
+            ),
+            child: Icon(icon, color: Luxe.gold, size: 24),
+          ),
+          const SizedBox(height: 12),
+          Text(title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Luxe.ink)),
+          if (message != null) ...<Widget>[
+            const SizedBox(height: 6),
+            Text(message!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, height: 1.5, color: Luxe.mute)),
+          ],
+          if (action != null) ...<Widget>[const SizedBox(height: 14), action!],
+        ]),
+      );
+}
+
+/// Gold loading state with a label, used instead of a bare spinner.
+class LuxeLoading extends StatelessWidget {
+  const LuxeLoading({super.key, this.label, this.height = 120});
+  final String? label;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: height,
+        child: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+            const SizedBox(
+              width: 26,
+              height: 26,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Luxe.gold),
+            ),
+            if (label != null) ...<Widget>[
+              const SizedBox(height: 10),
+              Text(label!, style: const TextStyle(fontSize: 12, color: Luxe.mute)),
+            ],
+          ]),
+        ),
+      );
+}
+
+/// Page header for secondary screens that do not use the NX2 top bar: back/close on the
+/// start edge, gold title, small-caps latin subtitle.
+class LuxeHeader extends StatelessWidget {
+  const LuxeHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.onBack,
+    this.trailing = const <Widget>[],
+    this.showBack = true,
+  });
+
+  final String title;
+  final String? subtitle;
+  final VoidCallback? onBack;
+  final List<Widget> trailing;
+  final bool showBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(LuxeSpace.md, LuxeSpace.sm, LuxeSpace.md, LuxeSpace.sm),
+      child: Row(children: <Widget>[
+        if (showBack) ...<Widget>[
+          LuxeIconButton(
+            icon: Directionality.of(context) == TextDirection.rtl ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded,
+            tooltip: 'Back',
+            onTap: onBack ?? () => Navigator.of(context).maybePop(),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: <Widget>[
+            Text(title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Luxe.ink, letterSpacing: 0.4)),
+            if (subtitle != null && subtitle!.isNotEmpty) Text(subtitle!, style: Luxe.latin),
+          ]),
+        ),
+        ...trailing,
+      ]),
+    );
+  }
+}
+
+/// Gold-bordered dialog: the single dialog chrome for confirmations, prompts and info.
+Future<T?> showLuxeDialog<T>(BuildContext context, {required Widget child}) {
+  return showDialog<T>(
+    context: context,
+    barrierColor: const Color(0x99030306),
+    builder: (BuildContext ctx) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(LuxeRadius.lg),
+            gradient: const LinearGradient(
+                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                colors: <Color>[Color(0xFF16140F), Color(0xFF0A0A0D)]),
+            border: Border.all(color: Luxe.line),
+            boxShadow: <BoxShadow>[BoxShadow(color: Luxe.gold.withValues(alpha: 0.12), blurRadius: 34, spreadRadius: -12)],
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+          child: child,
+        ),
+      ),
+    ),
+  );
+}
+
+/// Yes/no dialog in the app's own chrome. Returns true when confirmed.
+Future<bool?> showLuxeConfirm(
+  BuildContext context, {
+  required String title,
+  String? message,
+  String confirm = 'OK',
+  String? cancel,
+  bool danger = false,
+}) {
+  return showLuxeDialog<bool>(
+    context,
+    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+      Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: Luxe.ink)),
+      if (message != null) ...<Widget>[
+        const SizedBox(height: 8),
+        Text(message, style: const TextStyle(fontSize: 12.5, height: 1.55, color: Luxe.mute)),
+      ],
+      const SizedBox(height: 18),
+      Row(children: <Widget>[
+        Expanded(
+          child: LuxeButton(
+            label: cancel ?? (Localizations.localeOf(context).languageCode == 'fa' ? 'انصراف' : 'Cancel'),
+            kind: LuxeButtonKind.ghost,
+            height: 46,
+            expand: true,
+            onTap: () => Navigator.of(context).pop(false),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: LuxeButton(
+            label: confirm,
+            kind: danger ? LuxeButtonKind.danger : LuxeButtonKind.primary,
+            height: 46,
+            expand: true,
+            onTap: () => Navigator.of(context).pop(true),
+          ),
+        ),
+      ]),
+    ]),
+  );
+}
+
+/// Single-field prompt (room name, message, reason) in the app's own chrome.
+Future<String?> showLuxePrompt(
+  BuildContext context, {
+  required String title,
+  String? message,
+  String? hint,
+  String confirm = 'OK',
+  int maxLength = 60,
+  String? initial,
+}) {
+  final TextEditingController controller = TextEditingController(text: initial);
+  return showLuxeDialog<String>(
+    context,
+    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+      Text(title, style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: Luxe.ink)),
+      if (message != null) ...<Widget>[
+        const SizedBox(height: 6),
+        Text(message, style: const TextStyle(fontSize: 12, color: Luxe.mute)),
+      ],
+      const SizedBox(height: 12),
+      TextField(
+        controller: controller,
+        autofocus: true,
+        maxLength: maxLength,
+        style: const TextStyle(color: Luxe.ink, fontSize: 14),
+        decoration: InputDecoration(hintText: hint, counterStyle: const TextStyle(fontSize: 10, color: Luxe.mute)),
+        onSubmitted: (String v) => Navigator.of(context).pop(v.trim()),
+      ),
+      const SizedBox(height: 6),
+      Row(children: <Widget>[
+        Expanded(
+          child: LuxeButton(
+            label: 'Cancel',
+            kind: LuxeButtonKind.ghost,
+            height: 46,
+            onTap: () => Navigator.of(context).pop(),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: LuxeButton(
+            label: confirm,
+            height: 46,
+            onTap: () => Navigator.of(context).pop(controller.text.trim()),
+          ),
+        ),
+      ]),
+    ]),
+  );
+}
+
+/// Themed snackbar: gold hairline panel above the dock, never a Material default.
+void luxeToast(BuildContext context, String message, {bool error = false}) {
+  final ScaffoldMessengerState? m = ScaffoldMessenger.maybeOf(context);
+  if (m == null) return;
+  m
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: EdgeInsets.zero,
+      duration: const Duration(seconds: 3),
+      content: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(LuxeRadius.md),
+          gradient: const LinearGradient(colors: <Color>[Color(0xFF16140F), Color(0xFF0A0A0D)]),
+          border: Border.all(color: (error ? const Color(0xFFFF5A7A) : Luxe.gold).withValues(alpha: 0.5)),
+        ),
+        child: Row(children: <Widget>[
+          Icon(error ? Icons.error_outline_rounded : Icons.auto_awesome, size: 17, color: error ? const Color(0xFFFF8A9A) : Luxe.gold),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(message,
+                style: TextStyle(fontSize: 12.5, height: 1.35, color: error ? const Color(0xFFFFD9DF) : Luxe.ink)),
+          ),
+        ]),
+      ),
+    ));
+}

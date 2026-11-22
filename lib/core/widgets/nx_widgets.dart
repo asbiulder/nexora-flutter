@@ -205,7 +205,7 @@ class NxPill extends StatelessWidget {
         strokeWidth: 1.1,
         fill: LinearGradient(colors: <Color>[
           pillColor.withValues(alpha: 0.22),
-          const Color(0xE6120A33),
+          const Color(0xE614130F),
         ]),
         border: LinearGradient(colors: <Color>[
           pillColor,

@@ -73,7 +73,10 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
     super.initState();
     _online = ref.read(onlineProvider); // resolved while `ref` is usable
     _wantSeats = _game?.defaultPlayers ?? 2;
-    if (widget.gameId == 'mafia') _wantSeats = 6;
+    // Keep the default inside the game's online range (mafia defaults to 8, spy to 6 …): a default outside the
+    // bounds would never match a lobby and quick match would create impossible rooms.
+    final GameInfo? g = _game;
+    if (g != null) _wantSeats = _wantSeats.clamp(g.onlineMinPlayers, g.onlineMaxPlayers);
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_boot()));
   }
 
@@ -558,8 +561,11 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
 
   Widget _seatPicker(BuildContext context, GameInfo game, int value,
       ValueChanged<int> onPick) {
-    final int min = widget.gameId == 'mafia' ? 6 : game.minPlayers;
-    final int max = widget.gameId == 'mafia' ? 12 : game.maxPlayers;
+    // Online seat range of the game itself (finger soccer plays 1v1, 2v2 and 3v3 online, mafia 6–12,
+    // duels two). No per-game special cases here any more: the registry is the single source and the
+    // server mirrors it in nx_game_bounds.
+    final int min = game.onlineMinPlayers;
+    final int max = game.onlineMaxPlayers;
     if (max <= min) return const SizedBox.shrink();
     final NxThemeColors visual = NxThemeColors.of(context);
     return Wrap(spacing: 8, runSpacing: 8, children: <Widget>[

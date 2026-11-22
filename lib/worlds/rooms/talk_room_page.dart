@@ -10,10 +10,12 @@ import '../../core/backend/backend_gateway.dart';
 import '../../core/backend/supabase_backend.dart';
 import '../../core/online/online_config.dart';
 import '../../core/online/online_service.dart';
+import '../../core/online/room_capacity.dart';
 import '../../core/online/room_voice.dart';
 import '../../core/economy/gem_shop.dart';
 import '../../core/settings/app_settings.dart';
 import '../../core/ui2/anix_kit.dart';
+import '../../core/ui2/luxe.dart';
 import '../../core/ui2/nx2_widgets.dart';
 import '../../core/widgets/user_avatar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,20 +37,18 @@ class TalkRoomPage extends ConsumerStatefulWidget {
   ConsumerState<TalkRoomPage> createState() => _TalkRoomPageState();
 }
 
-/// Player limits per game inside a room (mirrors nx_game_bounds on the games project).
+/// Player limits per game inside a room.
+///
+/// The numbers are not repeated here any more: they come from [capacityOf] (which reads the
+/// game registry's online bounds), and the games project mirrors the same table in
+/// `nx_game_bounds`. That removes the old drift where this class said carrom 6 (the carrom
+/// board is a two-seat duel) and quiz 21 (the quiz engine is 1v1).
 class TalkRoomLimits {
-  static int maxPlayersFor(String game) => switch (game) {
-        'finger_soccer' || 'carrom' => 6,
-        'mafia' || 'spy_mafia' => 12,
-        'quiz' => 21,
-        _ => gameById(game)?.maxPlayers ?? 2,
-      };
+  static int maxPlayersFor(String game) => capacityOf(game).max;
 
-  static int minPlayersFor(String game) => switch (game) {
-        'mafia' => 6,
-        'spy_mafia' => 3,
-        _ => 2,
-      };
+  static int minPlayersFor(String game) => capacityOf(game).min;
+
+  static RoomCategory categoryFor(String game) => categoryOf(game);
 }
 
 /// v5 finger soccer (owner request 2026-11-20): the room manager swaps Team 1 and Team 2 before the match. Seats
@@ -88,6 +88,11 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
 
   Map<String, dynamic>? _room;
   List<RoomMember> _members = <RoomMember>[];
+
+  /// Live capacity of this room (host-set board size + unlimited audience). Recomputed from
+  /// every refresh and replaced by the server payload after each manager action.
+  RoomCapacity _capacity = RoomCapacity.fallback('finger_soccer');
+  bool _capacityBusy = false;
   final Map<String, Map<String, dynamic>> _picked = <String, Map<String, dynamic>>{}; // user -> {seat, prefs}
   final List<RoomMessage> _messages = <RoomMessage>[];
   final TextEditingController _input = TextEditingController();
@@ -230,7 +235,7 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
     try {
       final Map<String, dynamic>? room = await c
           .from('nx_rooms')
-          .select('id, code, title, game, selected_game, status, match_id, host, settings, kind')
+          .select('id, code, title, game, selected_game, status, match_id, host, settings, kind, seats, join_locked')
           .eq('id', widget.roomId)
           .maybeSingle();
       final List<dynamic> mem = await c
@@ -259,10 +264,69 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
           ..addAll(<String, Map<String, dynamic>>{
             for (final dynamic r in gp) '${(r as Map)['user_id']}': Map<String, dynamic>.from(r),
           });
+        _capacity = _capacityFromRoom();
       });
       await _syncVoiceRole();
       _maybeOpenMatch();
     } catch (_) {}
+  }
+
+  /// Local mirror of `nx_room_capacity` from the room row we already poll (no extra request).
+  RoomCapacity _capacityFromRoom() {
+    final Map<String, dynamic>? r = _room;
+    return RoomCapacity.fallback(
+      _game,
+      capacity: (r?['seats'] as num?)?.toInt(),
+      selected: _picked.length,
+      audience: _members.length,
+      locked: r?['join_locked'] == true,
+      isManager: _isManager,
+      status: '${r?['status'] ?? 'lobby'}',
+    );
+  }
+
+  /// Manager action that returns the fresh `nx_room_capacity` payload. The server re-validates
+  /// every rule, so a stale client can never widen a limit.
+  Future<void> _capacityAction(String fn, Map<String, dynamic> params) async {
+    final SupabaseClient? c = _c;
+    if (c == null || _capacityBusy) return;
+    setState(() => _capacityBusy = true);
+    try {
+      final dynamic r = await c.rpc(fn, params: <String, dynamic>{'p_room': widget.roomId, ...params});
+      if (mounted && r is Map) setState(() => _capacity = RoomCapacity.fromRpc(Map<String, dynamic>.from(r)));
+      await _refresh();
+    } catch (e) {
+      _snack(_clean(e));
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => _capacityBusy = false);
+    }
+  }
+
+  Future<void> _setCapacity(int n) async {
+    final RoomRuleError? err = _capacity.checkCapacity(n);
+    if (err != null) {
+      _snack(err.message(context.isFa, value: err == RoomRuleError.aboveMaximum ? _capacity.maxPlayers : _capacity.minPlayers));
+      return;
+    }
+    await _capacityAction('nx_room_set_capacity', <String, dynamic>{'p_capacity': n});
+  }
+
+  Future<void> _setLocked(bool locked) =>
+      _capacityAction('nx_room_set_locked', <String, dynamic>{'p_locked': locked});
+
+  Future<void> _kick(RoomMember m) async {
+    final bool? ok = await showLuxeConfirm(
+      context,
+      title: context.isFa ? 'حذف ${m.name} از اتاق؟' : 'Remove ${m.name} from the room?',
+      message: context.isFa
+          ? 'این بازیکن از اتاق و از لیست بازیکنان حذف می‌شود و می‌تواند دوباره وارد شود (اگر اتاق باز باشد).'
+          : 'They leave the room and the line-up. They can join again while the room is open.',
+      confirm: context.isFa ? 'حذف' : 'Remove',
+      danger: true,
+    );
+    if (ok != true) return;
+    await _capacityAction('nx_room_kick', <String, dynamic>{'p_user': m.userId});
   }
 
   void _maybeOpenMatch() {
@@ -437,64 +501,91 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: Nx2.deep,
-        appBar: AppBar(
-          backgroundColor: Nx2.night.withValues(alpha: 0.9),
-          foregroundColor: Nx2.text,
-          title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-            if (_room != null)
-              Text('${context.tx('کد', 'Code')} ${_room!['code']} · ${_members.length} ${context.tx('نفر', 'people')}',
-                  style: const TextStyle(fontSize: 11, color: Nx2.muted)),
-          ]),
-          actions: <Widget>[
-            IconButton(
-              tooltip: context.tx('خروج از اتاق', 'Leave room'),
-              icon: const Icon(Icons.logout_rounded),
-              onPressed: _leave,
-            ),
-          ],
-        ),
+        backgroundColor: Luxe.bg,
         body: Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
                 image: AssetImage(AnixAssets.sceneVoiceStage),
                 fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Color(0xB307031A), BlendMode.darken)),
+                colorFilter: ColorFilter.mode(Color(0xE0070306), BlendMode.darken)),
           ),
-          child: _error != null
-              ? _errorView()
-              : _room == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(children: <Widget>[
-                      _stage(),
-                      _tabs(),
-                      Expanded(
-                        child: switch (_tab) {
-                          1 => _membersList(),
-                          2 => _gamesPanel(),
-                          _ => _chat(),
-                        },
-                      ),
-                    ]),
+          child: SafeArea(
+            child: Column(children: <Widget>[
+              LuxeHeader(
+                title: title,
+                subtitle: _headerSubtitle(),
+                trailing: <Widget>[
+                  if (_capacity.canManage)
+                    LuxeIconButton(
+                      icon: _capacity.locked ? Icons.lock_rounded : Icons.lock_open_rounded,
+                      tooltip: _capacity.locked
+                          ? context.tx('ورود بسته است — باز کن', 'Admission closed — open it')
+                          : context.tx('ورود آزاد است — ببند', 'Admission open — close it'),
+                      color: _capacity.locked ? Nx2.danger : Luxe.gold,
+                      onTap: _capacityBusy ? null : () => unawaited(_setLocked(!_capacity.locked)),
+                    ),
+                  const SizedBox(width: 8),
+                  LuxeIconButton(
+                    icon: Icons.logout_rounded,
+                    tooltip: context.tx('خروج از اتاق', 'Leave room'),
+                    onTap: _leave,
+                  ),
+                ],
+              ),
+              Expanded(
+                child: _error != null
+                    ? _errorView()
+                    : _room == null
+                        ? LuxeLoading(label: context.tx('در حال ورود به اتاق…', 'Joining the room…'))
+                        : Column(children: <Widget>[
+                            _stage(),
+                            _tabs(),
+                            Expanded(
+                              child: switch (_tab) {
+                                1 => _membersList(),
+                                2 => _gamesPanel(),
+                                _ => _chat(),
+                              },
+                            ),
+                          ]),
+              ),
+            ]),
+          ),
         ),
       ),
     );
   }
 
+  /// Code · everyone in the room · players on the board (capacity) · admission state.
+  String _headerSubtitle() {
+    final Map<String, dynamic>? r = _room;
+    if (r == null) return '';
+    final String code = '${context.tx('کد', 'CODE')} ${r['code']}';
+    final String here = '${_capacity.audience} ${context.tx('نفر', 'here')}';
+    final String board = '${_capacity.selected}/${_capacity.capacity} ${context.tx('بازیکن', 'players')}';
+    final String lock = _capacity.locked ? ' · ${context.tx('بسته', 'closed')}' : '';
+    return '$code · $here · $board$lock';
+  }
+
   Widget _errorView() => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-            const Icon(Icons.wifi_off_rounded, color: Nx2.muted, size: 48),
-            const SizedBox(height: 10),
-            Text(
-                _error == 'offline'
-                    ? context.tx('برای اتاق‌ها باید وارد حساب شوی.', 'Sign in to use rooms.')
-                    : _error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Nx2.text)),
-          ]),
+          child: LuxeEmpty(
+            icon: Icons.wifi_off_rounded,
+            title: _error == 'offline'
+                ? context.tx('برای اتاق‌ها باید وارد حساب شوی.', 'Sign in to use rooms.')
+                : (_error == 'room locked'
+                    ? context.tx('ورود به این اتاق بسته است.', 'This room is not taking new people.')
+                    : _error!),
+            message: context.tx('اگر اتصال قطع شد، دوباره امتحان کن.', 'Check your connection and try again.'),
+            action: LuxeButton(
+              label: context.tx('تلاش دوباره', 'RETRY'),
+              icon: Icons.refresh_rounded,
+              height: 44,
+              expand: false,
+              onTap: _enter,
+            ),
+          ),
         ),
       );
 
@@ -704,27 +795,34 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
 
   Widget _membersList() {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 16),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 16),
       children: <Widget>[
+        LuxeSection(
+          title: context.tx('اعضا', 'Members'),
+          top: LuxeSpace.sm,
+          trailing: LuxeStat(
+            label: '${_members.length}',
+            icon: Icons.people_alt_rounded,
+          ),
+        ),
         for (final RoomMember m in _members)
-          ListTile(
-            dense: true,
-            onTap: () => _showMember(m),
-            leading: NxUserAvatar(avatar: m.avatar, name: m.name, size: 34,
-                ring: _speaking(m.userId) ? Nx2.success : (m.isManager ? Nx2.gold : null)),
-            title: Text(m.name + (m.userId == _me ? context.tx(' (تو)', ' (you)') : ''),
-                style: const TextStyle(color: Nx2.text, fontWeight: FontWeight.w800)),
-            subtitle: Text(
-                switch (m.role) {
+          LuxeListRow(
+            title: m.name + (m.userId == _me ? context.tx(' (تو)', ' (you)') : ''),
+            subtitle: switch (m.role) {
                   'manager' => context.tx('مدیر اتاق', 'Room manager'),
                   'speaker' => context.tx('سخنران', 'Speaker'),
                   _ => context.tx('شنونده', 'Listener'),
                 } +
-                    (m.muted ? context.tx(' · بی‌صدا', ' · muted') : ''),
-                style: const TextStyle(color: Nx2.muted, fontSize: 12)),
+                (m.muted ? context.tx(' · بی‌صدا', ' · muted') : '') +
+                (_picked.containsKey(m.userId) ? context.tx(' · بازیکن', ' · playing') : ''),
+            leading: NxUserAvatar(avatar: m.avatar, name: m.name, size: 34,
+                ring: _speaking(m.userId) ? Nx2.success : (m.isManager ? Nx2.gold : null)),
+            selected: m.userId == _me,
+            onTap: () => _showMember(m),
             trailing: _isManager && m.userId != _me
                 ? PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, color: Nx2.text),
+                    icon: const Icon(Icons.more_vert_rounded, color: Luxe.ink),
+                    color: Nx2.night,
                     onSelected: (String a) {
                       switch (a) {
                         case 'speaker':
@@ -734,6 +832,9 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
                         case 'mute':
                           unawaited(_rpc('nx_room_set_muted',
                               <String, dynamic>{'p_room': widget.roomId, 'p_user': m.userId, 'p_muted': !m.muted}));
+                        case 'kick':
+                          // Server re-checks that the caller is the manager and that the room has not started.
+                          unawaited(_kick(m));
                       }
                     },
                     itemBuilder: (_) => <PopupMenuEntry<String>>[
@@ -743,6 +844,11 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
                         PopupMenuItem<String>(value: 'spectator', child: Text(context.tx('شنونده کن', 'Make listener'))),
                       PopupMenuItem<String>(
                           value: 'mute', child: Text(m.muted ? context.tx('باصدا کن', 'Unmute') : context.tx('بی‌صدا کن', 'Mute'))),
+                      PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                          value: 'kick',
+                          child: Text(context.tx('حذف از اتاق', 'Remove from room'),
+                              style: const TextStyle(color: Nx2.danger))),
                     ],
                   )
                 : null,
@@ -809,10 +915,14 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
     final GameInfo? g = gameById(_game);
     final bool playing = _room?['status'] == 'playing';
     final bool iAmPicked = _picked.containsKey(_me);
-    final int maxP = TalkRoomLimits.maxPlayersFor(_game), minP = TalkRoomLimits.minPlayersFor(_game);
+    final RoomCapacity cap = _capacity.copyWith(
+        selected: _picked.length, audience: _members.length, isManager: _isManager, status: '${_room?['status'] ?? 'lobby'}');
+    final int maxP = cap.capacity, minP = cap.minPlayers;
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 24),
       children: <Widget>[
+        _capacityCard(cap),
+        const SizedBox(height: 10),
         Nx2Panel(
           padding: const EdgeInsets.all(12),
           child: Row(children: <Widget>[
@@ -854,7 +964,9 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
           )
         else ...<Widget>[
           Nx2SectionHeader(
-              title: '${context.tx('بازیکن‌ها', 'Players')} ${_picked.length}/$maxP'),
+              title: '${context.tx('بازیکن‌ها', 'Players')} ${_picked.length}/$maxP',
+              action: _isManager && !_capacityBusy ? context.tx('ظرفیت', 'Capacity') : null,
+              onAction: _isManager ? () => unawaited(_openCapacitySheet(cap)) : null),
           const SizedBox(height: 4),
           for (final RoomMember m in _members)
             CheckboxListTile(
@@ -905,12 +1017,12 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
           if (_isManager && _game == 'finger_soccer') _arenaSetup(),
           const SizedBox(height: 12),
           if (_isManager)
-            Nx2Button(
+            LuxeButton(
               label: context.tx('شروع بازی', 'START MATCH'),
               icon: Icons.play_arrow_rounded,
-              kind: Nx2ButtonKind.pink,
               height: 54,
-              onTap: () => unawaited(_start(minP)),
+              loading: _capacityBusy,
+              onTap: () => unawaited(_start(cap)),
             )
           else
             Text(
@@ -922,6 +1034,121 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
                 style: const TextStyle(color: Nx2.muted)),
         ],
       ],
+    );
+  }
+
+  /// Room capacity, in the app's design language. The manager sets how many of the people in
+  /// the room play the next match (the game's own rules cap it); everyone else stays in the
+  /// audience and keeps talking.
+  Widget _capacityCard(RoomCapacity cap) {
+    final bool fa = context.isFa;
+    final String category = switch (cap.bounds.category) {
+      RoomCategory.team => fa ? 'بازی تیمی — دو طرف برابر' : 'Team game — two equal sides',
+      RoomCategory.social => fa ? 'استدلال اجتماعی — نقش‌های مخفی' : 'Social deduction — hidden roles',
+      RoomCategory.duel => fa ? 'دو نفره' : 'Head to head',
+      RoomCategory.group => fa ? 'بازی گروهی دور یک میز' : 'Group game around one table',
+    };
+    final String people = fa
+        ? '$category · ${cap.minPlayers} تا ${cap.maxPlayers} بازیکن · تماشاگر نامحدود'
+        : '$category · ${cap.minPlayers}–${cap.maxPlayers} players · unlimited audience';
+    return LuxeCard(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+        Row(children: <Widget>[
+          const Icon(Icons.groups_2_rounded, color: Luxe.gold, size: 19),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(fa ? 'ظرفیت بازیکن‌ها' : 'Player capacity',
+                style: const TextStyle(color: Luxe.ink, fontWeight: FontWeight.w700, fontSize: 14)),
+          ),
+          LuxeStat(label: '${cap.selected}/${cap.capacity}', icon: Icons.sports_esports_rounded),
+        ]),
+        const SizedBox(height: 4),
+        Text(people, style: const TextStyle(color: Luxe.mute, fontSize: 11.5, height: 1.4)),
+        if (cap.canManage) ...<Widget>[
+          const SizedBox(height: 10),
+          Row(children: <Widget>[
+            LuxeIconButton(
+              icon: Icons.remove_rounded,
+              tooltip: fa ? 'کم کردن ظرفیت' : 'Fewer players',
+              onTap: _capacityBusy || cap.capacity <= cap.capacityOptions.first
+                  ? null
+                  : () => unawaited(_setCapacity(cap.step(-1))),
+            ),
+            Expanded(
+              child: Text('${cap.capacity}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Luxe.ink, fontWeight: FontWeight.w800, fontSize: 20)),
+            ),
+            LuxeIconButton(
+              icon: Icons.add_rounded,
+              tooltip: fa ? 'بیشتر کردن ظرفیت' : 'More players',
+              onTap: _capacityBusy || cap.capacity >= cap.maxPlayers ? null : () => unawaited(_setCapacity(cap.step(1))),
+            ),
+          ]),
+        ] else
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              fa ? 'مدیر اتاق تعیین می‌کند چند نفر بازی کنند.' : 'The room manager decides how many people play.',
+              style: const TextStyle(color: Luxe.mute, fontSize: 11),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  /// Big capacity picker (manager): every legal size for this game, plus the admission switch.
+  Future<void> _openCapacitySheet(RoomCapacity cap) async {
+    final bool fa = context.isFa;
+    final String range = cap.bounds.category == RoomCategory.team
+        ? (fa ? 'بازی تیمی: ۲، ۴ یا ۶ بازیکن' : 'Team game: 2, 4 or 6 players')
+        : (fa ? 'بین ${cap.minPlayers} و ${cap.maxPlayers} بازیکن' : 'Between ${cap.minPlayers} and ${cap.maxPlayers} players');
+    final String note = fa ? 'ورود به اتاق برای همه باز است؛ تماشاگر نامحدود.' : 'Joining the room stays open; audience is unlimited.';
+    final String lockLabel = cap.locked
+        ? (fa ? 'باز کردن ورود' : 'OPEN ADMISSION')
+        : (fa ? 'بستن ورود' : 'CLOSE ADMISSION');
+    await showLuxeSheet<void>(
+      context,
+      builder: (BuildContext ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(fa ? 'ظرفیت این اتاق' : 'Room capacity',
+              style: const TextStyle(color: Luxe.ink, fontWeight: FontWeight.w700, fontSize: 17)),
+          const SizedBox(height: 4),
+          Text('$range — $note', style: const TextStyle(color: Luxe.mute, fontSize: 12, height: 1.45)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              for (final int n in cap.capacityOptions)
+                LuxeStat(
+                  label: '$n',
+                  icon: n == cap.capacity ? Icons.check_rounded : null,
+                  color: n == cap.capacity ? Luxe.gold2 : Luxe.gold,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    unawaited(_setCapacity(n));
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          LuxeButton(
+            label: lockLabel,
+            icon: cap.locked ? Icons.lock_open_rounded : Icons.lock_rounded,
+            kind: LuxeButtonKind.ghost,
+            height: 46,
+            fontSize: 12,
+            onTap: () {
+              Navigator.of(ctx).pop();
+              unawaited(_setLocked(!cap.locked));
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -942,13 +1169,12 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
     return '${context.tx('صندلی', 'Seat')} ${seat + 1}$ready';
   }
 
-  Future<void> _start(int minP) async {
-    if (_picked.length < minP) {
-      _snack(context.tx('حداقل $minP بازیکن انتخاب کن', 'Pick at least $minP players'));
-      return;
-    }
-    if (_game == 'finger_soccer' && _picked.length.isOdd) {
-      _snack(context.tx('فوتبال انگشتی: تعداد بازیکن‌ها زوج باشد (۱×۱، ۲×۲، ۳×۳)', 'Finger soccer needs 2, 4 or 6 players'));
+  Future<void> _start(RoomCapacity cap) async {
+    // The same rules run again in nx_start_room_match, so a stale screen cannot start an illegal match.
+    final RoomRuleError? err = cap.checkStart(_picked.length);
+    if (err != null) {
+      final String msg = err.message(context.isFa, value: err == RoomRuleError.aboveMaximum ? cap.capacity : cap.minPlayers);
+      _snack(context.isFa && err == RoomRuleError.belowMinimum ? '$msg (${cap.minPlayers})' : msg);
       return;
     }
     await _rpc('nx_start_room_match', <String, dynamic>{'p_room': widget.roomId});

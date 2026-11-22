@@ -31,8 +31,10 @@ class Nx2 {
   static const Color success = Color(0xFF4BE3A0);
   static const Color danger = Color(0xFFFF5A7A);
 
+  /// Frame border gradient. Historic name kept (it is the NX2 frame token used by panels, pills and the dock);
+  /// the palette is the Station Luxe gold of the home page, not the old neon violet.
   static const LinearGradient neon =
-      LinearGradient(colors: <Color>[cyan, violet, magenta]);
+      LinearGradient(colors: <Color>[Color(0xFFF6E7BD), gold, goldDeep]);
   static const LinearGradient goldGrad =
       LinearGradient(colors: <Color>[Color(0xFFF6E7BD), gold, goldDeep]);
 
@@ -41,7 +43,7 @@ class Nx2 {
       fontWeight: FontWeight.w900,
       letterSpacing: 0.8,
       color: text,
-      shadows: <Shadow>[Shadow(color: Color(0xAA8B3DFF), blurRadius: 12)]);
+      shadows: <Shadow>[Shadow(color: Color(0x66D9B872), blurRadius: 12)]);
   static const TextStyle label =
       TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: text);
 }
@@ -143,7 +145,7 @@ class Nx2FramePainter extends CustomPainter {
       canvas.drawPath(
           p,
           Paint()
-            ..color = Nx2.violet.withValues(alpha: glow * 0.55)
+            ..color = Nx2.gold.withValues(alpha: glow * 0.55)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 6
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7));
@@ -155,7 +157,7 @@ class Nx2FramePainter extends CustomPainter {
                   const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: <Color>[Color(0xE62A1466), Color(0xEB100830)],
+                    colors: <Color>[Color(0xE61C1912), Color(0xEB0A0A0D)],
                   ))
               .createShader(r));
     // inner sheen
@@ -242,14 +244,14 @@ class Nx2Panel extends StatelessWidget {
             ? const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: <Color>[Color(0xE63A2410), Color(0xEB140A26)])
+                colors: <Color>[Color(0xE63A2C14), Color(0xEB0F0D09)])
             : null)
         : LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: <Color>[
-              Color.alphaBlend(tint!, const Color(0xE62A1466)),
-              Color.alphaBlend(tint!, const Color(0xEB100830)),
+              Color.alphaBlend(tint!, const Color(0xE61C1912)),
+              Color.alphaBlend(tint!, const Color(0xEB0A0A0D)),
             ],
           );
     Widget body = CustomPaint(
@@ -358,11 +360,16 @@ class Nx2Banner extends StatelessWidget {
       height: height,
       child: Stack(alignment: Alignment.center, children: <Widget>[
         Positioned.fill(
-          child: Image.asset(
-              wings ? Nx2Assets.framesBannerWingsViolet : Nx2Assets.framesBannerViolet,
-              fit: BoxFit.fill,
-              cacheWidth: 700,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+          // The pack banners are violet/blue art; BlendMode.color recolours them to the champagne gold of the
+          // home page while keeping every highlight and wing detail, so page headers match the master design.
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.mode(Color(0xFFD9B872), BlendMode.color),
+            child: Image.asset(
+                wings ? Nx2Assets.framesBannerWingsViolet : Nx2Assets.framesBannerViolet,
+                fit: BoxFit.fill,
+                cacheWidth: 700,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+          ),
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: height * 1.1),
@@ -1114,7 +1121,7 @@ class Nx2SegmentTabs extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xCC140A36),
+        color: const Color(0xCC14130F),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Nx2.cyan.withValues(alpha: 0.45)),
       ),
@@ -1123,9 +1130,9 @@ class Nx2SegmentTabs extends StatelessWidget {
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          gradient: const LinearGradient(colors: <Color>[Color(0xFF7B3CFF), Color(0xFFE040C8)]),
+          gradient: const LinearGradient(colors: <Color>[Color(0xFFF6E7BD), Color(0xFFD9B872)]),
         ),
-        labelColor: Colors.white,
+        labelColor: const Color(0xFF14120C),
         unselectedLabelColor: Nx2.muted,
         labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
         tabs: <Widget>[for (final String l in labels) Tab(height: 36, text: l)],

@@ -162,6 +162,8 @@ class GameInfo {
     required this.rulesEn,
     required this.minPlayers,
     required this.maxPlayers,
+    this.onlineMin,
+    this.onlineMax,
     required this.builder,
     required this.accent,
     this.supportsLocal = true,
@@ -193,6 +195,17 @@ class GameInfo {
   final String rulesEn;
   final int minPlayers;
   final int maxPlayers;
+
+  /// Online seat bounds, when the networked format differs from the offline one.
+  /// Finger soccer is 1v1 on one phone but plays 1v1, 2v2 and 3v3 online, so its
+  /// online range is 2..6 while [maxPlayers] (offline pass-and-play) stays 2.
+  /// These are the numbers the online lobby, the room manager and `nx_game_bounds`
+  /// on the games project must agree on.
+  final int? onlineMin;
+  final int? onlineMax;
+
+  int get onlineMinPlayers => onlineMin ?? minPlayers;
+  int get onlineMaxPlayers => onlineMax ?? maxPlayers;
   final int defaultPlayers;
   final bool supportsLocal;
   final Color accent;

@@ -30,6 +30,9 @@ final List<GameInfo> kGames = <GameInfo>[
         'Matches last 5 minutes and a golden goal decides a tie. Online turns are 15 seconds.',
     minPlayers: 2,
     maxPlayers: 2,
+    // Online the match is played 1v1, 2v2 or 3v3 (two equal sides, turns rotate inside each side);
+    // offline pass-and-play stays a single duel because one finger drives one disc.
+    onlineMax: 6,
     accent: const Color(0xFF3DDC97),
     builder: buildFingerSoccerGame,
     supportsOnline: true,
@@ -167,6 +170,8 @@ final List<GameInfo> kGames = <GameInfo>[
         '(the Godfather appears innocent). Days are for debate and voting. Narrator mode runs a party game for friends on one phone.',
     minPlayers: 6,
     maxPlayers: 12,
+    onlineMin: 6,
+    onlineMax: 12,
     defaultPlayers: 8,
     accent: const Color(0xFFFF5A6E),
     builder: buildMafiaGame,
