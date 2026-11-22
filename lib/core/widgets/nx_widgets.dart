@@ -154,7 +154,7 @@ class NxPageShell extends StatelessWidget {
     this.dock,
     this.floatingActionButton,
     this.showWallet = true,
-    this.showSearch = true,
+    this.search = true,
     this.showBack = true,
     this.scene,
     this.backdrop = true,
@@ -183,8 +183,9 @@ class NxPageShell extends StatelessWidget {
   /// Coins + gems pills on the right of the bar.
   final bool showWallet;
 
-  /// Global search button on the right of the bar.
-  final bool showSearch;
+  /// Global search button on the right of the bar (`search`, not `showSearch`, which would
+  /// shadow Material's `showSearch()` inside this widget).
+  final bool search;
   final bool showBack;
 
   /// Backdrop art; defaults to the arcade art for the arcade palette and the social art
@@ -220,7 +221,7 @@ class NxPageShell extends StatelessWidget {
           actions: <Widget>[...?actions, ...?trailing],
           leading: leading,
           showWallet: showWallet,
-          showSearch: showSearch,
+          search: search,
           showBack: showBack,
         ),
       ),
@@ -243,7 +244,7 @@ class NxTopBar extends ConsumerWidget implements PreferredSizeWidget {
     this.leading,
     this.accent,
     this.showWallet = true,
-    this.showSearch = true,
+    this.search = true,
     this.showBack = true,
   });
 
@@ -252,7 +253,7 @@ class NxTopBar extends ConsumerWidget implements PreferredSizeWidget {
   final Widget? leading;
   final Color? accent;
   final bool showWallet;
-  final bool showSearch;
+  final bool search;
   final bool showBack;
 
   @override
@@ -300,7 +301,7 @@ class NxTopBar extends ConsumerWidget implements PreferredSizeWidget {
               ]),
             ),
           ),
-          if (showSearch)
+          if (search)
             NxBarButton(
               icon: Icons.search_rounded,
               tooltip: context.tx('جستجوی سراسری', 'Open global search'),
