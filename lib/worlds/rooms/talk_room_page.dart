@@ -315,6 +315,41 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
   Future<void> _setLocked(bool locked) =>
       _capacityAction('nx_room_set_locked', <String, dynamic>{'p_locked': locked});
 
+  /// Hands the manager role to [m] (server re-checks that we are the manager). The old host
+  /// stays in the room as a speaker, so the conversation is not interrupted.
+  Future<void> _transferHost(RoomMember m) async {
+    final bool? ok = await showLuxeConfirm(
+      context,
+      title: context.isFa ? 'مدیر اتاق را به ${m.name} بدهی؟' : 'Make ${m.name} the room manager?',
+      message: context.isFa
+          ? '${m.name} می‌تواند ظرفیت، بازیکن‌ها و شروع بازی را کنترل کند. تو در اتاق می‌مانی.'
+          : '${m.name} will control capacity, the line-up and starting matches. You stay in the room.',
+      confirm: context.isFa ? 'واگذاری' : 'Transfer',
+    );
+    if (ok != true) return;
+    await _capacityAction('nx_room_transfer_host', <String, dynamic>{'p_user': m.userId});
+    if (mounted) luxeToast(context, context.tx('مدیر اتاق تغییر کرد', 'The room has a new manager'));
+  }
+
+  /// Ends the room for everyone (server: manager only, refused while a match runs).
+  Future<void> _closeRoom() async {
+    final bool? ok = await showLuxeConfirm(
+      context,
+      title: context.tx('اتاق بسته شود؟', 'Close this room?'),
+      message: context.tx('همه از اتاق خارج می‌شوند و ورود جدید ممکن نیست.', 'Everyone leaves and no one can join.'),
+      confirm: context.tx('بستن اتاق', 'Close room'),
+      danger: true,
+    );
+    if (ok != true) return;
+    try {
+      await _c?.rpc('nx_room_close', params: <String, dynamic>{'p_room': widget.roomId});
+    } catch (e) {
+      _snack(_clean(e));
+      return;
+    }
+    await _leave();
+  }
+
   Future<void> _kick(RoomMember m) async {
     final bool? ok = await showLuxeConfirm(
       context,
@@ -523,6 +558,22 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
                           : context.tx('ورود آزاد است — ببند', 'Admission open — close it'),
                       color: _capacity.locked ? Nx2.danger : Luxe.gold,
                       onTap: _capacityBusy ? null : () => unawaited(_setLocked(!_capacity.locked)),
+                    ),
+                  if (_capacity.canManage)
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.tune_rounded, color: Luxe.gold2),
+                      color: Nx2.night,
+                      tooltip: context.tx('مدیریت اتاق', 'Room controls'),
+                      onSelected: (String a) {
+                        if (a == 'close') unawaited(_closeRoom());
+                      },
+                      itemBuilder: (_) => <PopupMenuEntry<String>>[
+                        PopupMenuItem<String>(
+                          value: 'close',
+                          child: Text(context.tx('بستن اتاق', 'Close the room'),
+                              style: const TextStyle(color: Nx2.danger)),
+                        ),
+                      ],
                     ),
                   const SizedBox(width: 8),
                   LuxeIconButton(
@@ -833,6 +884,8 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
                         case 'mute':
                           unawaited(_rpc('nx_room_set_muted',
                               <String, dynamic>{'p_room': widget.roomId, 'p_user': m.userId, 'p_muted': !m.muted}));
+                        case 'host':
+                          unawaited(_transferHost(m));
                         case 'kick':
                           // Server re-checks that the caller is the manager and that the room has not started.
                           unawaited(_kick(m));
@@ -846,6 +899,9 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
                       PopupMenuItem<String>(
                           value: 'mute', child: Text(m.muted ? context.tx('باصدا کن', 'Unmute') : context.tx('بی‌صدا کن', 'Mute'))),
                       PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                          value: 'host',
+                          child: Text(context.tx('مدیر اتاق کن', 'Make room manager'))),
                       PopupMenuItem<String>(
                           value: 'kick',
                           child: Text(context.tx('حذف از اتاق', 'Remove from room'),

@@ -648,7 +648,10 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
     return Scaffold(
       backgroundColor: visual.background,
       appBar: AppBar(
-        backgroundColor: visual.surfaceRaised.withValues(alpha: 0.98),
+        backgroundColor: const Color(0xFF14130F),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: Border(bottom: BorderSide(color: visual.accent.withValues(alpha: 0.22))),
         titleSpacing: 0,
         title: _searching
             ? TextField(

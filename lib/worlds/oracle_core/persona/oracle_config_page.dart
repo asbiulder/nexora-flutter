@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../../../core/ui2/nx2_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -103,8 +105,9 @@ class _OracleConfigPageState extends ConsumerState<OracleConfigPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0F26),
+        backgroundColor: Nx2.deep,
         appBar: AppBar(
+          backgroundColor: const Color(0xFF14130F),
           title: const Text('شخصیت اوراکل'),
           actions: <Widget>[
             IconButton(

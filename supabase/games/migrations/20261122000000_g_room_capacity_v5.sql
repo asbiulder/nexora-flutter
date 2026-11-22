@@ -43,8 +43,6 @@ create or replace function public.nx_game_bounds(p_game text, out min_seats inte
            when 'bomb_arena' then 4
            when 'mini_golf' then 4
            when 'basketball_battle' then 4
-           when 'stickman_arena' then 4
-           when 'ludo_battle' then 4
            else 2 end
 $$;
 

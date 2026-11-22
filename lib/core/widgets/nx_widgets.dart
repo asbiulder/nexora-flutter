@@ -3,15 +3,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../assets/app_assets.dart';
 import '../profile/profile_service.dart';
 import '../settings/app_settings.dart';
 import '../theme/nx_theme.dart';
+import '../ui2/luxe.dart';
 import '../ui2/nx2_widgets.dart';
 import '../ui2/oracle_mascot.dart';
 
 import '../ui2/anix_kit.dart';
+import '../../worlds/hub/hub_search.dart';
 /// Animated cosmic background used by every world (respects quality + reduced motion).
 class NxBackground extends ConsumerStatefulWidget {
   const NxBackground(
@@ -129,6 +132,244 @@ class _StarPainter extends CustomPainter {
       old.t != t || old.stars != stars;
 }
 
+/// ===================== ONE PAGE SHELL =====================
+/// Every non-game screen of ANIX PRO is drawn by [NxPageShell]: the Station Luxe
+/// backdrop of the home page, one top bar ([NxTopBar]), one bottom dock, one safe-area
+/// policy and one page transition. Pages only supply their body.
+///
+/// Before this, each world built its own `Scaffold` + `AppBar`/`Nx2TopBar` + background
+/// combination, so the arcade, rooms, tournaments, settings and profile could drift apart
+/// (different bar height, different wallet visibility, different backdrop art, some pages
+/// even dropped the safe area). Anything that needs a page now goes through here.
+/// ==========================================================
+class NxPageShell extends StatelessWidget {
+  const NxPageShell({
+    super.key,
+    required this.title,
+    required this.body,
+    this.accent,
+    this.actions,
+    this.leading,
+    this.bottomNavigationBar,
+    this.dock,
+    this.floatingActionButton,
+    this.showWallet = true,
+    this.showSearch = true,
+    this.showBack = true,
+    this.scene,
+    this.backdrop = true,
+    this.safeArea = true,
+    this.resizeToAvoidBottomInset,
+    this.backgroundColor,
+    this.trailing,
+  });
+
+  /// Page title (already localised by the caller, usually with `context.tx`).
+  final String title;
+  final Widget body;
+
+  /// World tint used for the bar's hairline glow. Defaults to the theme accent.
+  final Color? accent;
+  final List<Widget>? actions;
+
+  /// Replaces the default back/home button when set.
+  final Widget? leading;
+
+  /// When set (or when [dock] is set) the Luxe dock is attached to the bottom.
+  final Widget? bottomNavigationBar;
+  final Nx2Tab? dock;
+  final Widget? floatingActionButton;
+
+  /// Coins + gems pills on the right of the bar.
+  final bool showWallet;
+
+  /// Global search button on the right of the bar.
+  final bool showSearch;
+  final bool showBack;
+
+  /// Backdrop art; defaults to the arcade art for the arcade palette and the social art
+  /// for the social worlds, exactly like the home page's luxe hub art.
+  final Nx2Scene? scene;
+
+  /// False for pages that paint their own full-bleed art (splash, video, cinematic).
+  final bool backdrop;
+  final bool safeArea;
+  final bool? resizeToAvoidBottomInset;
+  final Color? backgroundColor;
+
+  /// Extra widgets appended after [actions] in the bar (right side).
+  final List<Widget>? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget? bottom = bottomNavigationBar ?? (dock != null ? Nx2Dock(current: dock) : null);
+    final bool hasBottom = bottom != null;
+    final Widget content = safeArea
+        ? SafeArea(top: false, bottom: !hasBottom, child: body)
+        : body;
+    return Scaffold(
+      backgroundColor: backgroundColor ?? Nx2.deep,
+      extendBody: hasBottom,
+      extendBodyBehindAppBar: true,
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: NxTopBar(
+          title: title,
+          accent: accent,
+          actions: <Widget>[...?actions, ...?trailing],
+          leading: leading,
+          showWallet: showWallet,
+          showSearch: showSearch,
+          showBack: showBack,
+        ),
+      ),
+      floatingActionButton: floatingActionButton,
+      bottomNavigationBar: bottom,
+      body: backdrop
+          ? NxBrandBackground(scene: scene, child: content)
+          : content,
+    );
+  }
+}
+
+/// The single top bar of the application: ornate frame buttons (identical geometry on
+/// every screen), title plate, global search and the wallet. Mirrors the home page's HUD.
+class NxTopBar extends ConsumerWidget implements PreferredSizeWidget {
+  const NxTopBar({
+    super.key,
+    required this.title,
+    this.actions,
+    this.leading,
+    this.accent,
+    this.showWallet = true,
+    this.showSearch = true,
+    this.showBack = true,
+  });
+
+  final String title;
+  final List<Widget>? actions;
+  final Widget? leading;
+  final Color? accent;
+  final bool showWallet;
+  final bool showSearch;
+  final bool showBack;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(64);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ProfileService p = ref.watch(profileProvider);
+    final Color tint = accent ?? NxThemeColors.of(context).accent;
+    final bool canPop = Navigator.of(context).canPop();
+    final bool rtl = Directionality.of(context) == TextDirection.rtl;
+    return SafeArea(
+      bottom: false,
+      child: SizedBox(
+        height: 64,
+        child: Row(children: <Widget>[
+          const SizedBox(width: 8),
+          if (leading != null)
+            leading!
+          else if (showBack)
+            NxBarButton(
+              icon: canPop
+                  ? (rtl ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded)
+                  : Icons.home_rounded,
+              tooltip: canPop
+                  ? context.tx('بازگشت', 'Back')
+                  : context.tx('خانه', 'Home'),
+              tint: tint,
+              onTap: () {
+                if (canPop) {
+                  Navigator.of(context).maybePop();
+                } else {
+                  context.go('/hub');
+                }
+              },
+            ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Nx2.title.copyWith(fontSize: 17, shadows: <Shadow>[
+                Shadow(color: tint.withValues(alpha: 0.4), blurRadius: 12),
+              ]),
+            ),
+          ),
+          if (showSearch)
+            NxBarButton(
+              icon: Icons.search_rounded,
+              tooltip: context.tx('جستجوی سراسری', 'Open global search'),
+              tint: tint,
+              onTap: () => showSearch<void>(
+                context: context,
+                delegate: HubSearchDelegate(
+                  isFa: Localizations.localeOf(context).languageCode == 'fa',
+                ),
+              ),
+            ),
+          ...?actions,
+          if (showWallet) ...<Widget>[
+            const SizedBox(width: 2),
+            Nx2Stat(value: '${p.coins}', onTap: () => context.push('/world/nexora_exchange')),
+            const SizedBox(width: 4),
+            Nx2GemStat(gems: p.gems, onTap: () => context.push('/world/nexora_exchange')),
+          ],
+          const SizedBox(width: 10),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Square frame button used by [NxTopBar] and by page headers (arcade HUD, room header…).
+class NxBarButton extends StatelessWidget {
+  const NxBarButton({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+    this.tint,
+    this.size = 44,
+    this.color,
+  });
+  final IconData icon;
+  final VoidCallback? onTap;
+  final String? tooltip;
+  final Color? tint;
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color c = tint ?? NxThemeColors.of(context).accent;
+    final Widget button = Nx2Pressable(
+      onTap: onTap ?? () {},
+      child: Opacity(
+        opacity: onTap == null ? 0.45 : 1,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(
+            painter: Nx2FramePainter(
+              cut: 12,
+              glow: 0.22,
+              border: LinearGradient(colors: <Color>[c, Color.lerp(c, Nx2.gold, 0.5) ?? c]),
+            ),
+            child: Icon(icon, color: color ?? Nx2.text, size: size * 0.5),
+          ),
+        ),
+      ),
+    );
+    if (tooltip == null) return button;
+    return Tooltip(message: tooltip!, child: button);
+  }
+}
+
 /// App surfaces backdrop (NX2: the owner's cosmic castle art, darkened for contrast).
 class NxBrandBackground extends StatelessWidget {
   const NxBrandBackground({super.key, this.child, this.room = false, this.scene});
@@ -162,29 +403,19 @@ class GlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // NX2: chamfered neon glass. Gold borders keep the legendary look.
-    final Color? bc = borderColor;
-    final bool gold = bc != null &&
-        (bc.r > 0.8 && bc.g > 0.6 && bc.b < 0.5);
-    final Color? t = tint?.withValues(alpha: math.min(0.35, tint!.a));
-    final Widget panel = Nx2Panel(
+    // One surface style app-wide: the home page's rounded Luxe glass (gold hairline,
+    // blurred warm charcoal), not the chamfered neon frame. Pages that ask for a border
+    // colour keep their tint — the tint only changes the hairline, never the geometry.
+    final Widget panel = LuxeCard(
       padding: padding,
-      cut: math.min(16, math.max(8, radius * 0.6)),
-      gold: gold,
-      tint: t,
-      borderColor: gold ? null : bc?.withValues(alpha: 1),
+      radius: math.max(NxRadius.md, math.min(radius, LuxeRadius.lg)),
+      borderColor: borderColor,
+      tint: tint,
+      blur: blur ? 14 : 0,
       child: child,
     );
     if (onTap == null) return panel;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: Nx2.gold.withValues(alpha: 0.18),
-        highlightColor: Colors.transparent,
-        child: panel,
-      ),
-    );
+    return Nx2Pressable(onTap: onTap!, child: panel);
   }
 }
 
@@ -314,25 +545,18 @@ class NxWorldScaffold extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final Widget? bottom = bottomNavigationBar ??
-        (dock != null ? Nx2Dock(current: dock) : null);
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: Nx2.deep,
-      appBar: Nx2TopBar(title: title, actions: actions, showWallet: showWallet),
-      floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottom,
-      body: NxBrandBackground(
-        room: room,
-        scene: _scene,
-        child: SafeArea(
-          bottom: bottom == null,
-          child: body,
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => NxPageShell(
+        title: title,
+        accent: palette.primary,
+        body: body,
+        actions: actions,
+        leading: null,
+        bottomNavigationBar: bottomNavigationBar,
+        dock: dock,
+        floatingActionButton: floatingActionButton,
+        showWallet: showWallet,
+        scene: room ? Nx2Scene.room : _scene,
+      );
 }
 
 /// ORACLE mascot (NX2 animated robot). Legacy pose names map to moods.

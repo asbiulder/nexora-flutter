@@ -41,9 +41,6 @@ const List<String> kTournamentGames = <String>[
   'pool8',
   'mini_golf',
   'basketball_battle',
-  'stickman_arena',
-  'ludo_battle',
-  'chess_blitz',
 ];
 
 class _TournamentWizardPageState extends ConsumerState<TournamentWizardPage> {

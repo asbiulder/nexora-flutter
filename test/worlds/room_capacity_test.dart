@@ -21,6 +21,17 @@ void main() {
       'bomb_arena': (2, 4),
       'mini_golf': (2, 4),
       'basketball_battle': (2, 4),
+      // Games added to the arcade as real gameplay (they used to be lobby ids with no game).
+      'endless_runner': (1, 1),
+      'tetris_rush': (1, 1),
+      'helix_jump': (1, 1),
+      'fruit_ninja': (1, 1),
+      'geo_dash': (1, 1),
+      'traffic_racer': (1, 1),
+      'stack_tower': (1, 1),
+      'bubble_shooter': (1, 1),
+      'knife_hit': (1, 1),
+      'game_2048': (1, 1),
     };
 
     test('bounds match the server table', () {

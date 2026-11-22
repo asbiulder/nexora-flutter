@@ -5,6 +5,7 @@ import 'backgammon/backgammon_entry.dart';
 import 'billiards/billiards_entry.dart';
 import 'carrom/carrom_entry.dart';
 import 'core/game_contract.dart';
+import 'solo/solo_registry.dart';
 import 'finger_soccer/finger_soccer_entry.dart';
 import 'ludo/ludo_entry.dart';
 import 'mafia/mafia_entry.dart';
@@ -177,8 +178,11 @@ final List<GameInfo> kGames = <GameInfo>[
     builder: buildMafiaGame,
     supportsOnline: true,
   ),
-  // redesign-2: 20 new arcade games, added alongside the nine above.
+  // redesign-2: the ten multiplayer arcade games, added alongside the nine above.
   ...kArcadeGames,
+  // The ten single-player arcade games: real gameplay (lib/games/solo/), same medals,
+  // daily challenge and global score board as the rest of the arcade.
+  ...buildSoloGameInfos(),
 ];
 
 GameInfo? gameById(String id) {

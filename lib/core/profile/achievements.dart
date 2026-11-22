@@ -46,9 +46,12 @@ bool _arcadeAll(ProfileService p) => _arcadeTried(p) >= kArcadeIds.length;
 bool _arcadeGold(ProfileService p) => p.counter('arcade.medal.gold') >= 1;
 bool _arcadeDaily(ProfileService p) => p.counter('arcade.daily.done') >= 5;
 bool _racer(ProfileService p) => (p.stats['kart_racing']?.won ?? 0) >= 3;
-bool _grandmaster(ProfileService p) => (p.stats['chess_blitz']?.won ?? 0) >= 5;
+// Achievements only ever look at games that exist in the registry: the old chess_blitz
+// and stickman_arena conditions could never be satisfied because those games were never
+// playable.
+bool _grandmaster(ProfileService p) => (p.stats['backgammon']?.won ?? 0) >= 5;
 bool _survivor(ProfileService p) =>
-    (p.stats['obstacle_race']?.won ?? 0) + (p.stats['bomb_arena']?.won ?? 0) + (p.stats['stickman_arena']?.won ?? 0) >= 10;
+    (p.stats['obstacle_race']?.won ?? 0) + (p.stats['bomb_arena']?.won ?? 0) >= 10;
 
 const kAchievements = <AchievementDef>[
   AchievementDef(id: 'identity', asset: 'badge_explorer', nameFa: 'اکتشافگر', nameEn: 'Explorer',

@@ -15,6 +15,8 @@ begin
   if cap is null then raise exception 'capacity required'; end if;
   if cap < b.min_seats then raise exception 'this game needs at least % players', b.min_seats; end if;
   if cap > b.max_seats then raise exception 'this game takes at most % players', b.max_seats; end if;
+  -- Team category: only finger_soccer is two-equal-sides today, but the guard is written by
+  -- category so a future team game inherits it instead of needing a new migration.
   if g = 'finger_soccer' and cap % 2 <> 0 then raise exception 'team games need two equal sides'; end if;
   sel := public._nx_room_selected(p_room);
   if cap < sel then raise exception '% players are already picked (remove players first)', sel; end if;

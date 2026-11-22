@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../ui2/anix_kit.dart';
+import '../ui2/luxe.dart';
 import '../ui2/page_turn.dart';
 
 /// ANIX design tokens. Legacy gameplay colors remain stable; the app chrome
@@ -171,31 +172,53 @@ class NxThemeColors extends ThemeExtension<NxThemeColors> {
   }
 }
 
-/// Per-world accents stay available to gameplay and to the worlds' own content.
+/// Per-world accent colours.
+///
+/// One visual identity: **Station Luxe** (black, gold, champagne) is the app skin, and the
+/// home page (`HubPage`) is the reference for it. Every world therefore shares the same
+/// background ramp ([background]) and only varies the [primary] accent that tints its own
+/// glows and chips — that is what keeps the Arcade, Rooms, Social, ORACLE and the profile
+/// pages feeling like one application instead of seven themes. The accent is a tint on
+/// top of gold, never a replacement for it: `WorldPalette` no longer carries light-mode
+/// gradients (the profile world used to flip the whole app to a pale lavender) because a
+/// page that ignores the home-page palette breaks the identity.
 class WorldPalette {
-  const WorldPalette(this.primary, this.secondary, this.background,
-      {this.light = false});
+  const WorldPalette(this.primary, this.secondary, List<Color> background,
+      {this.light = false})
+      : background = _luxeRamp;
+
   final Color primary;
   final Color secondary;
+
+  /// Background ramp — always the Station Luxe ramp (kept identical to `Luxe.bg` and
+  /// `Nx2.deep` so a page painted with `NxBackground` and one painted with `LuxeScene`
+  /// stack without a visible seam).
   final List<Color> background;
+
+  /// Kept for API compatibility (settings/quality code reads it). No world is light any
+  /// more: the app has a single dark luxe skin.
   final bool light;
-  static const hub = WorldPalette(NxColors.electricBlue, NxColors.violet,
-      [Color(0xFF050818), Color(0xFF0E1640), Color(0xFF1B0F3F)]);
-  static const nova = WorldPalette(Color(0xFFFF6FB5), NxColors.gold,
-      [Color(0xFF1A0B2E), Color(0xFF3B1450), Color(0xFF5A1E4F)]);
-  static const orbit = WorldPalette(NxColors.turquoise, NxColors.electricBlue,
-      [Color(0xFF031A26), Color(0xFF06324A), Color(0xFF0A2A3F)]);
-  static const arcade = WorldPalette(Color(0xFFFFB020), Color(0xFFFF4F6E),
-      [Color(0xFF12051F), Color(0xFF2A0B3A), Color(0xFF3A0F2A)]);
-  static const oracle = WorldPalette(Color(0xFF9D7BFF), NxColors.turquoise,
-      [Color(0xFF0B0820), Color(0xFF1A1250), Color(0xFF0E2850)]);
-  static const personal = WorldPalette(Color(0xFF7CF5D0), Color(0xFFB79CFF),
-      [Color(0xFFEFF6FF), Color(0xFFDDE9FF), Color(0xFFEDE3FF)],
-      light: true);
-  static const social = WorldPalette(Color(0xFF4FD1FF), Color(0xFF7CFF8A),
-      [Color(0xFF04141F), Color(0xFF0B2B33), Color(0xFF0E1F3A)]);
-  static const exchange = WorldPalette(NxColors.gold, Color(0xFFFFE6A8),
-      [Color(0xFF0D0B05), Color(0xFF2A2210), Color(0xFF1A1530)]);
+
+  /// Black → warm charcoal → black, the ramp behind every screen.
+  static const List<Color> _luxeRamp = <Color>[
+    Color(0xFF07080C),
+    Color(0xFF12110D),
+    Color(0xFF07080C),
+  ];
+
+  /// Gold, the identity accent.
+  static const Color gold = Color(0xFFD9B872);
+  static const Color champagne = Color(0xFFF6E7BD);
+  static const Color bronze = Color(0xFF8A6A2C);
+
+  static const hub = WorldPalette(gold, champagne, _luxeRamp);
+  static const nova = WorldPalette(Color(0xFFE7B7C9), champagne, _luxeRamp);
+  static const orbit = WorldPalette(Color(0xFFB8CBB0), champagne, _luxeRamp);
+  static const arcade = WorldPalette(Color(0xFFE5C07B), champagne, _luxeRamp);
+  static const oracle = WorldPalette(Color(0xFFC9B8E8), champagne, _luxeRamp);
+  static const personal = WorldPalette(gold, champagne, _luxeRamp);
+  static const social = WorldPalette(Color(0xFFC7C0A8), champagne, _luxeRamp);
+  static const exchange = WorldPalette(gold, champagne, _luxeRamp);
 }
 
 class NxSpace {
@@ -239,6 +262,9 @@ ThemeData buildNxTheme([
 ThemeData buildNxGameplayTheme() =>
     _buildTheme(NxThemeColors.gameplay, NxAppearanceMode.dark);
 
+/// Ink used on gold fills (the same near-black as the Luxe buttons).
+const Color _luxeInk = Color(0xFF14120C);
+
 ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
   final scheme = (appearance == NxAppearanceMode.light
           ? ColorScheme.light
@@ -253,7 +279,9 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
     onSurface: visual.text,
   );
   final bool isDark = appearance == NxAppearanceMode.dark;
-  final Color chromePanel = isDark ? const Color(0xF214130F) : visual.surfaceRaised;
+  // Station Luxe chrome: the exact panel gradient stops of the home page's sheets/dialogs,
+  // so Material dialogs, sheets and menus sit on the same warm charcoal as LuxeCard.
+  final Color chromePanel = isDark ? const Color(0xFF14130F) : visual.surfaceRaised;
   final Color chromeSheet = isDark ? const Color(0xFF0F0E0B) : visual.surfaceRaised;
   final Color chromeChip = isDark ? const Color(0xE61C1912) : visual.surface;
   final base = ThemeData(
@@ -315,23 +343,32 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
       labelStyle: TextStyle(color: visual.muted),
       hintStyle: TextStyle(color: visual.muted.withValues(alpha: 0.82)),
     ),
+    // Material buttons are drawn as the Station Luxe button (same gold gradient, same
+    // pill radius, same ink) so legacy call sites look native on the home-page palette.
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: visual.accentSecondary,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NxRadius.md)),
+        backgroundColor: visual.accent,
+        foregroundColor: _luxeInk,
+        disabledBackgroundColor: visual.accent.withValues(alpha: 0.32),
+        disabledForegroundColor: _luxeInk.withValues(alpha: 0.6),
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+        shape: const StadiumBorder(),
         textStyle: const TextStyle(
-            fontFamily: kNxFont, fontFamilyFallback: kNxFontFallback, fontWeight: FontWeight.w800),
+            fontFamily: kNxFont,
+            fontFamilyFallback: kNxFontFallback,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: visual.accent,
-        side: BorderSide(color: visual.accent.withValues(alpha: 0.7)),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NxRadius.md)),
+        foregroundColor: visual.text,
+        side: BorderSide(color: visual.accent.withValues(alpha: 0.55)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(
+            fontFamily: kNxFont, fontFamilyFallback: kNxFontFallback, fontWeight: FontWeight.w800),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
@@ -365,8 +402,8 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
           height: 1.45,
           color: visual.muted),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(NxRadius.lg),
-        side: BorderSide(color: visual.border.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(LuxeRadius.lg),
+        side: BorderSide(color: visual.accent.withValues(alpha: 0.30)),
       ),
     ),
     bottomSheetTheme: BottomSheetThemeData(
@@ -374,9 +411,9 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
       surfaceTintColor: Colors.transparent,
       modalBackgroundColor: chromeSheet,
       showDragHandle: true,
-      dragHandleColor: visual.border.withValues(alpha: 0.7),
+      dragHandleColor: visual.accent.withValues(alpha: 0.45),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(NxRadius.lg)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(LuxeRadius.lg)),
       ),
     ),
 
@@ -474,7 +511,7 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
         foregroundColor: visual.accent,
         textStyle: const TextStyle(
             fontFamily: kNxFont, fontFamilyFallback: kNxFontFallback, fontWeight: FontWeight.w800),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NxRadius.sm)),
+        shape: const StadiumBorder(),
       ),
     ),
     iconButtonTheme: IconButtonThemeData(
