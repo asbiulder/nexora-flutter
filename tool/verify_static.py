@@ -384,7 +384,9 @@ def main() -> int:
                     if arg_name not in allowed:
                         problems.append(f'{rel(path)}: {sym}(...) has no named parameter `{arg_name}`')
 
-    # 6. 16-game online capacity parity between registry files and test table
+    # 6. online capacity parity between the registry files and the test table. The solo arcade games are
+    # single-player (SoloDef, not GameInfo) and have no room bounds: the table's (1, 1) rows for them are the
+    # test's own statement that they can never open a room, so both sides are compared after dropping them.
     reg_bounds: dict[str, tuple[int, int]] = {}
     for reg_rel in ('lib/games/game_registry.dart', 'lib/games/arcade_registry.dart'):
         reg_txt = raw[os.path.join(ROOT, reg_rel)]
@@ -405,6 +407,8 @@ def main() -> int:
         k: (int(a), int(b))
         for k, a, b in re.findall(r"'([a-z0-9_]+)':\s*\((\d+),\s*(\d+)\)", test_cap)
     }
+    solo_only = {k for k, v in test_bounds.items() if v == (1, 1) and k not in reg_bounds}
+    test_bounds = {k: v for k, v in test_bounds.items() if k not in solo_only}
     if reg_bounds != test_bounds:
         problems.append(f'capacity mismatch between registry ({reg_bounds}) and room_capacity_test ({test_bounds})')
 

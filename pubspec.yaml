@@ -68,6 +68,8 @@ flutter:
     - assets/games/carrom/
     - assets/games/bermuda/balls/v9/
     - assets/games/bermuda/discs/v9/
+    - assets/games/bermuda/discs/v10/
+    - assets/basketball/
     - assets/games/bermuda/fields/
     - assets/games/bermuda/goals/
     - assets/games/bermuda/intro/

@@ -179,20 +179,20 @@ void main() {
       return math.sqrt(b.vx * b.vx + b.vy * b.vy);
     }
 
-    // v9 teams: NX Frost (nat27) 10 / 10, BMW (club0) 9 / 9, NX Core (club32) 6 / 6
-    expect(shotSpeed('nat27'), greaterThan(shotSpeed('club0')));
-    expect(shotSpeed('club0'), greaterThan(shotSpeed('club32')));
-    expect(shotSpeed('nat27') / shotSpeed('club32'), closeTo(BmEngine.strikeOf(10) / BmEngine.strikeOf(6), 1e-9));
+    // v10 teams: NX Frost (nx_frost) 10 / 10, Real Madrid (realmadrid) 10 / 10, NX Core (nx_core) 6 / 6
+    expect(shotSpeed('nx_frost'), closeTo(shotSpeed('realmadrid'), 1e-9));
+    expect(shotSpeed('realmadrid'), greaterThan(shotSpeed('nx_core')));
+    expect(shotSpeed('nx_frost') / shotSpeed('nx_core'), closeTo(BmEngine.strikeOf(10) / BmEngine.strikeOf(6), 1e-9));
     // accuracy 10: exact aim, every seed
     for (int s = 0; s < 20; s++) {
-      expect(shotAngleErr('nat27', s).abs(), lessThan(1e-9));
+      expect(shotAngleErr('nx_frost', s).abs(), lessThan(1e-9));
     }
     // a weaker side misses by up to its accuracy bound, and not always by zero
-    final List<double> errs = <double>[for (int s = 0; s < 40; s++) shotAngleErr('club32', s)];
+    final List<double> errs = <double>[for (int s = 0; s < 40; s++) shotAngleErr('nx_core', s)];
     final double bound = BmEngine.aimErrorOf(6, 1);
     expect(errs.every((double x) => x.abs() <= bound + 1e-9), isTrue);
     expect(errs.where((double x) => x.abs() > bound * .2).length, greaterThan(5));
-    expect(shotAngleErr('club32', 11), shotAngleErr('club32', 11));
+    expect(shotAngleErr('nx_core', 11), shotAngleErr('nx_core', 11));
   });
 
   test('bot vs bot plays a long match without escaping the pitch', () {

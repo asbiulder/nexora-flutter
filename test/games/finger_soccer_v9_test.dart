@@ -254,24 +254,23 @@ void main() {
     });
   });
 
-  group('v9 teams: the 48 badge-sheet teams', () {
+  group('v9 teams: the 48 badge-sheet teams (v10 keeps the car and sport sets)', () {
     test('catalog, categories, art and shop ids', () {
-      expect(kBmTeamDefs.length, 48);
-      expect(kBmCats.map((List<Object> c) => c[0]).toList(), <String>['car', 'sport', 'nx']);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'car').length, 24);
+      // v10 (owner art 2026-11-22) grew the catalogue; the v9 car/sport half is unchanged.
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'cars').length, 24);
       expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'sport').length, 12);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nx').length, 12);
-      expect(kBmTeams.map((BmTeam t) => t.id).toSet().length, 48);
-      for (final BmTeam t in kBmTeams) {
+      expect(kBmTeams.map((BmTeam t) => t.id).toSet().length, kBmTeamDefs.length);
+      // every car / sport badge is still the v9 art, byte for byte the same folder
+      for (final BmTeam t in kBmTeams.where((BmTeam t) => t.cat == 'cars' || t.cat == 'sport')) {
         expect(File(t.asset).existsSync(), isTrue, reason: t.asset);
         expect(t.asset.startsWith('assets/games/bermuda/discs/v9/'), isTrue, reason: t.asset);
-        expect(kFsTeamFa[t.name], isNotNull, reason: t.name);
+        expect(t.faName.isNotEmpty, isTrue, reason: t.id);
         expect(t.power, inInclusiveRange(1, 10));
         expect(t.accuracy, inInclusiveRange(1, 10));
       }
       expect(Directory('assets/games/bermuda/discs/v9').listSync().length, 48);
       expect(Directory('assets/games/bermuda/discs').listSync().whereType<File>(), isEmpty);
-      // the shop's free teams are the NX house badges and exist
+      // the shop's free teams are the starter NX coins and exist
       for (final String id in kFreeTeams) {
         expect(bmTeam(id).id, id);
         expect(bmTeam(id).cat, 'nx');
@@ -317,7 +316,7 @@ void main() {
                 body: BermudaView(
                     launch: launch(),
                     autoStart: true,
-                    pick: const FsMatchPick(teams: <String>['club32', 'club0'], forms: <int>[0, 0])))));
+                    pick: const FsMatchPick(teams: <String>['nx_core', 'realmadrid'], forms: <int>[0, 0])))));
 
     Future<BmEngine> start(WidgetTester tester, Map<String, Object> prefs) async {
       // ignore: invalid_use_of_visible_for_testing_member

@@ -24,3 +24,12 @@ intro.txt
 badging.txt
 shots/
 android/
+
+# Owner uploads used as build inputs (the shipped art is generated from them; the sources stay out of Git).
+tool/inputs/
+
+# Python bytecode from the asset/team builders.
+__pycache__/
+
+# The tracked v9 bytecode file is kept (it predates this rule); new bytecode stays out.
+!tool/__pycache__/build_fs_assets.cpython-312.pyc

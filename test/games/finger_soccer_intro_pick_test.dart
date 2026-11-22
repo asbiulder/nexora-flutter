@@ -31,7 +31,7 @@ void main() {
 
   testWidgets('team select: the arrows pick the team shown (free team / opponent side)', (WidgetTester tester) async {
     phone(tester);
-    final List<String> teams = <String>['club32', 'club9'];
+    final List<String> teams = <String>['nx_core', 'club9'];
     List<String>? ready;
     await tester.pumpWidget(_app(FsTeamSelect(
       fa: true,
@@ -43,10 +43,10 @@ void main() {
       freeze: true,
     )));
     await tester.pump(const Duration(milliseconds: 300));
-    // side one: club32 (Persepolis) -> next is club33 (Esteghlal), a free team
+    // side one: nx_core (NX Core) -> next is nx_cyan, also a free team
     await tester.tap(find.byWidgetPredicate((Widget w) => w is FsArrow && !w.left));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(teams[0], 'club33');
+    expect(teams[0], 'nx_cyan');
     // side two (opponent, no ownership needed): club9 -> club10
     await tester.tap(find.text('تیم دو'));
     await tester.pump(const Duration(milliseconds: 300));
@@ -55,7 +55,7 @@ void main() {
     expect(teams[1], 'club10');
     await tester.tap(find.text('آماده'));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(ready, <String>['club33', 'club10']);
+    expect(ready, <String>['nx_cyan', 'club10']);
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
   });
@@ -64,7 +64,7 @@ void main() {
     phone(tester);
     int? done;
     await tester.pumpWidget(_app(FsFormationSelect(
-      discAsset: 'assets/games/bermuda/discs/v9/nx_core.webp',
+      discAsset: 'assets/games/bermuda/discs/v10/nx_core_green.webp',
       initial: 0,
       onDone: (int f) => done = f,
       onBar: () {},
