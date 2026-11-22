@@ -249,3 +249,58 @@ No extra server: everything runs in the existing Supabase project (Postgres RPCs
 - Tests: `test/games/finger_soccer_v7_test.dart` (rail / back net / side net / post parity for ball and disc on two
   pitches, speed-independent post, removed pitches + fallback incl. a saved removed pitch, default ball + GIF frame
   timing, formation button beside the bar and still opening the picker).
+
+## Release hardening — build unblocked, one skin everywhere, server caught up with the repo (2026-11-22, branch `arena/5a46ff7d-cocos-c`)
+- **Build unblocked.** The branch had 7 analyzer errors, which are fatal in `.github/workflows/android.yml` (analyze) and made 6 test
+  suites fail to load (`widget_test`, `quiz_widget_test`, `finger_soccer_v6_test`, `solo/solo_rules_test`,
+  `finger_soccer_online_pick_test`, `online/finger_soccer_two_phones_test`). Two causes: `NxWorldScaffold` never forwarded the
+  in-page section bar (`sections` / `sectionIndex` / `onSectionSelect`) that NOVA Gallery and Orbit Network were already passing to
+  it, and `Nx2Pressable.onTap` was a non-nullable `VoidCallback` while `NxDockBar` passes null for a bar with no `onSelect`.
+  `Nx2Pressable.onTap` is now nullable and null means *disabled* (no gesture detector, no press scale, no tick) — the same contract
+  as `Nx2Button.onTap`; `NxBarButton`'s `onTap ?? () {}` placeholder went with it, so a dimmed bar button no longer swallows taps.
+  Analyze is clean and all 60 test files load and pass.
+- **Last of the second palette.** `/social` (`SocialHubPage`) still painted the retired navy/neon look: a hand-rolled world switcher
+  in `0xE6140A36` with a violet→pink `0xFF7B3CFF`/`0xFFE040C8` gradient on a bare `GestureDetector` (no press animation, no haptic,
+  no tick, no Semantics) — a third navigation style between the hosted world's own section bar and the app dock. It is now the
+  Station Luxe gold pill chip `LuxeStationPage` uses (`LuxePress` + `Luxe.goldGrad` + `Luxe.line`, gold glow on the selected world,
+  `Luxe.ease` 380 ms, `Luxe.reduceMotion` honoured). Same three worlds, same order, same `initial` tab.
+- **One feedback surface.** `luxeToast` existed for exactly this ("gold hairline panel above the dock, never a Material default") but
+  only 4 call sites used it while 51 built their own raw `SnackBar`; there is no `SnackBar(` left in `lib/` outside `luxe.dart`.
+  `luxeToastState` is the same panel for callers holding the root messenger without a `BuildContext` (the call / invite / tournament /
+  announcement watchers). The toast gained `actionLabel`/`onAction`, `duration` and `icon` so no caller had to keep a bespoke bar
+  (a call invitation keeps its call/videocam glyph and its 30 s; a tournament reminder 20 s; a save tick 1 s).
+  `tool/toast_codemod.py` did the mechanical rewrite (bracket- and quote-aware; converts only `content: Text(...)` bars and *reports*
+  anything richer rather than guessing) and `tool/toast_rewrap.py` re-wrapped the long lines it emitted.
+- **Catalogue copy is true again.** The arcade grew to 26 games (9 originals + 7 multiplayer + 10 solo) but every user-facing count
+  was frozen at the launch number: the Arcade world tagline said "9 games", ORACLE answered "what games do you have" with only the
+  nine launch titles, ORACLE's system context said "Arcade with 9 games", "Arcade Master" asked for "all 20 new arcade games"
+  (`kArcadeIds.length` is 17) and "Arcade Wings" read "Try all 9 games" for a rule that is nine *distinct* games of 26. ORACLE now
+  lists all 26 under the arcade's own five filter groups, in both languages. `test/core/game_count_claims_test.dart` is the guard —
+  the counts live in `const` strings that cannot interpolate the registry, so this test is the only thing that keeps them honest.
+- **Room manager stops lying.** `_capacityAction` returned `void` and swallowed the server's refusal, so "Make X the room manager"
+  toasted "The room has a new manager" even when the hand-over failed. It now returns whether the server accepted the change and
+  `_transferHost` only announces success on success.
+- **Server caught up with the repo (applied live on the games project `eyzafhrefnqlwcjpcdyg`).** Two committed migrations had never
+  been applied, and the client was already calling into them:
+  * `20261122100000_g_room_control_v6.sql` — `nx_room_transfer_host` and `nx_room_close` did not exist, so the room screen's
+    *transfer host* and *close room* buttons failed at runtime. Applied; `nx_room_set_muted` / `nx_room_set_role` also moved from the
+    literal `nx_room_member_role() = 'manager'` check to `_nx_room_can_manage()` (`host = auth.uid()` OR member role manager), which
+    is what the v5 capacity RPC already used — the UI showed manager controls the server then refused. `nx_room_join` in v6 is v5's
+    body modulo comments (diffed before applying), so nothing regressed.
+  * `20261121100000_g_online_move_log_fix.sql` — `nx_quick_cancel` did not exist and the client calls it with `onError: (_) {}`, so
+    cancelling quick matchmaking was a silent no-op that left ownerless waiting lobbies behind. Applied together with the intended
+    `nx_push_move` (append-only input log, no per-move turn gate, 45 s activity clock, 16 KB move cap, `bad seat` check) and
+    `nx_quick` (a waiting player moves into an *older* lobby, `for update skip locked`). The client posts move/timeout rows as kind
+    `system` with the real kind in `_k`, which works against both the old and the new function; that workaround can now be retired,
+    but it is compatible as-is and was left alone.
+  All five v6 functions and all three move-log functions verified live: `SECURITY DEFINER`, `EXECUTE` granted to `authenticated`,
+  not to `anon`. `nx_game_bounds` live matches the client registry exactly (finger_soccer 2–6, mafia 6–12, spy_mafia 4–8,
+  carrom/billiards/backgammon/quiz/pool8 2–2, the group games 2–4).
+- **Android build verified end to end.** `ANIX PRO Android Build` run 45038069825 passed analyze → tests → split-per-ABI release APKs
+  → universal release APK → packaging → `apksigner verify` + `aapt dump badging` (package `com.nexora.nexora`, `sdkVersion 24`,
+  `targetSdkVersion` ≥ 34, launchable activity, label `ANIX PRO`), and uploaded `ANIX-apks` (331,755,791 bytes).
+- **Repo hygiene.** `.gitignore` now keeps the generated `android/` platform folder, `out/` (the signed APKs, ~300 MB), `*.apk`,
+  `*.aab`, the workflow's teed logs (`analyze.txt`, `test.txt`, `build-apk.txt`, `render.txt`, `intro.txt`, `badging.txt`) and the
+  render-test `shots/` out of Git. `android_overlay/` (the branding source the workflow copies in) stays tracked. No secret or
+  credential file is tracked; the Supabase keys in the workflow are the publishable/anon ones, which ship inside the app by design
+  with RLS protecting the data.
