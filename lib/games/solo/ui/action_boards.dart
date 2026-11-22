@@ -17,10 +17,10 @@ const Color _hazard = Color(0xFFC97A6A);
 class RunnerBoard extends SoloBoard {
   const RunnerBoard({super.key, required super.run});
   @override
-  _RunnerBoardState createState() => _RunnerBoardState();
+  RunnerBoardState createState() => RunnerBoardState();
 }
 
-class _RunnerBoardState extends SoloBoardState<RunnerBoard> {
+class RunnerBoardState extends SoloBoardState<RunnerBoard> {
   late RunnerWorld world;
   double _laneVisual = 1;
 
@@ -128,10 +128,10 @@ class _RunnerBoardState extends SoloBoardState<RunnerBoard> {
 class FruitBoard extends SoloBoard {
   const FruitBoard({super.key, required super.run});
   @override
-  _FruitBoardState createState() => _FruitBoardState();
+  FruitBoardState createState() => FruitBoardState();
 }
 
-class _FruitBoardState extends SoloBoardState<FruitBoard> {
+class FruitBoardState extends SoloBoardState<FruitBoard> {
   late FruitWorld world;
   final List<Offset> _trail = <Offset>[];
 
@@ -212,10 +212,10 @@ class _FruitBoardState extends SoloBoardState<FruitBoard> {
 class HelixBoard extends SoloBoard {
   const HelixBoard({super.key, required super.run});
   @override
-  _HelixBoardState createState() => _HelixBoardState();
+  HelixBoardState createState() => HelixBoardState();
 }
 
-class _HelixBoardState extends SoloBoardState<HelixBoard> {
+class HelixBoardState extends SoloBoardState<HelixBoard> {
   late HelixWorld world;
   double _tilt = 0;
 
@@ -281,10 +281,10 @@ class _HelixBoardState extends SoloBoardState<HelixBoard> {
 class BubbleBoard extends SoloBoard {
   const BubbleBoard({super.key, required super.run});
   @override
-  _BubbleBoardState createState() => _BubbleBoardState();
+  BubbleBoardState createState() => BubbleBoardState();
 }
 
-class _BubbleBoardState extends SoloBoardState<BubbleBoard> {
+class BubbleBoardState extends SoloBoardState<BubbleBoard> {
   late BubbleWorld world;
   double _aim = 0;
   double _cool = 0;
@@ -376,10 +376,10 @@ class _BubbleBoardState extends SoloBoardState<BubbleBoard> {
 class DashBoard extends SoloBoard {
   const DashBoard({super.key, required super.run});
   @override
-  _DashBoardState createState() => _DashBoardState();
+  DashBoardState createState() => DashBoardState();
 }
 
-class _DashBoardState extends SoloBoardState<DashBoard> {
+class DashBoardState extends SoloBoardState<DashBoard> {
   late DashWorld world;
   bool _holding = false;
 
@@ -467,10 +467,10 @@ class _DashBoardState extends SoloBoardState<DashBoard> {
 class TrafficBoard extends SoloBoard {
   const TrafficBoard({super.key, required super.run});
   @override
-  _TrafficBoardState createState() => _TrafficBoardState();
+  TrafficBoardState createState() => TrafficBoardState();
 }
 
-class _TrafficBoardState extends SoloBoardState<TrafficBoard> {
+class TrafficBoardState extends SoloBoardState<TrafficBoard> {
   late TrafficWorld world;
   double _laneX = 1;
 

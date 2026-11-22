@@ -13,10 +13,10 @@ import '../solo_kit.dart';
 class World2048Board extends SoloBoard {
   const World2048Board({super.key, required super.run});
   @override
-  _World2048BoardState createState() => _World2048BoardState();
+  World2048BoardState createState() => World2048BoardState();
 }
 
-class _World2048BoardState extends SoloBoardState<World2048Board> {
+class World2048BoardState extends SoloBoardState<World2048Board> {
   late World2048Game world;
   final Map<String, double> _pop = <String, double>{};
   int _moves = 0;
@@ -154,10 +154,10 @@ class _World2048BoardState extends SoloBoardState<World2048Board> {
 class TetrisBoard extends SoloBoard {
   const TetrisBoard({super.key, required super.run});
   @override
-  _TetrisBoardState createState() => _TetrisBoardState();
+  TetrisBoardState createState() => TetrisBoardState();
 }
 
-class _TetrisBoardState extends SoloBoardState<TetrisBoard> {
+class TetrisBoardState extends SoloBoardState<TetrisBoard> {
   late TetrisWorld world;
 
   static const List<Color> _pieceColours = <Color>[
@@ -255,10 +255,10 @@ class _TetrisBoardState extends SoloBoardState<TetrisBoard> {
 class StackBoard extends SoloBoard {
   const StackBoard({super.key, required super.run});
   @override
-  _StackBoardState createState() => _StackBoardState();
+  StackBoardState createState() => StackBoardState();
 }
 
-class _StackBoardState extends SoloBoardState<StackBoard> {
+class StackBoardState extends SoloBoardState<StackBoard> {
   late StackWorld world;
   String _flash = '';
   double _flashT = 0;
@@ -361,10 +361,10 @@ class _StackBoardState extends SoloBoardState<StackBoard> {
 class KnifeBoard extends SoloBoard {
   const KnifeBoard({super.key, required super.run});
   @override
-  _KnifeBoardState createState() => _KnifeBoardState();
+  KnifeBoardState createState() => KnifeBoardState();
 }
 
-class _KnifeBoardState extends SoloBoardState<KnifeBoard> {
+class KnifeBoardState extends SoloBoardState<KnifeBoard> {
   late KnifeWorld world;
   double _fly = 0;
   bool _thrown = false;

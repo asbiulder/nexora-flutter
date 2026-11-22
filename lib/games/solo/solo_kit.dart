@@ -96,9 +96,9 @@ abstract class SoloBoard extends StatefulWidget {
   const SoloBoard({super.key, required this.run});
   final SoloRun run;
 
-  /// Boards supply their concrete state (`_XBoardState`, a `SoloBoardState<XBoard>`).
-  @override
-  SoloBoardState<dynamic> createState();
+  // `StatefulWidget` already declares `State<StatefulWidget> createState()`; every board
+  // narrows it to its own `_XBoardState` (a `SoloBoardState<XBoard>`), which is a valid
+  // override, so the base class only documents the contract.
 }
 
 abstract class SoloBoardState<T extends SoloBoard> extends State<T> with SingleTickerProviderStateMixin {
