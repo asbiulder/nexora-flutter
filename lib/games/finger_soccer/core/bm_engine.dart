@@ -4,7 +4,7 @@
 // recording (2026-11-20, see the comments on each constant). Retune only from new measurements.
 // World = the field image's own pixel space scaled by FS (see geo()).
 import 'dart:math' as math;
-import 'dart:ui' show Offset;
+import 'dart:ui' show Color, Offset;
 
 import 'bm_data.dart';
 
@@ -32,7 +32,7 @@ const double kBmGoalMouthScale = 0.965;
 /// Match balls: 0-3 the owner's animated balls (kBmAnimBalls), 4 the classic black / white ball of the reference
 /// recordings (kBmClassicBall, v6), 5 NX Spin (v7 default) and 6 NX Star, the owner's GIF balls played with the
 /// GIF's own frames and timing (kBmAnimBalls, gifTimed).
-const int NB = 7;
+final int NB = kBmBallN.length;
 /// Weighty pieces (owner request 2026-11): discs are heavy (mass 8) and the ball lighter (2.6) but not a ping-pong
 /// ball. BKICK keeps a disc striking the ball launching it 5% harder than plain elastic transfer.
 const double DISC_M = 8.0;
@@ -152,6 +152,8 @@ class BmFieldS {
         gh = f.gh0 * FS,
         gr = f.gr0 * FS,
         gd = f.gd0 * FS,
+        score = f.score,
+        scoreRight = f.scoreRight,
         asset = f.asset ?? 'assets/games/bermuda/fields/${f.id}.webp';
   static double _r(int v) => (v * FS).round().toDouble(); // Math.round on positive values
   final String id, name, gs;
@@ -160,6 +162,10 @@ class BmFieldS {
   final double rc, gh, gr, gd;
   final bool builtInGoals;
   final String asset;
+  /// v9: the score displays drawn into the art (null = none) and the right display's colour.
+  final BmScoreDisplay? score;
+  final Color scoreRight;
+  bool get fullArt => score != null;
 }
 
 final List<BmFieldS> kBmFields = kBmFieldsRaw.map(BmFieldS.new).toList(growable: false);

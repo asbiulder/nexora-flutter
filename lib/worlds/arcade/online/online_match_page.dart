@@ -250,8 +250,13 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
     return false;
   }
 
+  /// A game that draws its own chrome during the match (GameLaunch.immersive): the corner buttons, presence dots and
+  /// tutorial banner hide, and the voice controls move to the bottom centre, below the game's playfield.
+  final ValueNotifier<bool> _immersive = ValueNotifier<bool>(false);
+
   @override
   void dispose() {
+    _immersive.dispose();
     WidgetsBinding.instance.removeObserver(this);
     final SupabaseMatchLink? l = _link;
     if (l != null) {
@@ -292,6 +297,7 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
         seed: l.seed,
         net: l,
         onFinish: _onGameFinish,
+        immersive: _immersive,
       );
       final Widget gameView = KeyedSubtree(
         key: ValueKey<int>(_generation),
@@ -310,6 +316,12 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
         backgroundColor: NxColors.luxeBg,
         body: Stack(children: <Widget>[
           Positioned.fill(child: body),
+          Positioned.fill(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _immersive,
+              builder: (BuildContext context, bool hide, Widget? chrome) =>
+                  hide && _result == null ? const SizedBox.shrink() : chrome!,
+              child: Stack(children: <Widget>[
           PositionedDirectional(
             top: MediaQuery.paddingOf(context).top + 6,
             start: 6,
@@ -337,11 +349,24 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
               right: 0,
               child: OracleTutorialBanner(gameId: widget.gameId),
             ),
-          // In-match voice: mic mute/unmute + speaker on/off (same LiveKit room as the lobby).
+              ]),
+            ),
+          ),
+          // In-match voice: mic mute/unmute + speaker on/off (same LiveKit room as the lobby). An immersive game keeps
+          // a bottom strip free of play for it, so it sits centred there.
           if (_result == null)
-            PositionedDirectional(
-              bottom: MediaQuery.paddingOf(context).bottom + 10,
-              end: 10,
+            ValueListenableBuilder<bool>(
+              valueListenable: _immersive,
+              // One stable tree in both modes (only the alignment changes), so the voice bar keeps its connection.
+              builder: (BuildContext context, bool immersive, Widget? bar) => Positioned(
+                left: 10,
+                right: 10,
+                bottom: MediaQuery.paddingOf(context).bottom + (immersive ? 8 : 10),
+                child: Align(
+                  alignment: immersive ? Alignment.center : AlignmentDirectional.centerEnd,
+                  child: bar,
+                ),
+              ),
               child: RoomVoiceBar(id: widget.matchId, match: true, compact: true),
             ),
           if (_result != null)

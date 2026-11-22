@@ -10,7 +10,7 @@ import '../core/bm_engine.dart';
 import 'bm_ball.dart';
 
 /// Every sprite is drawn so its measured rim lands exactly on the physics radius (see kBmDiscArtFill /
-/// kBmBallArtFill and tool/build_fs_assets.py): what the player sees is what collides.
+/// kBmBallArtFill and tool/build_fs_v9_assets.py): what the player sees is what collides.
 double bmDiscSpriteHalf(BmBody b) => b.r / kBmDiscArtFill;
 double bmBallSpriteHalf(BmBody b) => b.r / kBmBallArtFill;
 
@@ -77,6 +77,17 @@ class BmView {
     size = sz;
     final BmFieldS f = e.field;
     final double W = sz.width, fullH = sz.height;
+    if (f.fullArt) {
+      // v9: the pitch art is the whole scene (goals, nets and the side score displays drawn in): fit all of it into
+      // the space between the top bar and the bottom strip, so no control ever sits on the playfield.
+      final double top = insetTop;
+      final double H = fullH - top - insetBottom;
+      if (W < 50 || H < 50) return;
+      s = math.min(W / f.W, H / f.H);
+      ox = (W - f.W * s) / 2;
+      oy = top + (H - f.H * s) / 2;
+      return;
+    }
     final double top = math.max(insetTop, topHudClearance);
     final double H = fullH - top - insetBottom;
     if (W < 50 || H < 50) return;
@@ -88,6 +99,9 @@ class BmView {
     // world-to-screen mapping for rendering and pointer input.
     oy = top + H / 2 - e.CY * s;
   }
+
+  /// The pitch art's rectangle on screen (logical px).
+  Rect artRect(BmEngine e) => Rect.fromLTWH(ox, oy, e.field.W * s, e.field.H * s);
 
   Offset toWorld(Offset p) => Offset((p.dx - ox) / s, (p.dy - oy) / s);
 }
@@ -224,6 +238,43 @@ void bmPaintBallGloss(Canvas c, Offset o, double r) {
   c.drawCircle(h, r * .34, Paint()..shader = ui.Gradient.radial(h, r * .34, <Color>[_rgba(255, 255, 255, .72), _rgba(255, 255, 255, 0)]));
 }
 
+// ---------------------------------------------------------------- v9 score displays
+/// Segments lit for each digit, in the order a b c d e f g (top, top-right, bottom-right, bottom, bottom-left,
+/// top-left, middle).
+const List<int> kBmSegMasks = <int>[0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F];
+
+/// A glowing seven-segment digit filling [r]: unlit segments faintly visible, lit ones in [c] with a soft glow.
+void bmPaintSevenSeg(Canvas canvas, Rect r, int digit, Color c) {
+  final int m = kBmSegMasks[digit.clamp(0, 9).toInt()];
+  final double w = r.width, h = r.height, t = math.min(w, h) * .17, g = t * .18;
+  final double l = r.left, tp = r.top, mid = r.top + h / 2;
+  final List<Rect> seg = <Rect>[
+    Rect.fromLTWH(l + t * .6 + g, tp, w - t * 1.2 - 2 * g, t), // a
+    Rect.fromLTWH(l + w - t, tp + t * .6 + g, t, h / 2 - t * .9 - 2 * g), // b
+    Rect.fromLTWH(l + w - t, mid + t * .3 + g, t, h / 2 - t * .9 - 2 * g), // c
+    Rect.fromLTWH(l + t * .6 + g, tp + h - t, w - t * 1.2 - 2 * g, t), // d
+    Rect.fromLTWH(l, mid + t * .3 + g, t, h / 2 - t * .9 - 2 * g), // e
+    Rect.fromLTWH(l, tp + t * .6 + g, t, h / 2 - t * .9 - 2 * g), // f
+    Rect.fromLTWH(l + t * .6 + g, mid - t / 2, w - t * 1.2 - 2 * g, t), // g
+  ];
+  final Paint off = Paint()..color = c.withValues(alpha: .10);
+  final Paint glow = Paint()
+    ..color = c.withValues(alpha: .55)
+    ..maskFilter = MaskFilter.blur(BlurStyle.normal, t * .9);
+  final Paint on = Paint()..color = c;
+  final Paint core = Paint()..color = Color.lerp(c, const Color(0xFFFFFFFF), .45)!;
+  for (int i = 0; i < 7; i++) {
+    final RRect rr = RRect.fromRectAndRadius(seg[i], Radius.circular(t / 2));
+    if ((m >> i) & 1 == 0) {
+      canvas.drawRRect(rr, off);
+      continue;
+    }
+    canvas.drawRRect(rr, glow);
+    canvas.drawRRect(rr, on);
+    canvas.drawRRect(rr.deflate(t * .28), core);
+  }
+}
+
 class BmPainter extends CustomPainter {
   BmPainter(this.e, this.im, this.view, this.now, this.dpr, this.fancy, {required Listenable repaint, this.debugColliders = false})
       : super(repaint: repaint);
@@ -241,16 +292,37 @@ class BmPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    paintBackground(canvas, size);
+    if (e.bodies.isEmpty) return;
+    paintUnder(canvas);
+    paintDiscs(canvas);
+    paintBall(canvas);
+    paintOver(canvas);
+    paintScore(canvas);
+  }
+
+  // The phases below are the same frame split into layers, so the Flame scene (fs_flame.dart) can draw each layer as
+  // its own component while CustomPaint users (render tests) still get the whole frame from paint().
+
+  /// Layout + blurred surround + the pitch art.
+  void paintBackground(Canvas canvas, Size size) {
     view.layout(e, size);
     _bg(canvas, size);
-    if (e.bodies.isEmpty) return;
-    final double t = now();
-    final double s = view.s;
-    // ANIX PRO: no camera shake (owner request) and never a draw from the simulation RNG here: painting must not
-    // consume e.rnd, or the bot / online stream would depend on the frame rate.
+  }
+
+  void _world(Canvas canvas) {
     canvas.save();
     canvas.translate(view.ox, view.oy);
-    canvas.scale(s);
+    canvas.scale(view.s);
+  }
+
+  /// Motion trails, contact shadows, the pull circle and the turn rings (everything under the pieces).
+  void paintUnder(Canvas canvas) {
+    if (e.bodies.isEmpty) return;
+    final double t = now();
+    // ANIX PRO: no camera shake (owner request) and never a draw from the simulation RNG here: painting must not
+    // consume e.rnd, or the bot / online stream would depend on the frame rate.
+    _world(canvas);
     // Reference motion marks: a grey tapered streak behind the rolling ball, a blue water ribbon behind each
     // sliding disc (both under the pieces).
     _drawTrail(canvas, t);
@@ -273,12 +345,34 @@ class BmPainter extends CustomPainter {
         }
       }
     }
-    // v6 (reference): at the final whistle the pieces leave the pitch (the score table follows).
-    final bool over = over0;
+    canvas.restore();
+  }
+
+  /// Every disc (team badges as 3D pucks). v6: at the final whistle the pieces leave the pitch.
+  void paintDiscs(Canvas canvas) {
+    if (e.bodies.isEmpty || e.phase == 'over') return;
+    final double t = now();
+    _world(canvas);
     for (final BmBody b in e.bodies) {
-      if (b != e.ball && !over) _sprite(canvas, b, t);
+      if (b != e.ball) _sprite(canvas, b, t);
     }
-    if (e.ball != null && !over) _sprite(canvas, e.ball!, t);
+    canvas.restore();
+  }
+
+  /// The match ball.
+  void paintBall(Canvas canvas) {
+    final BmBody? b = e.ball;
+    if (b == null || e.phase == 'over') return;
+    _world(canvas);
+    _sprite(canvas, b, now());
+    canvas.restore();
+  }
+
+  /// Separate goal sprites (pitches without built-in goals), the debug colliders and the aim arrow.
+  void paintOver(Canvas canvas) {
+    if (e.bodies.isEmpty) return;
+    final double t = now();
+    _world(canvas);
     // goals (drawn over the ball: the net covers it). The sprite's post bottoms sit exactly on the goal line and its
     // posts on the engine's post colliders (BmEngine.geo builds the colliders from this same placement).
     final ui.Image? gi = im.goal;
@@ -303,6 +397,25 @@ class BmPainter extends CustomPainter {
     if (debugColliders) _colliders(canvas);
     // Impact sparks, rings and the full-screen flash are removed by design.
     _aimOver(canvas);
+    canvas.restore();
+  }
+
+  /// v9: the live score on the pitch art's two side displays (left / blue = the bottom side, right = the top side),
+  /// two seven-segment digits each, stacked tens over ones like the printed "00" they replace.
+  void paintScore(Canvas canvas) {
+    final BmScoreDisplay? d = e.field.score;
+    if (d == null) return;
+    final double k = e.field.W / d.artW; // art px -> world
+    _world(canvas);
+    for (int side = 0; side < 2; side++) {
+      final int v = e.score[side].clamp(0, 99).toInt();
+      final double cx = (side == 0 ? d.leftCx : d.rightCx) * k;
+      final Color c = side == 0 ? kBmScoreLeft : e.field.scoreRight;
+      bmPaintSevenSeg(canvas, Rect.fromCenter(center: Offset(cx, d.tensCy * k), width: d.digitW * k, height: d.digitH * k),
+          v ~/ 10, c);
+      bmPaintSevenSeg(canvas, Rect.fromCenter(center: Offset(cx, d.onesCy * k), width: d.digitW * k, height: d.digitH * k),
+          v % 10, c);
+    }
     canvas.restore();
   }
 

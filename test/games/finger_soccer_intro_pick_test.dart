@@ -64,7 +64,7 @@ void main() {
     phone(tester);
     int? done;
     await tester.pumpWidget(_app(FsFormationSelect(
-      discAsset: 'assets/games/bermuda/discs/germany.webp',
+      discAsset: 'assets/games/bermuda/discs/v9/nx_core.webp',
       initial: 0,
       onDone: (int f) => done = f,
       onBar: () {},

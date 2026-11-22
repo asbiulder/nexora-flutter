@@ -51,8 +51,12 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
   @override
   void dispose() {
     MusicService.instance.exitGame();
+    _immersive.dispose();
     super.dispose();
   }
+
+  /// A game that draws its own chrome during the match (GameLaunch.immersive) hides the host's corner buttons.
+  final ValueNotifier<bool> _immersive = ValueNotifier<bool>(false);
 
   int _round = 0;
   GameResult? _result;
@@ -150,6 +154,7 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
       seed: widget.daily ? ArcadeDaily.seed(widget.game.id) : DateTime.now().millisecondsSinceEpoch ^ _round,
       daily: widget.daily,
       onFinish: _onFinish,
+      immersive: _immersive,
     );
     final Widget gameView = KeyedSubtree(
       key: ValueKey('round_$_round'),
@@ -168,6 +173,12 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
           Positioned.fill(
             child: gameView,
           ),
+          Positioned.fill(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _immersive,
+              builder: (BuildContext context, bool hide, Widget? chrome) =>
+                  hide && _result == null ? const SizedBox.shrink() : chrome!,
+              child: Stack(children: <Widget>[
           PositionedDirectional(
             top: MediaQuery.paddingOf(context).top + 6,
             start: 6,
@@ -203,6 +214,9 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
               right: 0,
               child: OracleTutorialBanner(key: ValueKey<String>('tut_${widget.game.id}_$_round'), gameId: widget.game.id),
             ),
+              ]),
+            ),
+          ),
           if (_result != null)
             Positioned.fill(child: _resultOverlay(context, _result!, _award)),
         ]),

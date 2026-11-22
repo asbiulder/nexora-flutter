@@ -86,9 +86,9 @@ class FsShop extends StatefulWidget {
 
 /// [label, isNew]
 const List<(String, bool)> kFsShopTabs = <(String, bool)>[
-  ('کشوری', false),
-  ('باشگاهی', false),
-  ('لاکچری', true),
+  ('خودرو', true),
+  ('ورزشی', true),
+  ('انیکس', true),
   ('اختصاصی', true),
   ('بازیکن ها', true),
   ('زمین', false),
@@ -193,7 +193,7 @@ class _FsShopState extends State<FsShop> {
       case 0:
       case 1:
       case 2:
-        final String cat = <String>['nat', 'club', 'lux'][_tab];
+        final String cat = <String>['car', 'sport', 'nx'][_tab];
         return <Widget>[for (final BmTeam t in kBmTeams.where((BmTeam t) => t.cat == cat)) _teamCard(t)];
       case 3:
         return <Widget>[_customCard()];

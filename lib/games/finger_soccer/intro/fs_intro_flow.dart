@@ -42,7 +42,7 @@ class _FsIntroFlowState extends State<FsIntroFlow> {
   bool get _bot => launch.vsBot;
 
   String _randomTeam(String not) {
-    final List<BmTeam> pool = kBmTeams.where((BmTeam t) => t.id != not && (t.cat != 'lux' || _r.nextInt(4) == 0)).toList();
+    final List<BmTeam> pool = kBmTeams.where((BmTeam t) => t.id != not && (t.cat != 'nx' || _r.nextInt(4) == 0)).toList();
     return pool.isEmpty ? kBmTeams.first.id : pool[_r.nextInt(pool.length)].id;
   }
 

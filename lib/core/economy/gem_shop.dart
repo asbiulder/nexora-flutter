@@ -7,7 +7,8 @@ import '../../games/finger_soccer/core/bm_data.dart';
 import '../online/online_service.dart';
 import '../profile/profile_service.dart';
 
-/// Finger-soccer teams that are always unlocked (no purchase): Persepolis, Esteghlal and Iran.
+/// Finger-soccer teams that are always unlocked (no purchase). v9: the NX house badges NX Core, NX Pulse and NX Inferno
+/// (the ids are the shop catalogue's long-standing free ids, see bm_data.dart kBmTeamDefs).
 const Set<String> kFreeTeams = <String>{'club32', 'club33', 'nat26'};
 
 /// Default team for a new player / when a saved team is not owned.

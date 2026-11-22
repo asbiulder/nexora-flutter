@@ -49,7 +49,13 @@ class GameLaunch {
     this.net,
     this.tournamentMatchId,
     this.daily = false,
+    this.immersive,
   });
+
+  /// Set to true by a game whose match screen draws its own complete chrome (its own menu with an exit, its own
+  /// clock) while the match runs, so the host page hides its corner buttons, tutorial banner and presence dots and
+  /// nothing covers the playfield. The host owns the notifier; null when the host does not support it.
+  final ValueNotifier<bool>? immersive;
 
   /// Daily challenge run: [seed] is today's shared seed (solo: score target, multiplayer: win vs Hard bots).
   final bool daily;

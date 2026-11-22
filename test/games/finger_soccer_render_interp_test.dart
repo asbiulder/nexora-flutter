@@ -1,6 +1,6 @@
 // ANIX PRO: smooth render interpolation between fixed physics steps must be visual only.
-// - Bot-vs-bot matches with a fixed seed and a fixed frame clock produce exactly the same result as the engine at
-//   25af4d1 (goldens recorded from that commit), so interpolation / 3D pucks changed nothing in the simulation.
+// - Bot-vs-bot matches with a fixed seed and a fixed frame clock produce exactly the same result as the recorded
+//   goldens, so interpolation / 3D pucks / the Flame scene change nothing in the simulation.
 // - Painting never consumes the game RNG (the old camera shake drew from e.rnd).
 // - renderPos blends between the previous and current step and snaps across big jumps (kickoff reset).
 import 'dart:math' as math;
@@ -29,7 +29,7 @@ class _H implements BmHooks {
 
 BmConfig _cfg() => const BmConfig(
     mode: 'bot',
-    teams: <String>['lux0', 'lux1'],
+    teams: <String>['nat27', 'club0'],
     form: <int>[0, 1],
     names: <String>['A', 'B'],
     field: 0,
@@ -49,17 +49,22 @@ String _botVsBot(int seed, int frames) {
 }
 
 void main() {
-  // Recorded by running _botVsBot at 25af4d1 (before render interpolation). Any change here means the
-  // simulation changed, not just the rendering.
+  // Golden history:
+  // - first recorded at 25af4d1 (before render interpolation) on the old pitch 0 with teams lux0 / lux1.
+  // - re-recorded for finger soccer v9 (2026-11-22): pitch 0 is now the owner's Neon Arena art (800x1421, rails
+  //   71/727/90/1286, its own goal geometry) and the old team ids are gone, so the playfield the bots shoot on is a
+  //   different shape and every trajectory moves. bm_engine.dart's physics did not change in v9 (its diff is only the
+  //   score-display fields on BmFieldS, `NB` following the ball list and a Color import); the values below are what
+  //   the unchanged engine produces on the new pitch 0. Any change here from now on means the simulation changed.
   const Map<int, String> golden = <int, String>{
-    1: '0-0 t1 77.563,1238.185',
-    2: '2-0 t1 681.259,1472.365',
-    3: '0-1 t1 882.474,779.583',
-    7: '0-1 t0 812.492,744.055',
-    42: '1-0 t0 590.001,36.218',
+    1: '0-0 t0 165.983,475.215',
+    2: '1-2 t1 305.731,1686.876',
+    3: '1-1 t0 626.194,1424.102',
+    7: '0-2 t0 522.886,894.686',
+    42: '0-2 t1 594.109,749.768',
   };
 
-  test('bot vs bot simulation is bit-identical to 25af4d1', () {
+  test('bot vs bot simulation is bit-identical to the recorded goldens', () {
     final Map<int, String> got = <int, String>{for (final int s in golden.keys) s: _botVsBot(s, 3600)};
     // ignore: avoid_print
     print('GOT $got');

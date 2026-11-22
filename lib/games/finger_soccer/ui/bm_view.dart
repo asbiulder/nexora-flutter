@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -20,9 +21,9 @@ import '../core/bm_engine.dart';
 import 'bm_audio.dart';
 import 'bm_ball.dart';
 import 'bm_painter.dart';
+import 'fs_flame.dart';
 import '../intro/fs_game_bar.dart';
 import '../intro/fs_intro_data.dart';
-import '../intro/fs_intro_ui.dart' show FsBarHandle, kFsBarHandleHeight, kFsBarHandleWidth;
 import '../intro/fs_online_pick.dart';
 import '../intro/fs_score_table.dart';
 import '../intro/fs_team_select.dart' show FsSidePlayer;
@@ -33,11 +34,11 @@ const String _a = 'assets/games/bermuda/';
 /// Online match settings (config.js MATCH_SECONDS / TURN_SECONDS).
 const int kBmMatchSeconds = 300;
 
-/// Width reserved at each side of the top row for the host's exit / ORACLE buttons (6dp + 48dp + 4dp).
-const double kBmHostButtonLane = 58;
-
-/// Height of the match scoreboard (team chips + clock) below the status bar.
-const double kBmScoreboardHeight = 64;
+/// v9 match chrome: the top bar (clock, menu, formation button) below the status bar and the bottom strip (voice
+/// controls online, the "one minute left" toast) above the gesture bar. The pitch art is fitted between them, so no
+/// control ever sits on the playfield.
+const double kFsTopBarHeight = 52;
+const double kFsBottomStripHeight = 58;
 const double kBmOnlineTurnSeconds = 10;
 
 /// v6 reference: how long the "one minute left" toast stays up (about 3 s in the recordings).
@@ -246,6 +247,23 @@ class _BermudaViewState extends State<BermudaView>
     _last = el;
     if (dt < 0) dt = 0;
     _nowMs = el.inMicroseconds / 1000;
+    // v9: while the Flame scene is running the match it advances the game (FsFlameGame.update -> _advance); this
+    // ticker only keeps the clock for the painters and drives the screens before / without the Flame scene.
+    if (stage == 'match' && _nowMs - _flameAtMs < 250) return;
+    _advance(dt);
+  }
+
+  /// Time of the last Flame frame on the ticker's clock (ms).
+  double _flameAtMs = -1e9;
+
+  void _flameFrame(double dt) {
+    if (_disposed) return;
+    _flameAtMs = _nowMs;
+    _advance(dt);
+  }
+
+  /// One frame of the match screen: audio, toasts, the engine, clocks, net waiters and the end of the match.
+  void _advance(double dt) {
     audio.frame(dt);
     if (_toastT > 0) _toastT -= dt;
     if (_minuteT > 0) _minuteT -= dt;
@@ -383,7 +401,7 @@ class _BermudaViewState extends State<BermudaView>
     final math.Random r = math.Random(launch.seed);
     // Bots / local opponents draw from every category (Club, National, Luxury) so all supplied crests appear.
     final List<BmTeam> clubs = kBmTeams
-        .where((BmTeam t) => t.id != my.team && (t.cat != 'lux' || r.nextInt(4) == 0))
+        .where((BmTeam t) => t.id != my.team && (t.cat != 'nx' || r.nextInt(4) == 0))
         .toList();
     final FsMatchPick? pk = widget.pick;
     final String opp = pk != null ? pk.teams[1] : clubs[r.nextInt(clubs.length)].id;
@@ -526,8 +544,8 @@ class _BermudaViewState extends State<BermudaView>
     final List<ui.Image?> r = await Future.wait(<Future<ui.Image?>>[
       _img(f.asset),
       f.builtInGoals ? Future<ui.Image?>.value(null) : _img('${_a}goals/${f.gs}.webp'),
-      // v6: the classic ball is drawn by the 3D roller from its flat art (no sprite sheet)
-      c.ball == kBmClassicBallIndex ? _img(kBmClassicBall) : Future<ui.Image?>.value(null),
+      // v9: every ball is a flat art the 3D roller rolls with the ball's motion (no sprite sheet)
+      _img(bmBallArt(c.ball)),
       _img(bmTeam(c.teams[e.ct(0)]).asset, w: 192),
       _img(bmTeam(c.teams[e.ct(1)]).asset, w: 192),
     ]);
@@ -1109,6 +1127,7 @@ class _BermudaViewState extends State<BermudaView>
   @override
   Widget build(BuildContext context) {
     if (stage != 'match') {
+      _syncImmersive(false);
       // v4: no menu soundtrack on the screen that only hands over to an auto-started match (offline intro), and
       // none during a match; it comes back on the setup screen after leaving a match.
       if (launch.soundOn && !_paused && _visible && !widget.autoStart) unawaited(audio.music(true));
@@ -1117,76 +1136,63 @@ class _BermudaViewState extends State<BermudaView>
       return Stack(fit: StackFit.expand, children: <Widget>[pre, _stallBar()]);
     }
     final double dpr = math.min(MediaQuery.devicePixelRatioOf(context), 1.75);
-    // Layout only: centre the pitch (goals included) in the space between the scoreboard and the
-    // gesture bar, so neither the HUD nor the system bars cover it.
+    // v9 layout: the top bar and the bottom strip are outside the pitch; the pitch art is fitted between them.
     final EdgeInsets pad = MediaQuery.paddingOf(context);
-    view.insetTop = pad.top + kBmScoreboardHeight;
-    view.insetBottom = pad.bottom + 8;
+    view.insetTop = pad.top + kFsTopBarHeight;
+    view.insetBottom = pad.bottom + kFsBottomStripHeight;
     final bool fancy = launch.fancyEffects && !launch.reducedMotion;
+    final FsFlameGame game = _flame ??= FsFlameGame(
+      painter: BmPainter(e, im, view, () => _nowMs, dpr, fancy, repaint: _frame),
+      onFrame: _flameFrame,
+      pointer: FsPointerSink(
+        down: e.pointerDown,
+        move: e.pointerMove,
+        up: e.pointerUp,
+        cancel: e.pointerCancel,
+      ),
+    );
+    _syncImmersive(true);
     return Directionality(
       textDirection: TextDirection.ltr,
       child: ColoredBox(
         color: const Color(0xFF03060D),
         child: Stack(children: <Widget>[
-          Positioned.fill(
-            child: Listener(
-              behavior: HitTestBehavior.opaque,
-              onPointerDown: (PointerDownEvent ev) {
-                final Offset w = view.toWorld(ev.localPosition);
-                e.pointerDown(w.dx, w.dy);
-              },
-              onPointerMove: (PointerMoveEvent ev) {
-                final Offset w = view.toWorld(ev.localPosition);
-                e.pointerMove(w.dx, w.dy);
-              },
-              onPointerUp: (_) => e.pointerUp(),
-              onPointerCancel: (_) => e.pointerCancel(),
-              child: CustomPaint(
-                painter: BmPainter(e, im, view, () => _nowMs, dpr, fancy,
-                    repaint: _frame),
-                size: Size.infinite,
-              ),
-            ),
-          ),
-          // vignette (#vig)
-          const Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    radius: .95,
-                    colors: <Color>[
-                      Color(0x00000000),
-                      Color(0x00000000),
-                      Color(0x94050316)
-                    ],
-                    stops: <double>[0, .52, 1],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-              left: 0, right: 0, top: 0, child: SafeArea(child: _scoreboard())),
+          // The playfield: a Flame scene (pitch, discs, ball, goals, score displays and touch input).
+          Positioned.fill(child: GameWidget<FsFlameGame>(game: game)),
           Positioned.fill(child: IgnorePointer(child: _overlays())),
-          if (_tableT >= 0) Positioned.fill(child: _scoreTable()),
+          // Top bar: the match clock, the menu and the formation button, nothing else.
           Positioned(
             left: 0,
-            bottom: 12 + MediaQuery.paddingOf(context).bottom,
-            child: FsBarHandle(players: cfg?.names.length ?? 2, onTap: _pause),
+            right: 0,
+            top: pad.top,
+            height: kFsTopBarHeight,
+            child: ValueListenableBuilder<int>(
+              valueListenable: _frame,
+              builder: (BuildContext context, int _, Widget? __) => FsMatchTopBar(
+                clock: _clockText(),
+                red: e.mt > 0 && !e.sd ? bmClockRed(e.mleft, e.mt) : (e.sd ? 1 : 0),
+                turn: e.phase == 'aim' && e.tt > 0 ? (e.tleft / e.tt).clamp(0.0, 1.0).toDouble() : -1,
+                turnMine: e.turn == 0,
+                menuLabel: launch.tx('منو', 'Menu'),
+                formLabel: launch.tx('تغییر ترکیب', 'Formation'),
+                onMenu: _pause,
+                onFormation: _tableT < 0 ? _changeFormation : null,
+              ),
+            ),
           ),
-          // v6 reference toast "یک دقیقه تا پایان بازی" (dark pill, ~3 s). v7: one row above the game bar, because
-          // the formation button now sits beside the bar.
+          // Bottom strip (outside the pitch): the v6 "one minute left" toast; online the host page centres the voice
+          // controls here.
           Positioned(
-            left: 6,
+            left: 8,
             right: 8,
-            bottom: 12 + MediaQuery.paddingOf(context).bottom + kBmFormButtonRowLift,
+            bottom: pad.bottom,
+            height: kFsBottomStripHeight,
             child: IgnorePointer(
               child: ValueListenableBuilder<int>(
                 valueListenable: _frame,
                 builder: (BuildContext context, int _, Widget? __) => _minuteT > 0 && _tableT < 0
                     ? Align(
-                        alignment: Alignment.centerLeft,
+                        alignment: online ? Alignment.centerLeft : Alignment.center,
                         child: BmMinuteToast(
                             text: launch.tx('یک دقیقه تا پایان بازی', 'One minute left'),
                             opacity: (_minuteT / .25).clamp(0.0, 1.0).toDouble()))
@@ -1194,18 +1200,38 @@ class _BermudaViewState extends State<BermudaView>
               ),
             ),
           ),
-          // Reference in-match "تغییر ترکیب" button. v7 (owner request 2026-11-20): moved down to sit beside the game
-          // bar handle, on the same row (it used to float one row above the handle). Always shown while the match
-          // runs; only the end-of-match score table (match over) covers that corner.
-          if (_tableT < 0)
-          Positioned(
-            left: kBmFormButtonLeft,
-            bottom: 12 + MediaQuery.paddingOf(context).bottom + (kFsBarHandleHeight - kBmFormButtonHeight) / 2,
-            child: BmChangeFormButton(label: launch.tx('تغییر ترکیب', 'Formation'), onTap: _changeFormation),
-          ),
+          if (_tableT >= 0) Positioned.fill(child: _scoreTable()),
         ]),
       ),
     );
+  }
+
+  FsFlameGame? _flame;
+
+  /// Tests: the Flame scene of the running match (null before the match screen is built).
+  @visibleForTesting
+  FsFlameGame? get flameGame => _flame;
+
+  bool _immersiveSent = false;
+
+  /// Tells the host page (GameLaunch.immersive) that the match screen draws its own chrome, after this frame.
+  void _syncImmersive(bool on) {
+    if (_immersiveSent == on) return;
+    _immersiveSent = on;
+    final ValueNotifier<bool>? n = launch.immersive;
+    if (n == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_disposed) n.value = on;
+    });
+  }
+
+  /// The match clock: played time counting up (v3), "GOLDEN" in golden goal, empty for goal-limit matches.
+  String _clockText() {
+    if (e.mt <= 0) return '';
+    if (e.sd) return launch.tx('گل طلایی', 'GOLDEN');
+    final int el = math.min(e.mt, math.max(0, (e.mt - e.mleft).floor()));
+    final String c = '${(el ~/ 60).toString().padLeft(2, '0')}:${(el % 60).toString().padLeft(2, '0')}';
+    return launch.isFa ? fsFa(c) : c;
   }
 
   Widget _overlays() {
@@ -1324,242 +1350,6 @@ class _BermudaViewState extends State<BermudaView>
     return rows;
   }
 
-  Widget _scoreboard() {
-    return ValueListenableBuilder<int>(
-      valueListenable: _frame,
-      builder: (BuildContext context, int _, Widget? __) {
-        final NxThemeColors visual = NxThemeColors.of(context);
-        final double screenWidth = MediaQuery.sizeOf(context).width;
-        // A wide, shallow HUD gives names and scores room without covering the pitch.
-        // The host's exit + ORACLE buttons (48dp at 6dp from each edge) sit in the top corners:
-        // keep the scoreboard between them instead of under them.
-        final double sw = math.max(0, math.min(screenWidth - 2 * kBmHostButtonLane, 620));
-        final bool aim = e.phase == 'aim';
-        String clock = '';
-        // v6 reference banner: 0 = white plates / yellow clock, 1 = red; flashes over the last minute and stays red
-        // once the time is up (and in golden goal).
-        double red = 0;
-        if (e.mt > 0) {
-          if (e.sd) {
-            clock = launch.tx('گل طلایی', 'GOLDEN');
-            red = 1;
-          } else {
-            // v3 (owner request 2026-11-20): a natural match clock that counts the played time up in real
-            // seconds (00:00 -> match length) instead of counting down.
-            final int el = math.min(e.mt, math.max(0, (e.mt - e.mleft).floor()));
-            clock = '${(el ~/ 60).toString().padLeft(2, '0')}:${(el % 60).toString().padLeft(2, '0')}';
-            if (launch.isFa) clock = fsFa(clock);
-            red = bmClockRed(e.mleft, e.mt);
-          }
-        }
-        final int tl = math.max(0, e.tleft.ceil());
-
-        Widget team(int t) {
-          final bool on = aim && e.turn == t;
-          final Color accent = t == 0 ? visual.accent : visual.accentSecondary;
-          final Widget logo = Container(
-            width: 26,
-            height: 26,
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: visual.background.withValues(alpha: .78),
-              border: Border.all(
-                  color: on ? accent : visual.border.withValues(alpha: .56),
-                  width: on ? 1.6 : 1),
-              boxShadow: on
-                  ? <BoxShadow>[
-                      BoxShadow(
-                          color: accent.withValues(alpha: .42), blurRadius: 12)
-                    ]
-                  : null,
-            ),
-            child: ClipOval(
-                child: Image.asset(bmTeam(e.sel[e.ct(t)]).asset,
-                    cacheWidth: 96, fit: BoxFit.contain)),
-          );
-          final Widget identity = Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment:
-                  t == 0 ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-              children: <Widget>[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (on && t == 0) _TurnDot(color: accent),
-                    if (on && t == 0) const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        e.nm(t),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: t == 0 ? TextAlign.left : TextAlign.right,
-                        style: TextStyle(
-                            color: visual.text,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    if (on && t == 1) const SizedBox(width: 4),
-                    if (on && t == 1) _TurnDot(color: accent),
-                  ],
-                ),
-              ],
-            ),
-          );
-          final List<Widget> children = t == 0
-              ? <Widget>[logo, const SizedBox(width: 6), identity]
-              : <Widget>[identity, const SizedBox(width: 6), logo];
-          return Expanded(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-              decoration: BoxDecoration(
-                color: on ? accent.withValues(alpha: .13) : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: on
-                        ? accent.withValues(alpha: .72)
-                        : Colors.transparent),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  // v6: on a narrow phone the chip keeps the name (the crest is on every disc) so the banner fits.
-                  LayoutBuilder(
-                      builder: (BuildContext context, BoxConstraints box) =>
-                          Row(children: box.maxWidth >= 84 ? children : <Widget>[identity])),
-                  // Reference turn clock: an orange bar under each name, full while waiting, draining toward the
-                  // left on the side whose turn it is.
-                  if (e.tt > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: .45),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        alignment: Alignment.centerLeft,
-                        child: FractionallySizedBox(
-                          widthFactor: on ? (e.tleft / e.tt).clamp(0.0, 1.0).toDouble() : 1,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(2),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: <Color>[Color(0xFFFFC23A), Color(0xFFFF8A00)],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return Center(
-          child: SizedBox(
-            width: sw,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: visual.surface.withValues(alpha: .96),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: visual.border.withValues(alpha: .78)),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                          color: Colors.black.withValues(alpha: .34),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8)),
-                      BoxShadow(
-                          color: visual.accent.withValues(alpha: .10),
-                          blurRadius: 20),
-                    ],
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      team(0),
-                      // v6: the reference's score banner (white score plates either side of a yellow clock).
-                      BmScoreBanner(
-                        left: launch.isFa ? fsFa(e.score[0]) : '${e.score[0]}',
-                        right: launch.isFa ? fsFa(e.score[1]) : '${e.score[1]}',
-                        clock: clock,
-                        red: red,
-                      ),
-                      team(1),
-                    ],
-                  ),
-                ),
-                if (aim && e.tt > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: visual.surfaceRaised.withValues(alpha: .94),
-                        borderRadius: BorderRadius.circular(99),
-                        border: Border.all(
-                            color: (e.tleft < 5
-                                    ? const Color(0xFFFF697A)
-                                    : visual.border)
-                                .withValues(alpha: .8)),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 3),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            _TurnDot(
-                                color: e.tleft < 5
-                                    ? const Color(0xFFFF697A)
-                                    : visual.accent),
-                            const SizedBox(width: 5),
-                            Text(
-                              '${launch.tx('نوبت', 'TURN')} ${e.turn + 1}',
-                              style: TextStyle(
-                                  color: visual.muted,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: .5),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${tl}s',
-                              style: TextStyle(
-                                color: e.tleft < 5
-                                    ? const Color(0xFFFF8794)
-                                    : visual.text,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                fontFeatures: const <ui.FontFeature>[
-                                  ui.FontFeature.tabularFigures()
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Locked team: confirm + buy with gems (server-side deduct and unlock). True when the team is now owned.
   Future<bool> _buyTeam(BmTeam t) async {
     final GemShop shop = GemShop.instance;
     final int price = shop.teamPrice(t.id);
@@ -2160,48 +1950,153 @@ class _BermudaViewState extends State<BermudaView>
   }
 }
 
-/// v7 layout of the in-match formation button: on the game bar's row, just right of the bar handle
-/// ([kFsBarHandleWidth] wide, at the left edge), vertically centred on it.
+/// Height of the in-match formation button (v9: in the top bar).
 const double kBmFormButtonHeight = 36;
-const double kBmFormButtonLeft = kFsBarHandleWidth + 8;
-/// Lift of the "one minute left" toast: one row above the game bar (where the formation button used to be).
-const double kBmFormButtonRowLift = 48;
 
-/// The reference's in-match "تغییر ترکیب" button: a dark pill with the label and a small green pitch icon.
-class BmChangeFormButton extends StatelessWidget {
-  const BmChangeFormButton({super.key, required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
+/// v9 top bar of the match screen: the menu button, the match clock (with the turn clock as a thin bar under it) and
+/// the formation button - nothing else, and it sits above the pitch art, never on it.
+class FsMatchTopBar extends StatelessWidget {
+  const FsMatchTopBar({
+    super.key,
+    required this.clock,
+    required this.red,
+    required this.turn,
+    required this.turnMine,
+    required this.menuLabel,
+    required this.formLabel,
+    required this.onMenu,
+    required this.onFormation,
+  });
+
+  final String clock;
+  /// 0 = normal clock, 1 = red (last-minute pulse / final whistle / golden goal), see [bmClockRed].
+  final double red;
+  /// Share of the turn clock left (0..1), or < 0 when no turn clock runs.
+  final double turn;
+  /// The turn being timed is the local side's (green) or the other side's (gold).
+  final bool turnMine;
+  final String menuLabel, formLabel;
+  final VoidCallback onMenu;
+  final VoidCallback? onFormation;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: GestureDetector(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Row(children: <Widget>[
+        LuxeIconButton(icon: Icons.menu_rounded, tooltip: menuLabel, size: 40, onTap: onMenu),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: FsClockPill(clock: clock, red: red, turn: turn, turnMine: turnMine),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: BmChangeFormButton(label: formLabel, onTap: onFormation),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// The match clock pill (Luxe gold hairline); it warms to red with [red] and carries the turn clock underneath.
+class FsClockPill extends StatelessWidget {
+  const FsClockPill({super.key, required this.clock, required this.red, required this.turn, required this.turnMine});
+  final String clock;
+  final double red;
+  final double turn;
+  final bool turnMine;
+
+  @override
+  Widget build(BuildContext context) {
+    final double k = red.clamp(0.0, 1.0).toDouble();
+    final Color ink = Color.lerp(Luxe.gold2, const Color(0xFFFF6B6B), k)!;
+    return Container(
+      constraints: const BoxConstraints(minWidth: 92),
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xE6101014),
+        borderRadius: BorderRadius.circular(LuxeRadius.pill),
+        border: Border.all(color: Color.lerp(Luxe.line, const Color(0x99FF6B6B), k)!),
+        boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x66000000), blurRadius: 10, offset: Offset(0, 3))],
+      ),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: <Widget>[
+        Text(clock.isEmpty ? '--:--' : clock,
+            maxLines: 1,
+            style: TextStyle(
+              color: ink,
+              fontSize: 17,
+              height: 1.1,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .6,
+              fontFeatures: const <ui.FontFeature>[ui.FontFeature.tabularFigures()],
+            )),
+        if (turn >= 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: SizedBox(
+              width: 56,
+              height: 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: Stack(children: <Widget>[
+                  const Positioned.fill(child: ColoredBox(color: Color(0x33FFFFFF))),
+                  FractionallySizedBox(
+                    widthFactor: turn,
+                    child: ColoredBox(color: turnMine ? kBmRingGreen : kBmRingGold),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+/// The in-match "تغییر ترکیب" button (v9: Luxe pill in the top bar, with the small green pitch icon).
+class BmChangeFormButton extends StatelessWidget {
+  const BmChangeFormButton({super.key, required this.label, required this.onTap});
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: onTap == null ? .45 : 1,
+      child: LuxePress(
         onTap: onTap,
+        semantics: label,
         child: Container(
           height: kBmFormButtonHeight,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            color: const Color(0xE61C1E22),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.white24),
-            boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x66000000), blurRadius: 6, offset: Offset(0, 2))],
+            color: const Color(0xE6101014),
+            borderRadius: BorderRadius.circular(LuxeRadius.pill),
+            border: Border.all(color: Luxe.line),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-            const SizedBox(width: 6),
             Container(
-              width: 30,
-              height: 22,
+              width: 26,
+              height: 20,
               decoration: BoxDecoration(
                 color: const Color(0xFF2E9B32),
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: const Color(0xFF9CFF7A)),
               ),
-              child: const Icon(Icons.grid_view_rounded, size: 14, color: Colors.white),
+              child: const Icon(Icons.grid_view_rounded, size: 13, color: Colors.white),
             ),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(color: Luxe.ink, fontSize: 12, fontWeight: FontWeight.w700)),
           ]),
         ),
       ),
@@ -2455,25 +2350,6 @@ class _StatBar extends StatelessWidget {
   }
 }
 
-class _TurnDot extends StatelessWidget {
-  const _TurnDot({required this.color});
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          boxShadow: <BoxShadow>[
-            BoxShadow(color: color.withValues(alpha: .62), blurRadius: 6)
-          ]),
-    );
-  }
-}
-
 class _ToastPill extends StatelessWidget {
   const _ToastPill({required this.text, required this.big});
   final String text;
@@ -2526,141 +2402,6 @@ double bmClockRed(double mleft, int mt) {
   if (mleft <= 0) return 1;
   if (mleft > 60) return 0;
   return .5 - .5 * math.cos(2 * math.pi * (60 - mleft) / 4);
-}
-
-/// v6: the reference's in-match score banner: a white score plate on each side of a yellow hexagonal clock, all
-/// turning red by [red] (last-minute pulse, solid red at the final whistle / golden goal).
-class BmScoreBanner extends StatelessWidget {
-  const BmScoreBanner({super.key, required this.left, required this.right, required this.clock, this.red = 0});
-  final String left;
-  final String right;
-  final String clock;
-  final double red;
-
-  static const double kWidth = 122;
-  static const double kHeight = 34;
-  static const double kPlate = 30;
-
-  @override
-  Widget build(BuildContext context) {
-    final double k = red.clamp(0.0, 1.0).toDouble();
-    final Color score = Color.lerp(const Color(0xFF1E2230), const Color(0xFF240306), k)!;
-    final Color clockInk = Color.lerp(const Color(0xFF3C3300), const Color(0xFFFFE9EC), k)!;
-    TextStyle st(Color c, double size) => TextStyle(
-      color: c,
-      fontSize: size,
-      height: 1,
-      fontWeight: FontWeight.w900,
-      fontFeatures: const <ui.FontFeature>[ui.FontFeature.tabularFigures()],
-    );
-    return SizedBox(
-      width: kWidth,
-      height: kHeight,
-      child: CustomPaint(
-        painter: _BannerPainter(k),
-        child: Row(
-          children: <Widget>[
-            SizedBox(
-              width: kPlate,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 5),
-                child: Center(
-                  child: FittedBox(child: Text(left, maxLines: 1, style: st(score, 19))),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(clock, maxLines: 1, style: st(clockInk, 14)),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: kPlate,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 5),
-                child: Center(
-                  child: FittedBox(child: Text(right, maxLines: 1, style: st(score, 19))),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BannerPainter extends CustomPainter {
-  _BannerPainter(this.k);
-  final double k;
-
-  Color _l(int a, int b) => Color.lerp(Color(a), Color(b), k)!;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width, h = size.height, p = BmScoreBanner.kPlate, n = 8;
-    final Paint edge = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = Colors.black.withValues(alpha: .55);
-    Paint fill(Rect r, int top, int bottom, int topR, int bottomR) => Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: <Color>[_l(top, topR), _l(bottom, bottomR)],
-      ).createShader(r);
-    // score plates (pointed outward ends), behind the clock
-    final Path lp = Path()
-      ..moveTo(n, 0)
-      ..lineTo(p + n, 0)
-      ..lineTo(p + n, h)
-      ..lineTo(n, h)
-      ..lineTo(0, h / 2)
-      ..close();
-    final Path rp = Path()
-      ..moveTo(w - n, 0)
-      ..lineTo(w - p - n, 0)
-      ..lineTo(w - p - n, h)
-      ..lineTo(w - n, h)
-      ..lineTo(w, h / 2)
-      ..close();
-    final Rect all = Offset.zero & size;
-    for (final Path q in <Path>[lp, rp]) {
-      canvas.drawPath(q, fill(all, 0xFFFFFFFF, 0xFFCFD3DA, 0xFFFFC2CA, 0xFFF0687A));
-      canvas.drawPath(q, edge);
-    }
-    // clock hexagon
-    final Path c = Path()
-      ..moveTo(p + n, 0)
-      ..lineTo(w - p - n, 0)
-      ..lineTo(w - p, h / 2)
-      ..lineTo(w - p - n, h)
-      ..lineTo(p + n, h)
-      ..lineTo(p, h / 2)
-      ..close();
-    canvas.drawShadow(c, Colors.black, 2, false);
-    canvas.drawPath(c, fill(all, 0xFFFFF35A, 0xFFC9B400, 0xFFF0303A, 0xFFA50E16));
-    // top gloss
-    canvas.drawPath(
-      Path()
-        ..moveTo(p + n + 2, 2)
-        ..lineTo(w - p - n - 2, 2)
-        ..lineTo(w - p - n * .5 - 2, h * .42)
-        ..lineTo(p + n * .5 + 2, h * .42)
-        ..close(),
-      Paint()..color = Colors.white.withValues(alpha: .22),
-    );
-    canvas.drawPath(c, edge);
-  }
-
-  @override
-  bool shouldRepaint(_BannerPainter old) => old.k != k;
 }
 
 /// v6 reference: the dark rounded "یک دقیقه تا پایان بازی" pill.

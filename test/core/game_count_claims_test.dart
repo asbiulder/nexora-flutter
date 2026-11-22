@@ -1,3 +1,5 @@
+import 'dart:io';
+
 // The app describes its own catalogue in user-facing copy: the Arcade world tagline, ORACLE's
 // "what games do you have" answer and two achievement descriptions. All of those are const
 // strings, so they cannot interpolate the registry — which is how the app ended up promising
@@ -98,15 +100,17 @@ void main() {
     });
 
     test('the catalogue the README advertises is the one that ships', () {
-      // 114 teams: Club 40, National 31, Luxury 43 (every Luxury set rated 10/10), 30 pitches.
-      expect(kBmTeamDefs.length, 114);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'club').length, 40);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nat').length, 31);
-      final List<BmTeamDef> lux =
-          kBmTeamDefs.where((BmTeamDef t) => t.cat == 'lux').toList();
-      expect(lux.length, 43);
-      expect(lux.every((BmTeamDef t) => t.power == 10 && t.accuracy == 10), isTrue);
-      expect(kBmFieldsRaw.length, 30);
+      // v9: 48 teams (Cars 24, Sport 12, NX 12) from the owner's badge sheets, the owner's 3 pitches, 18 balls.
+      expect(kBmTeamDefs.length, 48);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'car').length, 24);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'sport').length, 12);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nx').length, 12);
+      expect(kBmFieldsRaw.length, 3);
+      expect(kBmBallN.length, 18);
+      final String readme = File('README.md').readAsStringSync();
+      expect(readme, contains('48 teams'));
+      expect(readme, contains('3 pitches'));
+      expect(readme, contains('۴۸ تیم'));
     });
   });
 }
