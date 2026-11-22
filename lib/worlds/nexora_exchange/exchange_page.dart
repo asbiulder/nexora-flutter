@@ -104,7 +104,7 @@ Color rarityColor(String rarity) {
     case 'epic':
       return const Color(0xFFD068FF);
     case 'rare':
-      return const Color(0xFF35D6FF);
+      return const Color(0xFFD9B872);
     default:
       return const Color(0xFF9FB3C8);
   }
@@ -668,7 +668,7 @@ class _ItemCard extends ConsumerWidget {
                         top: 0,
                         start: 0,
                         child: _badge(
-                            context.tx('داری', 'Owned'), NxColors.turquoise)),
+                            context.tx('داری', 'Owned'), NxColors.champagne)),
                   if (locked)
                     PositionedDirectional(
                       top: 0,
@@ -817,7 +817,7 @@ List<Color> themeColors(String theme) {
     default:
       return const <Color>[
         Color(0xFF041B2D),
-        NxColors.turquoise,
+        NxColors.champagne,
         Color(0xFF7B3FF2)
       ];
   }
@@ -1214,7 +1214,7 @@ class _ItemSheetState extends ConsumerState<_ItemSheet>
                               ? Icons.check_circle_rounded
                               : Icons.inventory_2_rounded,
                           color:
-                              equipped ? NxColors.success : NxColors.turquoise),
+                              equipped ? NxColors.success : NxColors.champagne),
                       const SizedBox(width: 6),
                       Text(
                         equipped
@@ -1227,7 +1227,7 @@ class _ItemSheetState extends ConsumerState<_ItemSheet>
                         style: TextStyle(
                             color: equipped
                                 ? NxColors.success
-                                : NxColors.turquoise,
+                                : NxColors.champagne,
                             fontWeight: FontWeight.w800),
                       ),
                     ]),

@@ -481,7 +481,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
                     NxPill(
                         label: regModeName(context, t.regMode),
                         icon: Icons.how_to_reg_rounded,
-                        color: NxColors.turquoise),
+                        color: NxColors.champagne),
                   ]),
                 ]),
           ),
@@ -647,7 +647,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
         child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(icon, size: 16, color: NxColors.turquoise),
+              Icon(icon, size: 16, color: NxColors.champagne),
               const SizedBox(width: 8),
               Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
             ]),
@@ -858,7 +858,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
             Row(children: <Widget>[
               TAvatar(
                   name: _names[_me] ?? 'Me',
-                  color: NxColors.turquoise,
+                  color: NxColors.champagne,
                   size: 34),
               const SizedBox(width: 8),
               Text(context.tx('تو', 'You'),
@@ -962,7 +962,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
         fontWeight: bold ? FontWeight.w900 : FontWeight.w600,
         color: header
             ? NxColors.textDim
-            : (r?.userId == _me ? NxColors.turquoise : NxColors.ink));
+            : (r?.userId == _me ? NxColors.gold : NxColors.ink));
     Widget c(String s, {double w = 28, bool bold = false}) => SizedBox(
         width: w, child: Text(s, textAlign: TextAlign.center, style: st(bold)));
     return Container(
@@ -1031,7 +1031,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
           child: GlassPanel(
             blur: false,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            borderColor: m.involves(_me) ? NxColors.turquoise : null,
+            borderColor: m.involves(_me) ? NxColors.champagne : null,
             onTap: () => _matchSheet(context, t, m),
             child: Row(children: <Widget>[
               Expanded(
@@ -1167,7 +1167,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
           dense: true,
           leading: TAvatar(
               name: e.username,
-              color: e.userId == _me ? NxColors.turquoise : tAccent(context)),
+              color: e.userId == _me ? NxColors.champagne : tAccent(context)),
           title: Text(e.username,
               style: const TextStyle(fontWeight: FontWeight.w800)),
           subtitle: Text(

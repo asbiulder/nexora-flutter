@@ -143,7 +143,7 @@ class _OracleConfigPageState extends ConsumerState<OracleConfigPage> {
                     _msg ??
                         'هر بخش را باز کن و ویرایش کن: بازیکن‌ها و اسم‌های دیگرشان، جمله‌ها، خوشامدها، جمله‌های خودجوش، '
                             'واکنش برد/باخت، آموزش‌ها، متن تورها، احتمال‌ها و روشن/خاموش هر بخش. {jan} = «جاااااااااان».',
-                    style: const TextStyle(color: Color(0xFF8FF3FF), fontSize: 12),
+                    style: const TextStyle(color: Color(0xFFF6E7BD), fontSize: 12),
                   ),
                 ),
                 Expanded(

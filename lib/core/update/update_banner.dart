@@ -30,12 +30,12 @@ class UpdateOverlay extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
                   gradient: const LinearGradient(colors: <Color>[Color(0xF0121A3F), Color(0xF0241046)]),
-                  border: Border.all(color: const Color(0xFF39E6FF), width: 1.2),
-                  boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x6639E6FF), blurRadius: 22)],
+                  border: Border.all(color: const Color(0xFFD9B872), width: 1.2),
+                  boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x66D9B872), blurRadius: 22)],
                 ),
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
                   Row(children: <Widget>[
-                    const Icon(Icons.system_update_rounded, color: Color(0xFF39E6FF)),
+                    const Icon(Icons.system_update_rounded, color: Color(0xFFD9B872)),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -50,7 +50,7 @@ class UpdateOverlay extends StatelessWidget {
                       ),
                     if (p == null)
                       FilledButton(
-                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFF39E6FF), foregroundColor: Colors.black),
+                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD9B872), foregroundColor: Colors.black),
                         onPressed: u.downloadAndInstall,
                         child: Text(fa ? 'به‌روزرسانی' : 'Update'),
                       ),
@@ -60,7 +60,7 @@ class UpdateOverlay extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
                       child: LinearProgressIndicator(
-                          value: p, minHeight: 8, backgroundColor: Colors.white12, color: const Color(0xFF39E6FF)),
+                          value: p, minHeight: 8, backgroundColor: Colors.white12, color: const Color(0xFFD9B872)),
                     ),
                     const SizedBox(height: 6),
                     Text('${(p * 100).round()}%', style: const TextStyle(color: Colors.white70, fontSize: 12)),

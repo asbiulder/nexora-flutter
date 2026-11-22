@@ -715,7 +715,7 @@ class _TournamentManagePageState extends ConsumerState<TournamentManagePage>
               m.games == 0)
             ListTile(
               leading:
-                  const Icon(Icons.edit_rounded, color: NxColors.turquoise),
+                  const Icon(Icons.edit_rounded, color: NxColors.champagne),
               title: Text(
                   ctx.tx('تغییر بازیکن/زمان/Bo', 'Edit players / time / Bo')),
               onTap: () => Navigator.pop(ctx, 'edit'),

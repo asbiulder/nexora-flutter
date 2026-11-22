@@ -66,7 +66,7 @@ Color kindColor(CommunityKind k) {
     case CommunityKind.private:
       return NxColors.goldDeep;
     case CommunityKind.topic:
-      return NxColors.turquoise;
+      return NxColors.champagne;
     case CommunityKind.game:
       return kSocialPalette.secondary;
     case CommunityKind.tournament:
@@ -94,7 +94,7 @@ Color roleColor(CommunityRole r) {
     case CommunityRole.admin:
       return NxColors.pink;
     case CommunityRole.moderator:
-      return NxColors.turquoise;
+      return NxColors.champagne;
     case CommunityRole.member:
       return NxColors.textDim;
   }

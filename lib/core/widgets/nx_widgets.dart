@@ -562,23 +562,6 @@ class NxPill extends StatelessWidget {
   }
 }
 
-/// Coins + level chip for app bars.
-class WalletChip extends ConsumerWidget {
-  const WalletChip({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final p = ref.watch(profileProvider);
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Nx2Stat(value: '${p.coins}'),
-      const SizedBox(width: 6),
-      Nx2GemStat(gems: p.gems),
-      const SizedBox(width: 6),
-      Nx2Stat(value: '${p.level}', icon: Icons.bolt_rounded, color: Nx2.cyan),
-    ]);
-  }
-}
-
 /// XP progress bar.
 class XpBar extends ConsumerWidget {
   const XpBar({super.key, this.height = 10});
@@ -704,7 +687,7 @@ Future<void> showAwardOutcome(BuildContext context, AwardOutcome o) async {
               style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
-                  color: NxColors.turquoise)),
+                  color: NxColors.champagne)),
         for (final a in o.unlocked)
           ListTile(
             leading: Image.asset(AppAssets.achievement(a.asset),

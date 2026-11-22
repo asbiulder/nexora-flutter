@@ -111,7 +111,6 @@ flutter:
     - assets/media/
     - assets/sfx/ui/
     - assets/ui/nx2/badges/
-    - assets/ui/nx2/bars/
     - assets/ui/nx2/bg/
     - assets/ui/nx2/boards/
     - assets/ui/nx2/chests/

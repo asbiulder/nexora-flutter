@@ -160,7 +160,7 @@ class SettingsPage extends ConsumerWidget {
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.tour_rounded, color: Color(0xFF8FF3FF)),
+                leading: const Icon(Icons.tour_rounded, color: Color(0xFFF6E7BD)),
                 title: Text(context.tx('دیدن دوباره‌ی تور اوراکل', 'Replay ORACLE tour')),
                 subtitle: Text(context.tx('راهنمای قدم‌به‌قدم هر بخش دوباره نشان داده می‌شود',
                     'Every section shows its step-by-step guide again')),
@@ -295,7 +295,7 @@ class _AdminInviteTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.vpn_key_rounded, color: Color(0xFF8FF3FF)),
+        leading: const Icon(Icons.vpn_key_rounded, color: Color(0xFFF6E7BD)),
         title: Text(context.tx('ورود کد دعوت ادمین', 'Redeem admin invitation code')),
         subtitle: Text(context.tx('کد را از مدیر اصلی بگیر', 'Use a code issued by the main admin')),
         onTap: () async {

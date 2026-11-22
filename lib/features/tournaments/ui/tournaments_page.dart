@@ -617,7 +617,7 @@ class TournamentCard extends StatelessWidget {
                 NxPill(
                     label: entryStatusName(context, entry!.status),
                     icon: Icons.how_to_reg_rounded,
-                    color: NxColors.turquoise),
+                    color: NxColors.champagne),
             ]),
             if (next != null) ...<Widget>[
               const SizedBox(height: 10),

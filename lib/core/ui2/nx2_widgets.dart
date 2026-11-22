@@ -353,85 +353,6 @@ class Nx2Button extends StatelessWidget {
       );
 }
 
-/// Ornate title banner (winged violet plate) with centred text.
-class Nx2Banner extends StatelessWidget {
-  const Nx2Banner(
-      {super.key, required this.text, this.height = 58, this.wings = false});
-  final String text;
-  final double height;
-  final bool wings;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: Stack(alignment: Alignment.center, children: <Widget>[
-        Positioned.fill(
-          // The pack banners are violet/blue art; BlendMode.color recolours them to the champagne gold of the
-          // home page while keeping every highlight and wing detail, so page headers match the master design.
-          child: ColorFiltered(
-            colorFilter: const ColorFilter.mode(Color(0xFFD9B872), BlendMode.color),
-            child: Image.asset(
-                wings ? Nx2Assets.framesBannerWingsViolet : Nx2Assets.framesBannerViolet,
-                fit: BoxFit.fill,
-                cacheWidth: 700,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: height * 1.1),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(text, style: Nx2.title.copyWith(fontSize: height * 0.3)),
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
-/// Avatar inside the winged crystal ring.
-class Nx2AvatarRing extends StatelessWidget {
-  const Nx2AvatarRing(
-      {super.key, this.size = 64, this.initial = '?', this.purple = false});
-  final double size;
-  final String initial;
-  final bool purple;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size * 1.12,
-      height: size,
-      child: Stack(alignment: Alignment.center, children: <Widget>[
-        Positioned.fill(
-          child: Image.asset(
-              purple ? Nx2Assets.framesRingWingsPurple : Nx2Assets.framesRingWingsBlue,
-              fit: BoxFit.contain,
-              cacheWidth: (size * 3).round(),
-              errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-        ),
-        Container(
-          width: size * 0.46,
-          height: size * 0.46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const RadialGradient(
-                colors: <Color>[Color(0xFF4A35B5), Color(0xFF160C40)]),
-            border: Border.all(color: Nx2.cyan.withValues(alpha: 0.6)),
-          ),
-          alignment: Alignment.center,
-          child: Text(initial,
-              style: TextStyle(
-                  fontSize: size * 0.22,
-                  fontWeight: FontWeight.w900,
-                  color: Nx2.text)),
-        ),
-      ]),
-    );
-  }
-}
-
 /// Neon XP/progress bar in a chamfered track.
 class Nx2Progress extends StatelessWidget {
   const Nx2Progress(
@@ -608,67 +529,6 @@ class _WiggleState extends State<_Wiggle> with SingleTickerProviderStateMixin {
                 scale: 1 + 0.12 * math.sin(t * math.pi), child: child));
       },
       child: widget.child,
-    );
-  }
-}
-
-/// Art tile from the owner's icon sheets with a label underneath.
-class Nx2Tile extends StatelessWidget {
-  const Nx2Tile({
-    super.key,
-    required this.asset,
-    required this.label,
-    required this.onTap,
-    this.badge = false,
-    this.size = 74,
-  });
-  final String asset;
-  final String label;
-  final VoidCallback onTap;
-  final bool badge;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Pressable(
-      onTap: onTap,
-      child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        SizedBox(
-          width: size,
-          height: size,
-          child: Stack(clipBehavior: Clip.none, children: <Widget>[
-            Positioned.fill(
-              child: Image.asset(asset,
-                  fit: BoxFit.contain,
-                  cacheWidth: (size * 2.6).round(),
-                  errorBuilder: (_, __, ___) => const Icon(
-                      Icons.blur_on_rounded,
-                      color: Nx2.cyan,
-                      size: 40)),
-            ),
-            if (badge)
-              PositionedDirectional(
-                top: 2,
-                end: 2,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: Nx2.danger,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-          ]),
-        ),
-        const SizedBox(height: 4),
-        Text(label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: Nx2.label),
-      ]),
     );
   }
 }
@@ -1092,30 +952,6 @@ class _RoundIcon extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Small round icon button in the NX2 style (public).
-class Nx2IconButton extends StatelessWidget {
-  const Nx2IconButton(
-      {super.key,
-      required this.icon,
-      required this.onTap,
-      required this.tooltip});
-  final IconData icon;
-  final VoidCallback onTap;
-  final String tooltip;
-  @override
-  Widget build(BuildContext context) =>
-      _RoundIcon(icon: icon, onTap: onTap, tooltip: tooltip);
-}
-
-/// Speech bubble for the mascot / hub logo (ANIX popover art, pointer at the bottom).
-class Nx2Bubble extends StatelessWidget {
-  const Nx2Bubble({super.key, required this.text, this.maxWidth = 220});
-  final String text;
-  final double maxWidth;
-  @override
-  Widget build(BuildContext context) => AnixPopover(maxWidth: maxWidth, child: Text(text));
 }
 
 /// Neon segmented tabs bound to the nearest DefaultTabController.

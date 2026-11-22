@@ -510,7 +510,7 @@ class _OracleCorePageState extends ConsumerState<OracleCorePage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(colors: <Color>[
-                  (_thinking ? NxColors.turquoise : WorldPalette.oracle.primary)
+                  (_thinking ? NxColors.champagne : WorldPalette.oracle.primary)
                       .withValues(alpha: 0.45),
                   Colors.transparent,
                 ]),

@@ -28,7 +28,7 @@ void main() {
       '/account',
       '/oracle',
       '/settings',
-      '/journey',
+      '/onboarding',
     };
     final destinations = kNexoraMenuSections
         .expand((NexoraMenuSection section) => section.destinations)

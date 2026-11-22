@@ -32,7 +32,6 @@ class AppSettings extends ChangeNotifier {
     _sfxVolume = (_store.getInt(_kSfxVol) ?? 80).clamp(0, 100) / 100.0;
     _sound = _store.getBool(_kSound) ?? true;
     _haptics = _store.getBool(_kHaptics) ?? true;
-    _journeySeen = _store.getBool(_kJourney) ?? false;
     _onboarded = _store.getBool(_kOnboarded) ?? false;
     _authMode = _store.getString(_kAuthMode) ?? '';
     _oracleBuddy = _store.getBool(_kOracleBuddy) ?? true;
@@ -69,7 +68,6 @@ class AppSettings extends ChangeNotifier {
   static const _kVisualTheme = 'settings.visual_theme';
   static const _kSound = 'settings.sound';
   static const _kHaptics = 'settings.haptics';
-  static const _kJourney = 'settings.journey_seen';
   static const _kOnboarded = 'settings.onboarded';
   static const _kAuthMode = 'settings.auth_mode';
   static const _kMusic = 'settings.music';
@@ -84,7 +82,6 @@ class AppSettings extends ChangeNotifier {
   late NxAppearanceMode _appearanceMode;
   late bool _sound;
   late bool _haptics;
-  late bool _journeySeen;
   late bool _onboarded;
   late String _authMode;
   late bool _music;
@@ -127,7 +124,6 @@ class AppSettings extends ChangeNotifier {
   Locale get locale => Locale(_languageCode);
   bool get sound => _sound;
   bool get haptics => _haptics;
-  bool get journeySeen => _journeySeen;
   bool get onboarded => _onboarded;
 
   /// '', 'email' or 'guest'. Guest is deliberately local-only.
@@ -194,12 +190,6 @@ class AppSettings extends ChangeNotifier {
   set haptics(bool v) {
     _haptics = v;
     _store.setBool(_kHaptics, v);
-    notifyListeners();
-  }
-
-  void markJourneySeen() {
-    _journeySeen = true;
-    _store.setBool(_kJourney, true);
     notifyListeners();
   }
 

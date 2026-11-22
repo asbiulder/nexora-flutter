@@ -149,17 +149,17 @@ class OracleTutorialCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: const LinearGradient(colors: <Color>[Color(0xF2182A5E), Color(0xF22A1556)]),
-            border: Border.all(color: const Color(0xFF39E6FF)),
-            boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x6639E6FF), blurRadius: 18)],
+            border: Border.all(color: const Color(0xFFD9B872)),
+            boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x66D9B872), blurRadius: 18)],
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
             Image.asset('assets/characters/oracle/moods/laugh.webp',
-                width: 40, height: 40, errorBuilder: (_, __, ___) => const Icon(Icons.smart_toy_rounded, color: Color(0xFF8FF3FF))),
+                width: 40, height: 40, errorBuilder: (_, __, ___) => const Icon(Icons.smart_toy_rounded, color: Color(0xFFF6E7BD))),
             const SizedBox(width: 8),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: <Widget>[
                 Text('ORACLE · ${tutorial.title}',
-                    style: const TextStyle(color: Color(0xFF8FF3FF), fontSize: 11, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(color: Color(0xFFF6E7BD), fontSize: 11, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
                 Text(tutorial.line,
                     style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, height: 1.35)),
@@ -185,7 +185,7 @@ class OracleResultLine extends StatelessWidget {
       padding: const EdgeInsets.only(top: 12),
       child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
         Image.asset('assets/characters/oracle/moods/laugh.webp',
-            width: 34, height: 34, errorBuilder: (_, __, ___) => const Icon(Icons.smart_toy_rounded, color: Color(0xFF8FF3FF))),
+            width: 34, height: 34, errorBuilder: (_, __, ___) => const Icon(Icons.smart_toy_rounded, color: Color(0xFFF6E7BD))),
         const SizedBox(width: 8),
         Flexible(
           child: Container(
@@ -193,7 +193,7 @@ class OracleResultLine extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: const Color(0xCC1B2350),
-              border: Border.all(color: const Color(0xFF39E6FF).withValues(alpha: .7)),
+              border: Border.all(color: const Color(0xFFD9B872).withValues(alpha: .7)),
             ),
             child: Text(text,
                 textDirection: TextDirection.rtl,

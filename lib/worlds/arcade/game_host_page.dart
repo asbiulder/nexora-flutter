@@ -202,7 +202,7 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
               shape: const CircleBorder(),
               child: IconButton(
                 tooltip: 'ORACLE',
-                icon: const Icon(Icons.smart_toy_rounded, color: Color(0xFF8FF3FF)),
+                icon: const Icon(Icons.smart_toy_rounded, color: Color(0xFFF6E7BD)),
                 onPressed: () => OracleGameSheet.show(context, widget.game),
               ),
             ),
@@ -290,7 +290,7 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
                 NxPill(
                     label: '+${a.xp} XP',
                     icon: Icons.bolt_rounded,
-                    color: NxColors.turquoise),
+                    color: NxColors.champagne),
                 const SizedBox(width: 8),
                 NxPill(
                     label: '+${a.coins}',
@@ -303,7 +303,7 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
                   child: Text(
                       context.tx('سطح ${a.newLevel}!', 'Level ${a.newLevel}!'),
                       style: const TextStyle(
-                          color: NxColors.turquoise,
+                          color: NxColors.champagne,
                           fontWeight: FontWeight.w900,
                           fontSize: 18)),
                 ),
@@ -352,7 +352,7 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
     }
     if (a.dailyJustDone) {
       chips.add(NxPill(label: context.tx('چالش روزانه +۸۰ XP', 'Daily challenge +80 XP'), icon: Icons.today_rounded,
-          color: NxColors.turquoise));
+          color: NxColors.champagne));
     }
     if (chips.isEmpty) return const SizedBox.shrink();
     return Padding(

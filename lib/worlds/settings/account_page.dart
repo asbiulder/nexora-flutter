@@ -63,7 +63,7 @@ class AccountStatusCard extends ConsumerWidget {
           'Progress is saved locally and syncs when you reconnect.');
     } else if (o.isGuest) {
       icon = Icons.person_outline_rounded;
-      color = NxColors.turquoise;
+      color = NxColors.champagne;
       title = context.tx('آنلاین · حساب مهمان', 'Online · guest account');
       sub = context.tx('برای حفظ پیشرفت روی چند گوشی، ایمیل و رمز ثبت کن.',
           'Add email + password to keep your progress across phones.');

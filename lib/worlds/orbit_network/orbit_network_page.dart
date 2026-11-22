@@ -50,7 +50,7 @@ class _OrbitNetworkPageState extends ConsumerState<OrbitNetworkPage>
         child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
           ListTile(
             leading:
-                const Icon(Icons.groups_rounded, color: NxColors.turquoise),
+                const Icon(Icons.groups_rounded, color: NxColors.champagne),
             title: Text(c.tx('گروه تازه', 'New group')),
             subtitle: Text(c.tx('گفت‌وگوی چندنفره با نشان باشگاه',
                 'Multi-person chat with a club badge')),

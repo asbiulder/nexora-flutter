@@ -8,6 +8,12 @@ import '../ui2/page_turn.dart';
 /// reads [NxThemeColors] from the active theme instead.
 class NxColors {
   NxColors._();
+  /// Secondary highlight ("you", "owned", "done"): Station Luxe champagne. It replaced the retired neon turquoise
+  /// (0xFF2EE6D6) so no screen keeps a second accent language next to gold.
+  static const champagne = Color(0xFFF6E7BD);
+
+  /// Gameplay-only colour (NX Cards card colour, Mafia / Quiz in-board highlights): a game piece needs four
+  /// distinguishable colours, so this stays inside game boards. App chrome uses [champagne].
   static const turquoise = Color(0xFF2EE6D6);
   static const gold = Color(0xFFD9B872);
   static const pink = Color(0xFFFF4FA3);
@@ -73,7 +79,6 @@ class NxThemeColors extends ThemeExtension<NxThemeColors> {
     muted: Color(0xFFB9AE95),
   );
 
-  /// NX2 cosmic neon skin (deep violet, neon cyan/magenta) — the app skin.
   /// App skin: ANIX PRO Station Luxe (black / gold / champagne). Name kept for settings compatibility.
   static const neon = NxThemeColors(
     accent: Color(0xFFD9B872),
@@ -85,18 +90,6 @@ class NxThemeColors extends ThemeExtension<NxThemeColors> {
     border: Color(0xFF8A6A2C),
     text: Color(0xFFF4EAD2),
     muted: Color(0xFFB9AE95),
-  );
-
-  static const neonLight = NxThemeColors(
-    accent: Color(0xFF087EA4),
-    accentSecondary: Color(0xFF6D35B5),
-    background: Color(0xFFF5F3FF),
-    backgroundMid: Color(0xFFEAE4FF),
-    surface: Color(0xFFFFFFFF),
-    surfaceRaised: Color(0xFFF0ECFF),
-    border: Color(0xFF9A7AD8),
-    text: Color(0xFF171329),
-    muted: Color(0xFF625B78),
   );
 
   static const goldLight = NxThemeColors(
@@ -255,10 +248,10 @@ ThemeData buildNxTheme([
   NxVisualTheme style = NxVisualTheme.neon,
   NxAppearanceMode appearance = NxAppearanceMode.dark,
 ]) => _buildTheme(
+      // One skin: light mode is the Station Luxe light palette for either preset (the lavender "neon light"
+      // skin of the retired navy/neon look is gone).
       appearance == NxAppearanceMode.light
-          ? (style == NxVisualTheme.gold
-              ? NxThemeColors.goldLight
-              : NxThemeColors.neonLight)
+          ? NxThemeColors.goldLight
           : (style == NxVisualTheme.gold ? NxThemeColors.gold : NxThemeColors.neon),
       appearance,
     );
@@ -277,7 +270,7 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
     primary: visual.accent,
     secondary: visual.accentSecondary,
     tertiary:
-        visual.premiumPanels ? visual.accentSecondary : NxColors.turquoise,
+        visual.premiumPanels ? visual.accentSecondary : NxColors.champagne,
     surface: visual.surfaceRaised,
     error: NxColors.danger,
     onPrimary: appearance == NxAppearanceMode.light ? Colors.white : const Color(0xFF08101A),

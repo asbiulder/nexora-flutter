@@ -99,7 +99,7 @@ class OrbitDeliveryIcon extends StatelessWidget {
       case OrbitDelivery.delivered:
         return const Icon(Icons.done_all_rounded, size: 14, color: NxColors.textDim);
       case OrbitDelivery.read:
-        return const Icon(Icons.done_all_rounded, size: 14, color: NxColors.turquoise);
+        return const Icon(Icons.done_all_rounded, size: 14, color: NxColors.champagne);
     }
   }
 }
@@ -318,7 +318,7 @@ class _OrbitMediaBody extends StatelessWidget {
   }
 
   Widget _fallback(IconData icon, String name) => Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        Icon(icon, color: NxColors.turquoise, size: 28),
+        Icon(icon, color: NxColors.champagne, size: 28),
         const SizedBox(width: 8),
         Flexible(child: Text(name.isEmpty ? 'Attachment' : name, maxLines: 2, overflow: TextOverflow.ellipsis)),
       ]);

@@ -105,7 +105,7 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
         child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
           ListTile(
             leading: const Icon(Icons.collections_rounded,
-                color: NxColors.turquoise),
+                color: NxColors.champagne),
             title: Text(c.tx('اثر هنری ANIX', 'ANIX art')),
             subtitle: Text(
                 c.tx('از کتابخانه‌ی هنری اپ', "From the app's art library")),

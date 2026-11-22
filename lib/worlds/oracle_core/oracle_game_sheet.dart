@@ -117,7 +117,7 @@ class _OracleGameSheetState extends ConsumerState<OracleGameSheet> {
           gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: <Color>[Color(0xFF13204A), Color(0xFF0A0F26)]),
           boxShadow: <BoxShadow>[BoxShadow(color: Color(0x5539E6FF), blurRadius: 30)],
-          border: Border(top: BorderSide(color: Color(0xFF39E6FF), width: 1.2)),
+          border: Border(top: BorderSide(color: Color(0xFFD9B872), width: 1.2)),
         ),
         child: Column(children: <Widget>[
           const SizedBox(height: 8),
@@ -156,8 +156,8 @@ class _OracleGameSheetState extends ConsumerState<OracleGameSheet> {
                     label: Text(l),
                     onPressed: _busy ? null : () => _ask(q),
                     backgroundColor: const Color(0xFF1C2D63),
-                    labelStyle: const TextStyle(color: Color(0xFF8FF3FF)),
-                    side: const BorderSide(color: Color(0x6639E6FF)),
+                    labelStyle: const TextStyle(color: Color(0xFFF6E7BD)),
+                    side: const BorderSide(color: Color(0x66D9B872)),
                   ),
                 ),
             ]),
@@ -184,7 +184,7 @@ class _OracleGameSheetState extends ConsumerState<OracleGameSheet> {
                     decoration: BoxDecoration(
                       color: me ? const Color(0xFF2B1F5C) : const Color(0xFF12305A),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: me ? const Color(0x66B57CFF) : const Color(0x6639E6FF)),
+                      border: Border.all(color: me ? const Color(0x66F6E7BD) : const Color(0x66D9B872)),
                     ),
                     child: Text(m['content'] ?? '', style: const TextStyle(color: Colors.white, height: 1.45)),
                   ),

@@ -241,7 +241,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         const SizedBox(height: NxSpace.lg),
         GlassPanel(
           child: Row(children: [
-            const Icon(Icons.cloud_done_rounded, color: NxColors.turquoise),
+            const Icon(Icons.cloud_done_rounded, color: NxColors.champagne),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

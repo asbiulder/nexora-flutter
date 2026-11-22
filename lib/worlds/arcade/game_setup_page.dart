@@ -181,7 +181,7 @@ class _GameSetupPageState extends ConsumerState<GameSetupPage> {
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Icon(Icons.menu_book_rounded, color: NxColors.turquoise),
+                const Icon(Icons.menu_book_rounded, color: NxColors.champagne),
                 const SizedBox(width: 8),
                 Text(context.tx('قوانین', 'Rules'),
                     style: const TextStyle(fontWeight: FontWeight.w800)),
@@ -274,7 +274,7 @@ class _GameSetupPageState extends ConsumerState<GameSetupPage> {
             ]),
           ),
           if (done)
-            const NxPill(label: '✓', color: NxColors.turquoise)
+            const NxPill(label: '✓', color: NxColors.champagne)
           else
             LuxeButton(
               label: context.tx('شروع', 'Play'),

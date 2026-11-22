@@ -411,7 +411,7 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
         ),
       GameOutcome.draw => (
           context.tx('مساوی', 'Draw'),
-          NxColors.turquoise,
+          NxColors.champagne,
           Icons.handshake_rounded
         ),
       GameOutcome.loss => (

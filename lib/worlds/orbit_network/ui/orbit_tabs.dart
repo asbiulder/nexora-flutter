@@ -255,7 +255,7 @@ class _OfflineCallsTab extends StatelessWidget {
         const OnlineOnlyNotice(featureFa: 'تماس صوتی، تصویری و گروهی', featureEn: 'Voice, video and group calls'),
         const SizedBox(height: 14),
         card(Icons.call_rounded, 'تماس صوتی', 'Voice call', 'صدای شفاف با هاله‌ی صوتی', 'Crystal voice with a reactive aura',
-            NxColors.turquoise),
+            NxColors.champagne),
         card(Icons.videocam_rounded, 'تماس تصویری', 'Video call', 'رو در رو، در هر کجای کهکشان',
             'Face to face, anywhere in the galaxy', NxColors.gold),
         card(Icons.groups_rounded, 'تماس گروهی', 'Group call', 'گردهمایی صوتی و تصویری دوستان', 'Voice and video with your crew',
@@ -306,11 +306,11 @@ class _OfflineContactsTab extends ConsumerWidget {
           borderColor: WorldPalette.orbit.primary.withValues(alpha: 0.6),
           child: Column(children: <Widget>[
             Row(children: <Widget>[
-              const Icon(Icons.fingerprint_rounded, color: NxColors.turquoise),
+              const Icon(Icons.fingerprint_rounded, color: NxColors.champagne),
               const SizedBox(width: 8),
               Text(context.tx('کارت کاوشگر', 'Explorer ID card'), style: const TextStyle(fontWeight: FontWeight.w900)),
               const Spacer(),
-              NxPill(label: 'Lv ${p.level}', color: NxColors.turquoise),
+              NxPill(label: 'Lv ${p.level}', color: NxColors.champagne),
             ]),
             const SizedBox(height: 14),
             Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
@@ -319,7 +319,7 @@ class _OfflineContactsTab extends ConsumerWidget {
               textDirection: TextDirection.ltr,
               child: SelectableText(
                 p.explorerId,
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 3, color: NxColors.turquoise),
+                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 3, color: NxColors.champagne),
               ),
             ),
             const SizedBox(height: 4),
@@ -341,7 +341,7 @@ class _OfflineContactsTab extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: NxColors.turquoise),
+                  style: FilledButton.styleFrom(backgroundColor: NxColors.champagne),
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: shareText));
                     if (context.mounted) {
@@ -549,7 +549,7 @@ class _OnlineCallsTabState extends ConsumerState<_OnlineCallsTab> {
                 final String title = chat == null ? '—' : orbitChatTitle(c, chat);
                 return ListTile(
                   leading: Icon(e.video ? Icons.videocam_rounded : Icons.call_rounded,
-                      color: out ? NxColors.turquoise : NxColors.gold),
+                      color: out ? NxColors.champagne : NxColors.gold),
                   title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Text(
                     '${out ? c.tx('خروجی', 'Outgoing') : c.tx('ورودی', 'Incoming')} · ${_listTime(c, e.at)}'

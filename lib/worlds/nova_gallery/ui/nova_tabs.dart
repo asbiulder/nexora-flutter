@@ -459,7 +459,7 @@ class NovaNotificationsTab extends ConsumerWidget {
       case NovaNotifKind.like:
         return const Color(0xFFFF4F8B);
       case NovaNotifKind.comment:
-        return NxColors.turquoise;
+        return NxColors.champagne;
       case NovaNotifKind.share:
         return NxColors.gold;
       case NovaNotifKind.story:
