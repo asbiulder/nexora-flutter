@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nexora/games/solo/core/solo_rules.dart';
 import 'package:nexora/games/solo/core/solo_rules_b.dart';
 import 'package:nexora/games/solo/core/solo_rules_c.dart';
+import 'package:nexora/games/solo/solo_kit.dart';
 import 'package:nexora/games/solo/solo_registry.dart';
 
 /// The ten solo arcade games must be real, deterministic games — not medal tables.

@@ -183,7 +183,7 @@ class NxThemeColors extends ThemeExtension<NxThemeColors> {
 /// gradients (the profile world used to flip the whole app to a pale lavender) because a
 /// page that ignores the home-page palette breaks the identity.
 class WorldPalette {
-  const WorldPalette(this.primary, this.secondary, List<Color> background,
+  const WorldPalette(this.primary, this.secondary, List<Color> ramp,
       {this.light = false})
       : background = _luxeRamp;
 

@@ -13,6 +13,7 @@ import 'solo_rules.dart';
 /// A 10x18 well. Pieces fall, lines clear, gravity accelerates every 10 lines.
 class TetrisWorld {
   TetrisWorld({required this.seed}) : rng = math.Random(seed) {
+    well = List<List<int>>.generate(rows, (_) => List<int>.filled(cols, 0));
     _next = _pick();
     _spawn();
   }

@@ -1,11 +1,18 @@
 name: ANIX PRO Quick Check
+# Fast, diagnostic-only gate: analyzer and test failures are published as ::error annotations on
+# the commit, so the exact file:line:column:message is readable from the API in environments where
+# Actions log blobs are not reachable. Never blocks a pull request (always exits 0).
 on:
   push:
-    branches: ['work/**']
+    branches: ['work/**', 'arena/**']
+  workflow_dispatch:
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      checks: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -18,17 +25,24 @@ jobs:
         run: |
           set +e
           flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1
-          echo "=====ANALYZE-BEGIN====="
-          grep -E "(error|warning) •" analyze.txt
+          echo "=====ANALYZE-ISSUES====="
+          grep -E " • " analyze.txt | grep -vE "^Analyzing" | head -120
           echo "=====ANALYZE-END====="
+          # One annotation per issue keeps the message inside GitHub's 64 KB step limit.
+          grep -E " • " analyze.txt | grep -vE "^Analyzing" | head -60 | while IFS= read -r line; do
+            echo "::error title=analyze::$line"
+          done
           exit 0
       - name: Test
         run: |
           set +e
           flutter test --reporter expanded > test.txt 2>&1
-          echo "=====TEST-BEGIN====="
-          grep -E "\[E\]|Error:|error:|Expected:|Actual:|FAILED|Some tests failed|All tests passed|Failed to load" test.txt | head -300
+          echo "=====TEST-SUMMARY====="
+          grep -E "All tests passed|Some tests failed|\[E\]" test.txt | head -40
           echo "=====TEST-END====="
+          grep -E "\[E\]|Expected:|Actual:" test.txt | head -40 | while IFS= read -r line; do
+            echo "::error title=test::$line"
+          done
           exit 0
       - name: Render finger soccer preview
         run: |

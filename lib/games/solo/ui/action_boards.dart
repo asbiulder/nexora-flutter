@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../arcade_kit/arcade_shell.dart';
 import '../core/solo_rules_b.dart';
+import '../core/solo_rules_c.dart';
 import '../solo_kit.dart';
 
 const Color _sand = Color(0xFFD9B872);
