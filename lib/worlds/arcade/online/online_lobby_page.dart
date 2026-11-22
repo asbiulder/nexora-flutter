@@ -523,11 +523,9 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
                                         'p_user': f.id
                                       });
                                   if (ctx.mounted && mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            content: Text(context.tx(
+                                    luxeToast(context, context.tx(
                                                 'دعوت فرستاده شد',
-                                                'Invite sent'))));
+                                                'Invite sent'));
                                     Navigator.pop(ctx);
                                   }
                                 } catch (_) {}
@@ -868,8 +866,7 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
                 icon: const Icon(Icons.copy_rounded),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: '${r['code']}'));
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(context.tx('کد کپی شد', 'Code copied'))));
+                  luxeToast(context, context.tx('کد کپی شد', 'Code copied'));
                 },
               ),
             ]),

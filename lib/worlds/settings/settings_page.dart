@@ -17,6 +17,8 @@ import '../../features/admin/admin_access.dart';
 import 'account_page.dart';
 
 import '../../core/ui2/anix_kit.dart';
+import '../../core/ui2/luxe.dart';
+
 /// Settings (STEP_12, P13, P16, P27, P28).
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -319,11 +321,9 @@ class _AdminInviteTile extends ConsumerWidget {
           final Map<String, dynamic> result = await AdminApi(ref.read(onlineProvider)).redeemAdminCode(value);
           if (!context.mounted) return;
           final bool fa = context.isFa;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(result['ok'] == true
+          luxeToast(context, result['ok'] == true
                 ? (fa ? 'دسترسی ساخت تورنمنت فعال شد ✓' : 'Tournament-admin access enabled ✓')
-                : adminErrorText(result['error'] as String?, fa)),
-          ));
+                : adminErrorText(result['error'] as String?, fa));
           if (result['ok'] == true) await ref.read(adminAccessProvider).refresh();
         },
       );

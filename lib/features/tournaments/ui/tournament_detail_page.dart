@@ -19,6 +19,8 @@ import 'bracket_view.dart';
 import 't_common.dart';
 
 import '../../../core/ui2/anix_kit.dart';
+import '../../../core/ui2/luxe.dart';
+
 /// Tournament detail: rules, countdowns, prize pool, players, register / code / withdraw, live bracket or
 /// league table, my next match with the Ready button, match list and history.
 class TournamentDetailPage extends ConsumerStatefulWidget {
@@ -165,11 +167,9 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
   Future<void> _toast(TResult r, {String? okFa, String? okEn}) async {
     if (!mounted) return;
     final bool fa = ref.read(settingsProvider).isFa;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(r.ok
+    luxeToast(context, r.ok
           ? (fa ? (okFa ?? 'انجام شد') : (okEn ?? 'Done'))
-          : tErrorText(r.error, fa)),
-    ));
+          : tErrorText(r.error, fa));
   }
 
   Future<void> _register() async {

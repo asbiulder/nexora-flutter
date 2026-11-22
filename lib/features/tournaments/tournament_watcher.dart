@@ -12,6 +12,7 @@ import '../../core/online/online_service.dart';
 import '../../core/settings/app_settings.dart';
 import 'data/models.dart';
 import 'data/tournament_repository.dart';
+import '../../core/ui2/luxe.dart';
 
 /// Device notifications (the app has no FCM): immediate ones for tournament events that arrive while the
 /// app runs in the background, and scheduled 10-minute reminders that fire even when the app is closed.
@@ -174,11 +175,13 @@ class TournamentWatcher with WidgetsBindingObserver {
     final ScaffoldMessengerState? m = _messenger.currentState;
     if (m == null) return;
     final bool urgent = n.kind == 'match_ready';
-    m.showSnackBar(SnackBar(
-      duration: Duration(seconds: urgent ? 20 : 6),
-      content: Text('🏆 ${n.title}: $body'),
-      action: SnackBarAction(label: fa ? 'باز کن' : 'Open', onPressed: () => _open(route)),
-    ));
+    luxeToastState(
+        m,
+        '🏆 ${n.title}: $body',
+        actionLabel: fa ? 'باز کن' : 'Open',
+        onAction: () => _open(route),
+        duration: Duration(seconds: urgent ? 20 : 6),
+    );
   }
 
   /// Device-side 10-minute reminders for my approved tournaments and scheduled matches.

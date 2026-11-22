@@ -19,6 +19,8 @@ import 'core/exchange_rules.dart';
 import 'core/exchange_service.dart';
 
 import '../../core/ui2/anix_kit.dart';
+import '../../core/ui2/luxe.dart';
+
 /// ANIX EXCHANGE (STEP_28): transparent cosmetic shop paid with earned coins.
 /// No loot boxes, no gambling, no random paid rewards; real money is disabled.
 class ExchangePage extends ConsumerStatefulWidget {
@@ -370,9 +372,10 @@ class _WalletPanel extends ConsumerWidget {
                   final AwardOutcome? o =
                       ref.read(profileProvider).claimDaily();
                   if (o != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                            '${context.tx('جایزه‌ی روزانه', 'Daily bonus')}: +${_digits(context, '${o.coins}')}')));
+                    luxeToast(
+                        context,
+                        '${context.tx('جایزه‌ی روزانه', 'Daily bonus')}: +${_digits(context, '${o.coins}')}',
+                    );
                     showAwardOutcome(context, o);
                   }
                 },
@@ -994,7 +997,7 @@ class _ItemSheetState extends ConsumerState<_ItemSheet>
     final PurchaseStatus pre = ExchangeService.status(p, item);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     if (pre != PurchaseStatus.ok) {
-      messenger.showSnackBar(SnackBar(content: Text(_statusText(pre))));
+      luxeToastState(messenger, _statusText(pre));
       return;
     }
     final bool? confirm = await showDialog<bool>(
@@ -1024,7 +1027,7 @@ class _ItemSheetState extends ConsumerState<_ItemSheet>
     final Set<String> before = Set<String>.of(p.achievements);
     final PurchaseStatus st = ExchangeService.buy(p, item);
     setState(() => _busy = false);
-    messenger.showSnackBar(SnackBar(content: Text(_statusText(st))));
+    luxeToastState(messenger, _statusText(st));
     if (st == PurchaseStatus.ok) {
       final List<AchievementDef> unlocked = kAchievements
           .where((AchievementDef a) =>
@@ -1062,7 +1065,7 @@ class _ItemSheetState extends ConsumerState<_ItemSheet>
     } else {
       msg = context.tx('فعال شد!', 'Equipped!');
     }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    luxeToast(context, msg);
   }
 
   @override
@@ -1395,8 +1398,10 @@ class _GemTeamsTabState extends ConsumerState<_GemTeamsTab> {
     if (ok != true) return;
     final GemBuyResult r = await shop.buyTeam(t.id);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.ok ? context.tx('${t.name} باز شد ✓', '${t.name} unlocked ✓') : gemErrorText(r.error, context.isFa))));
+    luxeToast(
+        context,
+        r.ok ? context.tx('${t.name} باز شد ✓', '${t.name} unlocked ✓') : gemErrorText(r.error, context.isFa),
+    );
   }
 
   @override
@@ -1449,7 +1454,7 @@ class _GemTeamsTabState extends ConsumerState<_GemTeamsTab> {
                                 final String got = context.tx('الماس روزانه', 'Daily gems');
                                 final String none = context.tx('امروز گرفته‌ای', 'Already claimed today');
                                 final int g = await shop.claimDaily();
-                                m.showSnackBar(SnackBar(content: Text(g > 0 ? '$got: +$g' : none)));
+                                luxeToastState(m, g > 0 ? '$got: +$g' : none);
                               }
                             : null,
                         icon: const Icon(Icons.card_giftcard_rounded, size: 16),

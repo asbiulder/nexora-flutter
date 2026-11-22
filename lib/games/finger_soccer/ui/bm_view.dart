@@ -26,6 +26,7 @@ import '../intro/fs_intro_ui.dart' show FsBarHandle, kFsBarHandleHeight, kFsBarH
 import '../intro/fs_online_pick.dart';
 import '../intro/fs_score_table.dart';
 import '../intro/fs_team_select.dart' show FsSidePlayer;
+import '../../../core/ui2/luxe.dart';
 
 const String _a = 'assets/games/bermuda/';
 
@@ -1601,8 +1602,7 @@ class _BermudaViewState extends State<BermudaView>
     if (ok != true) return false;
     final GemBuyResult r = await shop.buyTeam(t.id);
     if (!mounted) return r.ok;
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-        content: Text(r.ok ? (fa ? '${t.name} باز شد ✓' : '${t.name} unlocked ✓') : gemErrorText(r.error, fa))));
+    luxeToast(context, r.ok ? (fa ? '${t.name} باز شد ✓' : '${t.name} unlocked ✓') : gemErrorText(r.error, fa));
     if (r.ok) setState(() {});
     return r.ok;
   }

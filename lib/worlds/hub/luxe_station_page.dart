@@ -25,8 +25,10 @@ Future<void> luxeClaimDaily(BuildContext context, WidgetRef ref) async {
   final AwardOutcome? o = p.claimDaily();
   if (!context.mounted) return;
   if (o == null) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.tx('جایزه‌ی امروز را گرفته‌ای. فردا برگرد!', 'Already claimed today. Come back tomorrow!'))));
+    luxeToast(
+        context,
+        context.tx('جایزه‌ی امروز را گرفته‌ای. فردا برگرد!', 'Already claimed today. Come back tomorrow!'),
+    );
     return;
   }
   await showAwardOutcome(context, o);

@@ -12,18 +12,17 @@ import '../../../core/widgets/nx_widgets.dart';
 import '../core/challenge_store.dart';
 import '../core/challenges.dart';
 import 'po_common.dart';
+import '../../../core/ui2/luxe.dart';
 
 /// Missions: daily reward with streak + daily / weekly challenges with real progress.
 class MissionsTab extends ConsumerWidget {
   const MissionsTab({super.key});
 
   void _celebrate(BuildContext context, AwardOutcome o) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(poDigits(
+    luxeToast(context, poDigits(
           context,
           context.tx('+${o.xp} XP  •  +${o.coins} سکه',
-              '+${o.xp} XP  •  +${o.coins} coins'))),
-    ));
+              '+${o.xp} XP  •  +${o.coins} coins')));
     showAwardOutcome(context, o);
   }
 

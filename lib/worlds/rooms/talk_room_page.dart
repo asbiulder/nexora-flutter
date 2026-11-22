@@ -286,18 +286,21 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
   }
 
   /// Manager action that returns the fresh `nx_room_capacity` payload. The server re-validates
-  /// every rule, so a stale client can never widen a limit.
-  Future<void> _capacityAction(String fn, Map<String, dynamic> params) async {
+  /// every rule, so a stale client can never widen a limit. Returns false when the server
+  /// refused (or the call failed), so a caller never announces a success that did not happen.
+  Future<bool> _capacityAction(String fn, Map<String, dynamic> params) async {
     final SupabaseClient? c = _c;
-    if (c == null || _capacityBusy) return;
+    if (c == null || _capacityBusy) return false;
     setState(() => _capacityBusy = true);
     try {
       final dynamic r = await c.rpc(fn, params: <String, dynamic>{'p_room': widget.roomId, ...params});
       if (mounted && r is Map) setState(() => _capacity = RoomCapacity.fromRpc(Map<String, dynamic>.from(r)));
       await _refresh();
+      return true;
     } catch (e) {
       _snack(_clean(e));
       await _refresh();
+      return false;
     } finally {
       if (mounted) setState(() => _capacityBusy = false);
     }
@@ -312,8 +315,9 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
     await _capacityAction('nx_room_set_capacity', <String, dynamic>{'p_capacity': n});
   }
 
-  Future<void> _setLocked(bool locked) =>
-      _capacityAction('nx_room_set_locked', <String, dynamic>{'p_locked': locked});
+  Future<void> _setLocked(bool locked) async {
+    await _capacityAction('nx_room_set_locked', <String, dynamic>{'p_locked': locked});
+  }
 
   /// Hands the manager role to [m] (server re-checks that we are the manager). The old host
   /// stays in the room as a speaker, so the conversation is not interrupted.
@@ -327,8 +331,12 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
       confirm: context.isFa ? 'واگذاری' : 'Transfer',
     );
     if (ok != true) return;
-    await _capacityAction('nx_room_transfer_host', <String, dynamic>{'p_user': m.userId});
-    if (mounted) luxeToast(context, context.tx('مدیر اتاق تغییر کرد', 'The room has a new manager'));
+    // Only announce the hand-over when the server actually did it: a refusal (not the manager,
+    // member gone, function missing) already showed why through _capacityAction's own toast.
+    final bool done =
+        await _capacityAction('nx_room_transfer_host', <String, dynamic>{'p_user': m.userId});
+    if (!done || !mounted) return;
+    luxeToast(context, context.tx('مدیر اتاق تغییر کرد', 'The room has a new manager'));
   }
 
   /// Ends the room for everyone (server: manager only, refused while a match runs).
@@ -406,7 +414,7 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
 
   void _snack(String s) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
+    luxeToast(context, s);
   }
 
   // ------------------------------------------------------------------ voice

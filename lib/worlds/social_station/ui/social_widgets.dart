@@ -12,6 +12,8 @@ import '../../orbit_network/models/arcade_refs.dart';
 import '../models/social_models.dart';
 
 import '../../../core/ui2/anix_kit.dart';
+import '../../../core/ui2/luxe.dart';
+
 const WorldPalette kSocialPalette = WorldPalette.social;
 
 /// The current explorer acting in SOCIAL STATION.
@@ -254,7 +256,7 @@ class SocialSectionTitle extends StatelessWidget {
 }
 
 void socialSnack(BuildContext context, String fa, String en) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tx(fa, en))));
+  luxeToast(context, context.tx(fa, en));
 }
 
 /// Asks for a single line of text.

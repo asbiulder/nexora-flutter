@@ -11,6 +11,7 @@ import '../core/bm_data.dart';
 import '../core/bm_engine.dart';
 import 'fs_intro_data.dart';
 import 'fs_intro_ui.dart';
+import '../../../core/ui2/luxe.dart';
 
 /// Locked team: confirm + buy with gems (server-side deduct and unlock). True when the team is now owned.
 Future<bool> fsBuyTeam(BuildContext context, BmTeam t, bool fa) async {
@@ -57,8 +58,7 @@ Future<bool> fsBuyTeam(BuildContext context, BmTeam t, bool fa) async {
   if (ok != true) return false;
   final GemBuyResult r = await shop.buyTeam(t.id);
   if (!context.mounted) return r.ok;
-  ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-      content: Text(r.ok ? '${fsTeamName(t, fa)} باز شد ✓' : gemErrorText(r.error, fa), textDirection: TextDirection.rtl)));
+  luxeToast(context, r.ok ? '${fsTeamName(t, fa)} باز شد ✓' : gemErrorText(r.error, fa));
   return r.ok;
 }
 

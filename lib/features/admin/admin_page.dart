@@ -10,6 +10,8 @@ import '../../core/theme/nx_theme.dart';
 import 'admin_access.dart';
 
 import '../../core/ui2/anix_kit.dart';
+import '../../core/ui2/luxe.dart';
+
 /// Admin panel. Tabs appear only for the permissions the signed-in admin holds; the server checks every call again
 /// (auth project: users/bans, grants, admins, announcements, moderation, ORACLE · games project: rooms, tournaments)
 /// and writes an audit entry.
@@ -107,9 +109,10 @@ AdminApi _api(WidgetRef ref) => AdminApi(ref.read(onlineProvider));
 Future<void> _toast(BuildContext context, Map<String, dynamic> r, {String? okFa, String? okEn}) async {
   if (!context.mounted) return;
   final bool fa = context.isFa;
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(r['ok'] == true ? (fa ? (okFa ?? 'انجام شد ✓') : (okEn ?? 'Done ✓')) : adminErrorText(r['error'] as String?, fa)),
-  ));
+  luxeToast(
+      context,
+      r['ok'] == true ? (fa ? (okFa ?? 'انجام شد ✓') : (okEn ?? 'Done ✓')) : adminErrorText(r['error'] as String?, fa),
+  );
 }
 
 Future<String?> _ask(BuildContext context, String title, {String hint = '', String initial = ''}) async {

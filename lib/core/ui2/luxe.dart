@@ -976,9 +976,39 @@ Future<String?> showLuxePrompt(
 }
 
 /// Themed snackbar: gold hairline panel above the dock, never a Material default.
-void luxeToast(BuildContext context, String message, {bool error = false}) {
+///
+/// The one feedback surface of the app — every screen reports through this instead of
+/// building its own [SnackBar], so a message looks the same in a room, a shop, a tournament
+/// wizard and a game. [actionLabel]/[onAction] add the gold text shortcut the Material
+/// `SnackBarAction` used to provide; [duration] defaults to 3 s (call invitations ask for more).
+void luxeToast(
+  BuildContext context,
+  String message, {
+  bool error = false,
+  IconData? icon,
+  String? actionLabel,
+  VoidCallback? onAction,
+  Duration duration = const Duration(seconds: 3),
+}) {
   final ScaffoldMessengerState? m = ScaffoldMessenger.maybeOf(context);
   if (m == null) return;
+  luxeToastState(m, message,
+      error: error, icon: icon, actionLabel: actionLabel, onAction: onAction, duration: duration);
+}
+
+/// The same themed snackbar for callers that hold the root messenger but no [BuildContext]
+/// (the call / invite / announcement / tournament watchers run off a global key).
+void luxeToastState(
+  ScaffoldMessengerState m,
+  String message, {
+  bool error = false,
+  IconData? icon,
+  String? actionLabel,
+  VoidCallback? onAction,
+  Duration duration = const Duration(seconds: 3),
+}) {
+  final Color accent = error ? const Color(0xFFFF5A7A) : Luxe.gold;
+  final bool hasAction = actionLabel != null && onAction != null;
   m
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(
@@ -987,21 +1017,40 @@ void luxeToast(BuildContext context, String message, {bool error = false}) {
       elevation: 0,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: EdgeInsets.zero,
-      duration: const Duration(seconds: 3),
+      duration: duration,
       content: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LuxeRadius.md),
           gradient: const LinearGradient(colors: <Color>[Color(0xFF16140F), Color(0xFF0A0A0D)]),
-          border: Border.all(color: (error ? const Color(0xFFFF5A7A) : Luxe.gold).withValues(alpha: 0.5)),
+          border: Border.all(color: accent.withValues(alpha: 0.5)),
         ),
         child: Row(children: <Widget>[
-          Icon(error ? Icons.error_outline_rounded : Icons.auto_awesome, size: 17, color: error ? const Color(0xFFFF8A9A) : Luxe.gold),
+          Icon(icon ?? (error ? Icons.error_outline_rounded : Icons.auto_awesome),
+              size: 17, color: error ? const Color(0xFFFF8A9A) : Luxe.gold),
           const SizedBox(width: 10),
           Expanded(
             child: Text(message,
                 style: TextStyle(fontSize: 12.5, height: 1.35, color: error ? const Color(0xFFFFD9DF) : Luxe.ink)),
           ),
+          if (hasAction) ...<Widget>[
+            const SizedBox(width: 10),
+            LuxePress(
+              onTap: onAction,
+              semantics: actionLabel,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Text(actionLabel.toUpperCase(),
+                    maxLines: 1,
+                    style: const TextStyle(
+                        fontFamily: 'ChakraPetch',
+                        fontSize: 11.5,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
+                        color: Luxe.gold2)),
+              ),
+            ),
+          ],
         ]),
       ),
     ));

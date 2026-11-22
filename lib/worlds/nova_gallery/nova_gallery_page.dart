@@ -14,6 +14,8 @@ import 'ui/nova_tabs.dart';
 import 'ui/nova_visuals.dart';
 
 import '../../core/ui2/anix_kit.dart';
+import '../../core/ui2/luxe.dart';
+
 /// NOVA GALLERY — the social network world (offline-first).
 class NovaGalleryPage extends ConsumerStatefulWidget {
   const NovaGalleryPage({super.key});
@@ -93,9 +95,8 @@ class _NovaGalleryPageState extends ConsumerState<NovaGalleryPage> {
   void _openPost(String id) {
     final NovaPost? post = ref.read(novaControllerProvider).byId(id);
     if (post == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.tx(
-              'این پست دیگر وجود ندارد.', 'This post no longer exists.'))));
+      luxeToast(context, context.tx(
+              'این پست دیگر وجود ندارد.', 'This post no longer exists.'));
       return;
     }
     Navigator.of(context).push<void>(MaterialPageRoute<void>(

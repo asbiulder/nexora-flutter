@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../settings/app_settings.dart';
+import '../ui2/luxe.dart';
 import 'online_service.dart';
 
 /// Rings anywhere in the app when someone starts an Orbit Network call in one of my chats
@@ -58,19 +59,18 @@ class CallWatcher {
     final bool fa = _ref.read(settingsProvider).isFa;
     final ScaffoldMessengerState? m = _messenger.currentState;
     if (m == null) return;
-    m.showSnackBar(SnackBar(
+    // The app's own themed toast (gold panel) keeps its call/videocam glyph and the ANSWER
+    // shortcut; an invitation stays up for 30 s instead of the 3 s default.
+    luxeToastState(
+      m,
+      title == who
+          ? (fa ? '$who تماس ${video ? 'تصویری' : 'صوتی'} گرفته است' : '$who is calling you (${video ? 'video' : 'voice'})')
+          : (fa ? '$who در «$title» تماس شروع کرد' : '$who started a call in "$title"'),
+      icon: video ? Icons.videocam_rounded : Icons.call_rounded,
+      actionLabel: fa ? 'پاسخ' : 'Answer',
+      onAction: () => _open(chatId, id, video, title),
       duration: const Duration(seconds: 30),
-      content: Row(children: <Widget>[
-        Icon(video ? Icons.videocam_rounded : Icons.call_rounded, color: Colors.white),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(title == who
-              ? (fa ? '$who تماس ${video ? 'تصویری' : 'صوتی'} گرفته است' : '$who is calling you (${video ? 'video' : 'voice'})')
-              : (fa ? '$who در «$title» تماس شروع کرد' : '$who started a call in "$title"')),
-        ),
-      ]),
-      action: SnackBarAction(label: fa ? 'پاسخ' : 'Answer', onPressed: () => _open(chatId, id, video, title)),
-    ));
+    );
   }
 
   void _detach({bool disposing = false}) {

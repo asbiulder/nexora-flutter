@@ -19,6 +19,8 @@ import '../domain/prize_split.dart';
 import 't_common.dart';
 
 import '../../../core/ui2/anix_kit.dart';
+import '../../../core/ui2/luxe.dart';
+
 /// Tournaments list: registering / upcoming / live / finished / mine, with filters and live countdowns.
 class TournamentsPage extends ConsumerStatefulWidget {
   const TournamentsPage({super.key, this.game, this.joinCode});
@@ -174,13 +176,11 @@ class _TournamentsPageState extends ConsumerState<TournamentsPage>
     final TResult r = await _repo.joinCode(code);
     if (!mounted) return;
     final String? t = r.data['tournament_id'] as String?;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(r.ok
+    luxeToast(context, r.ok
           ? (fa
               ? 'ثبت شد: ${entryStatusName(context, '${r.data['status']}')}'
               : 'Done: ${entryStatusName(context, '${r.data['status']}')}')
-          : tErrorText(r.error, fa)),
-    ));
+          : tErrorText(r.error, fa));
     if (t != null) {
       unawaited(_load(silent: true));
       unawaited(context.push('/tournaments/$t'));

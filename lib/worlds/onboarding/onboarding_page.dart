@@ -12,6 +12,7 @@ import '../../core/profile/profile_service.dart';
 import '../../core/settings/app_settings.dart';
 import '../../core/theme/nx_theme.dart';
 import '../../core/widgets/nx_widgets.dart';
+import '../../core/ui2/luxe.dart';
 
 /// Digital identity creation (STEP_08/09, offline guest identity).
 /// Online later: the same identity is linked to a Supabase account.
@@ -45,9 +46,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Future<void> _finish() async {
     final name = _name.text.trim();
     if (name.length < 2) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.tx('نام کاربری حداقل ۲ حرف باشد',
-              'Username must be at least 2 characters'))));
+      luxeToast(context, context.tx('نام کاربری حداقل ۲ حرف باشد',
+              'Username must be at least 2 characters'));
       return;
     }
     HapticFeedback.mediumImpact();

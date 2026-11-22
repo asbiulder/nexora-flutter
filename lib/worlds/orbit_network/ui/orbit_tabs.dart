@@ -18,6 +18,8 @@ import 'orbit_chat_page.dart';
 import 'orbit_sheets.dart';
 
 import '../../../core/ui2/anix_kit.dart';
+import '../../../core/ui2/luxe.dart';
+
 void openOrbitChat(BuildContext context, String chatId, {String? focusMessageId}) {
   Navigator.of(context).push<void>(MaterialPageRoute<void>(
     builder: (BuildContext c) => OrbitChatPage(chatId: chatId, focusMessageId: focusMessageId),
@@ -329,8 +331,7 @@ class _OfflineContactsTab extends ConsumerWidget {
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: p.explorerId));
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(SnackBar(content: Text(context.tx('شناسه کپی شد', 'ID copied'))));
+                      luxeToast(context, context.tx('شناسه کپی شد', 'ID copied'));
                     }
                   },
                   icon: const Icon(Icons.copy_rounded),
@@ -344,9 +345,10 @@ class _OfflineContactsTab extends ConsumerWidget {
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: shareText));
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content:
-                              Text(context.tx('متن دعوت کپی شد؛ هرجا خواستی بفرست', 'Invite text copied; paste it anywhere'))));
+                      luxeToast(
+                          context,
+                          context.tx('متن دعوت کپی شد؛ هرجا خواستی بفرست', 'Invite text copied; paste it anywhere'),
+                      );
                     }
                   },
                   icon: const Icon(Icons.share_rounded),
@@ -631,7 +633,7 @@ class _OrbitFriendsPanelState extends ConsumerState<OrbitFriendsPanel> {
 
   void _snack(String fa, String en) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tx(fa, en))));
+    luxeToast(context, context.tx(fa, en));
   }
 
   Future<void> _message(NxUser u) async {

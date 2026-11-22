@@ -16,6 +16,8 @@ import '../../domain/prize_split.dart';
 import '../t_common.dart';
 
 import '../../../../core/ui2/anix_kit.dart';
+import '../../../../core/ui2/luxe.dart';
+
 /// Organizer wizard: info → format/capacity → times → match rules → prizes → registration/codes → review/publish.
 /// Every value is validated again on the server (nx_t_save); this page only guides.
 class TournamentWizardPage extends ConsumerStatefulWidget {
@@ -251,7 +253,7 @@ class _TournamentWizardPageState extends ConsumerState<TournamentWizardPage> {
     final String? err = _validate(context);
     final bool fa = ref.read(settingsProvider).isFa;
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      luxeToast(context, err);
       return;
     }
     setState(() => _busy = true);
@@ -260,8 +262,7 @@ class _TournamentWizardPageState extends ConsumerState<TournamentWizardPage> {
     if (!r.ok) {
       if (mounted) {
         setState(() => _busy = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(tErrorText(r.error, fa))));
+        luxeToast(context, tErrorText(r.error, fa));
       }
       return;
     }
@@ -276,17 +277,15 @@ class _TournamentWizardPageState extends ConsumerState<TournamentWizardPage> {
     if (publish && (_editing == null || _editing!.status == 'draft')) {
       final TResult p = await repo.admin(id, 'publish');
       if (!p.ok && mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(tErrorText(p.error, fa))));
+        luxeToast(context, tErrorText(p.error, fa));
       }
     }
     if (!mounted) return;
     setState(() => _busy = false);
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(publish
+    luxeToast(context, publish
             ? (fa ? 'منتشر شد' : 'Published')
-            : (fa ? 'ذخیره شد' : 'Saved'))));
+            : (fa ? 'ذخیره شد' : 'Saved'));
     if (_editing == null) {
       context.pushReplacement('/tournaments/$id/manage');
     } else {

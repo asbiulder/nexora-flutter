@@ -19,6 +19,8 @@ import 'orbit_bubbles.dart';
 import 'orbit_sheets.dart';
 
 import '../../../core/ui2/anix_kit.dart';
+import '../../../core/ui2/luxe.dart';
+
 /// One conversation (Saved Orbit, group or channel).
 class OrbitChatPage extends ConsumerStatefulWidget {
   const OrbitChatPage({super.key, required this.chatId, this.focusMessageId});
@@ -175,9 +177,8 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
             if (mounted) context.push('/online/$g?code=$code');
           } catch (_) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(context.tx('ساخت اتاق آنلاین ممکن نشد.',
-                      'Could not create the online room.'))));
+              luxeToast(context, context.tx('ساخت اتاق آنلاین ممکن نشد.',
+                      'Could not create the online room.'));
             }
           }
           break;
@@ -219,7 +220,7 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
     if (!mounted || picked == null || picked.files.single.bytes == null) return;
     final PlatformFile file = picked.files.single;
     if (file.size > 8 * 1024 * 1024) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tx('حداکثر اندازه ۸ مگابایت است.', 'Maximum size is 8 MB.'))));
+      luxeToast(context, context.tx('حداکثر اندازه ۸ مگابایت است.', 'Maximum size is 8 MB.'));
       return;
     }
     final String ext = (file.extension ?? '').toLowerCase();
@@ -241,7 +242,7 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
       await _ctrl.send(widget.chatId, authorName: name, kind: kind, text: caption, payload: media);
       await _afterSend();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tx('ارسال فایل انجام نشد.', 'Could not send the file.'))));
+      if (mounted) luxeToast(context, context.tx('ارسال فایل انجام نشد.', 'Could not send the file.'));
     }
   }
 
@@ -305,9 +306,8 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
         await _ctrl.addMembers(chat.id, picked.toList());
       } catch (_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(context.tx('فقط مدیران می‌توانند عضو اضافه کنند.',
-                  'Only admins can add members.'))));
+          luxeToast(context, context.tx('فقط مدیران می‌توانند عضو اضافه کنند.',
+                  'Only admins can add members.'));
         }
       }
     }

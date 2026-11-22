@@ -14,6 +14,8 @@ import '../../domain/bracket.dart';
 import '../t_common.dart';
 
 import '../../../../core/ui2/anix_kit.dart';
+import '../../../../core/ui2/luxe.dart';
+
 /// Organizer panel: controls (publish / draw / start / pause / cancel / finish), approval queue, players
 /// and seeds, invite codes, manual match tools (result / correction / replay / edit / add for custom), logs, staff.
 /// The UI only hides; every action is role-checked by the RPCs in Postgres.
@@ -97,11 +99,9 @@ class _TournamentManagePageState extends ConsumerState<TournamentManagePage>
     if (!mounted) return;
     setState(() => _busy = false);
     final bool fa = ref.read(settingsProvider).isFa;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(r.ok
+    luxeToast(context, r.ok
           ? (fa ? (okFa ?? 'انجام شد') : (okEn ?? 'Done'))
-          : tErrorText(r.error, fa)),
-    ));
+          : tErrorText(r.error, fa));
     unawaited(_load());
   }
 
@@ -537,8 +537,7 @@ class _TournamentManagePageState extends ConsumerState<TournamentManagePage>
                   onPressed: () {
                     Clipboard.setData(
                         ClipboardData(text: 'nexora://t/${c.code}'));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('nexora://t/${c.code}')));
+                    luxeToast(context, 'nexora://t/${c.code}');
                   },
                 ),
                 if (!c.revoked)

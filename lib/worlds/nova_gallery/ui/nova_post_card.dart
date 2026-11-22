@@ -13,6 +13,8 @@ import 'nova_composer.dart';
 import 'nova_visuals.dart';
 
 import '../../../core/ui2/anix_kit.dart';
+import '../../../core/ui2/luxe.dart';
+
 /// One post in the feed.
 class NovaPostCard extends ConsumerWidget {
   const NovaPostCard({super.key, required this.post, this.onHashtag, this.onMention});
@@ -115,10 +117,11 @@ class NovaPostCard extends ConsumerWidget {
               onTap: () async {
                 final bool s = await ctrl.toggleSave(post.id);
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(s ? context.tx('ذخیره شد', 'Saved') : context.tx('از ذخیره‌ها برداشته شد', 'Removed from saved')),
-                  duration: const Duration(seconds: 1),
-                ));
+                luxeToast(
+                    context,
+                    s ? context.tx('ذخیره شد', 'Saved') : context.tx('از ذخیره‌ها برداشته شد', 'Removed from saved'),
+                    duration: const Duration(seconds: 1),
+                );
               },
             ),
           ]),
@@ -157,7 +160,7 @@ class NovaPostCard extends ConsumerWidget {
       case 'copy':
         await Clipboard.setData(ClipboardData(text: post.textFor(context.isFa)));
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tx('متن کپی شد', 'Text copied'))));
+          luxeToast(context, context.tx('متن کپی شد', 'Text copied'));
         }
         break;
     }
@@ -168,13 +171,12 @@ class NovaPostCard extends ConsumerWidget {
 Future<void> shareNovaPostToOrbit(BuildContext context, WidgetRef ref, NovaPost post) async {
   await ref.read(novaControllerProvider).shareToOrbit(post, context.isFa);
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(context.tx('در صندوق اشتراک Orbit Network قرار گرفت', 'Placed in the Orbit Network share inbox')),
-    action: SnackBarAction(
-      label: context.tx('باز کردن', 'Open'),
-      onPressed: () => context.push('/world/orbit_network'),
-    ),
-  ));
+  luxeToast(
+      context,
+      context.tx('در صندوق اشتراک Orbit Network قرار گرفت', 'Placed in the Orbit Network share inbox'),
+      actionLabel: context.tx('باز کردن', 'Open'),
+      onAction: () => context.push('/world/orbit_network'),
+  );
 }
 
 class _ActionButton extends StatelessWidget {
