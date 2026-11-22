@@ -449,7 +449,7 @@ class NxBarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color c = tint ?? NxThemeColors.of(context).accent;
     final Widget button = Nx2Pressable(
-      onTap: onTap ?? () {},
+      onTap: onTap,
       child: Opacity(
         opacity: onTap == null ? 0.45 : 1,
         child: SizedBox(
@@ -616,6 +616,9 @@ class NxWorldScaffold extends StatelessWidget {
     this.bottomNavigationBar,
     this.showWallet = true,
     this.dock,
+    this.sections,
+    this.sectionIndex = 0,
+    this.onSectionSelect,
     this.room = false,
     this.scene,
   });
@@ -629,6 +632,13 @@ class NxWorldScaffold extends StatelessWidget {
 
   /// When set, the NX2 bottom dock is shown with this tab highlighted.
   final Nx2Tab? dock;
+
+  /// In-page sub-tabs of this screen (NOVA's Feed/Explore/Reels, Orbit's Chats/Calls/Contacts).
+  /// Forwarded to [NxPageShell], which draws them with [NxDockBar] on the app dock's own
+  /// geometry — one navigation language instead of a second bar style per page.
+  final List<NxDockSection>? sections;
+  final int sectionIndex;
+  final ValueChanged<int>? onSectionSelect;
   final bool room;
 
   /// Scene art; by default arcade pages get the ANIX arcade art and social pages the social art.
@@ -654,6 +664,9 @@ class NxWorldScaffold extends StatelessWidget {
         leading: null,
         bottomNavigationBar: bottomNavigationBar,
         dock: dock,
+        sections: sections,
+        sectionIndex: sectionIndex,
+        onSectionSelect: onSectionSelect,
         floatingActionButton: floatingActionButton,
         showWallet: showWallet,
         scene: room ? Nx2Scene.room : _scene,

@@ -267,9 +267,14 @@ class Nx2Panel extends StatelessWidget {
 }
 
 /// Scale-down-on-press with a light haptic.
+///
+/// A null [onTap] means "disabled": the child is painted as-is, with no gesture
+/// detector, no press animation and no tick sound — the same contract as
+/// [Nx2Button.onTap] and Material's `onPressed`, so callers never have to invent
+/// an empty callback (which would still swallow taps and play the tick).
 class _Pressable extends StatefulWidget {
   const _Pressable({required this.onTap, required this.child});
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Widget child;
   @override
   State<_Pressable> createState() => _PressableState();
@@ -279,6 +284,8 @@ class _PressableState extends State<_Pressable> {
   bool _down = false;
   @override
   Widget build(BuildContext context) {
+    final VoidCallback? onTap = widget.onTap;
+    if (onTap == null) return widget.child;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _down = true),
@@ -287,7 +294,7 @@ class _PressableState extends State<_Pressable> {
       onTap: () {
         HapticFeedback.selectionClick();
         NxSfx.instance.play('tick', gain: 0.6);
-        widget.onTap();
+        onTap();
       },
       child: AnimatedScale(
         scale: _down ? 0.96 : 1,
@@ -301,7 +308,7 @@ class _PressableState extends State<_Pressable> {
 /// Public wrapper of the press animation for art tiles.
 class Nx2Pressable extends StatelessWidget {
   const Nx2Pressable({super.key, required this.onTap, required this.child});
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Widget child;
   @override
   Widget build(BuildContext context) =>
