@@ -5,6 +5,10 @@ import 'package:flutter/scheduler.dart';
 
 import '../../core/ui2/luxe.dart';
 import '../arcade_kit/arcade_shell.dart';
+
+// `SoloRun` is declared in arcade_shell.dart and is the shell's controller; re-exported so
+// registry and board files that only need the controller do not import the shell machinery.
+export '../arcade_kit/arcade_shell.dart' show SoloRun;
 import '../arcade_kit/arcade_skin.dart';
 import '../core/game_contract.dart';
 
