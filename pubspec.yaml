@@ -66,13 +66,12 @@ flutter:
     - assets/games/backgammon/
     - assets/games/billiards/
     - assets/games/carrom/
-    - assets/games/bermuda/balls/
-    - assets/games/bermuda/discs/
+    - assets/games/bermuda/balls/v9/
+    - assets/games/bermuda/discs/v9/
     - assets/games/bermuda/fields/
     - assets/games/bermuda/goals/
     - assets/games/bermuda/intro/
     - assets/games/bermuda/sfx/
-    - assets/games/bermuda/teams/
     - assets/games/bermuda/thumbs/
     - assets/games/bermuda/ui/
     - assets/games/finger_soccer/
