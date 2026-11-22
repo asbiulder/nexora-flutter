@@ -323,6 +323,16 @@ jobs:
           path: out/*
           retention-days: 30
 
+      # The 64-bit ARM build on its own, so it can be downloaded directly (most phones).
+      - name: Upload arm64-v8a APK
+        if: env.KEEPALIVE != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ANIX-arm64-v8a-apk
+          path: out/ANIX-arm64-v8a.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Release body
         if: env.PUBLISH == 'true' && env.KEEPALIVE != 'true'
         run: |

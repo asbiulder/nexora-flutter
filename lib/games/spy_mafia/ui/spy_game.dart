@@ -49,7 +49,7 @@ class _SpyGameViewState extends ArcadeLoopState<SpyGameView> {
 
   GameLaunch get l => widget.launch;
   int get me => l.mySeat;
-  int get seats => l.net?.seatCount ?? l.playerCount.clamp(4, 8);
+  int get seats => (l.net?.seatCount ?? l.playerCount).clamp(4, 8);
   bool _isBot(int s) => !l.online && s != me;
   double get _skill => botSkillFor(l.daily ? BotDifficulty.hard : l.difficulty);
 
