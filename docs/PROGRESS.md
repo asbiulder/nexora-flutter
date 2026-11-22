@@ -304,3 +304,45 @@ No extra server: everything runs in the existing Supabase project (Postgres RPCs
   render-test `shots/` out of Git. `android_overlay/` (the branding source the workflow copies in) stays tracked. No secret or
   credential file is tracked; the Supabase keys in the workflow are the publishable/anon ones, which ship inside the app by design
   with RLS protecting the data.
+
+## Server state closed out (2026-11-22)
+
+Every migration in `supabase/games/migrations/` is now applied to the games project
+(`eyzafhrefnqlwcjpcdyg`) and verified against the live database rather than assumed from the
+SQL on disk. A committed file says nothing about what the server runs: three physics files and
+`g_pro_result_integrity` had been sitting unapplied while the client was already written for
+them.
+
+- `physics_reference_v4_sizes`, `physics_reference_v4`, `physics_fs_v7_rebound` — applied in
+  order; the contract row moved from `physics-2026-11-20-ref-v3` (PR 75 / BR 37.5) to v7.
+- `physics_fs_v8_engine_truth` (**new file**) — applying v4 alone would still have been
+  untrue: it recorded `PF1 45 / PF2 3.5 / launch_scale 2.04`, the calibration from
+  2026-11-20, while `bm_engine.dart` ships `PF1 0 / PF2 3.25 / kBmLaunch 1.97`. It also left
+  `post_restitution 1.9` arguing with the `goal_post_restitution 0.9` the owner asked for in
+  v7. v8 corrects the numbers, drops the contradictory key, records the constants that were
+  implemented but never written down, and lists the nine v1/v2 prototype keys the engine does
+  not implement under `legacy_keys_not_in_engine` instead of deleting owner history.
+- `pro_result_integrity` — one phone can no longer dictate a match result. Reports are
+  collected in `nx_match_reports` (RLS on, no client grants, `service_role` only), the match
+  finalizes when every required player agrees or when the silent ones are provably gone, and
+  conflicting claims end as `disputed` with no rewards. Rating moved from a flat +16/−12 to
+  Elo (K = 32) against the average opponent rating. `nx_forfeit` no longer lets the host
+  forfeit a seat that already reported or moved in the last 30 s.
+
+  `match_link.dart`'s `report()` was already written for this contract — it sends `p_hash` /
+  `p_reason` and waits out `{pending: true}` — and every device reports through
+  `online_match_page.dart:_onGameFinish`, so consensus is reachable in normal play. The live
+  function had the five-parameter signature but the old 1 199-character body, i.e. the client
+  was ahead of the server.
+
+Verification, not inference: the md5 of each function's `prosrc` was compared with the md5 of
+the corresponding body in the repo file and all three match exactly (`_nx_apply_result`
+2 509 bytes, `nx_finish_match` 4 799, `nx_forfeit` 1 564), all are `SECURITY DEFINER`,
+`nx_finish_match` / `nx_forfeit` are executable by `authenticated` and not by `anon`, and
+`_nx_apply_result` by neither. The `nx_matches` status check now admits `disputed`.
+
+The nine foundational files (`mirror_bridge`, `games_core`, `tournaments_v2`, `admin`,
+`turn_authority`, `arcade`, `rooms_talk`, `quick_match_fix`, `admin_powers`) have no ledger
+row — they predate the ledger convention — so their objects were enumerated from the SQL and
+checked directly: **all 29 relations and all 143 functions they declare exist live**. Nothing
+in the repo's server code is unapplied any more.
