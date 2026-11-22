@@ -6,6 +6,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexora/core/profile/achievements.dart';
 import 'package:nexora/games/arcade_kit/arcade_meta.dart';
+import 'package:nexora/games/finger_soccer/core/bm_data.dart';
+import 'package:nexora/games/finger_soccer/core/bm_engine.dart';
+import 'package:nexora/games/finger_soccer/ui/bm_view.dart';
 import 'package:nexora/games/game_registry.dart';
 import 'package:nexora/worlds/oracle_core/core/oracle_knowledge.dart';
 import 'package:nexora/worlds/world_registry.dart';
@@ -72,6 +75,38 @@ void main() {
       expect(wings.descEn, contains('9 different games'));
       expect(wings.descEn.toLowerCase(), isNot(contains('all ')));
       expect(wings.descFa, isNot(contains('هر ۹')));
+    });
+  });
+
+  // The finger soccer rules screen is the game's own instruction manual: it used to promise
+  // 6 formations and 15-second online turns while the engine shipped 9 formations and a
+  // 10-second clock (kBmOnlineTurnSeconds, and the server's turn-authority migration).
+  group('finger soccer rules copy matches the engine', () {
+    test('the rules name the real number of formations', () {
+      final GameInfo fs = gameById('finger_soccer')!;
+      expect(kBmForms.length, 9);
+      expect(fs.rulesEn, contains('(${kBmForms.length} shapes)'));
+      expect(fs.rulesFa, contains('${faNum(kBmForms.length)} ترکیب'));
+    });
+
+    test('the rules state the real online turn length', () {
+      final GameInfo fs = gameById('finger_soccer')!;
+      final int seconds = kBmOnlineTurnSeconds.toInt();
+      expect(seconds, 10);
+      expect(fs.rulesEn, contains('$seconds seconds'));
+      expect(fs.rulesFa, contains('${faNum(seconds)} ثانیه'));
+    });
+
+    test('the catalogue the README advertises is the one that ships', () {
+      // 114 teams: Club 40, National 31, Luxury 43 (every Luxury set rated 10/10), 30 pitches.
+      expect(kBmTeamDefs.length, 114);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'club').length, 40);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nat').length, 31);
+      final List<BmTeamDef> lux =
+          kBmTeamDefs.where((BmTeamDef t) => t.cat == 'lux').toList();
+      expect(lux.length, 43);
+      expect(lux.every((BmTeamDef t) => t.power == 10 && t.accuracy == 10), isTrue);
+      expect(kBmFieldsRaw.length, 30);
     });
   });
 }

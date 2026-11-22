@@ -24,12 +24,12 @@ final List<GameInfo> kGames = <GameInfo>[
     nameEn: 'Finger Soccer',
     taglineFa: 'فلاخن بکش، شوت بزن، گل کن',
     taglineEn: 'Pull, flick, score',
-    rulesFa: 'تیم، ترکیب (۶ ترکیب)، زمین و توپ را انتخاب کن. نوبتی یکی از مهره‌های خودت را بکش و رها کن؛ هرچه بیشتر بکشی ضربه محکم‌تر است. '
+    rulesFa: 'تیم، ترکیب (۹ ترکیب)، زمین و توپ را انتخاب کن. نوبتی یکی از مهره‌های خودت را بکش و رها کن؛ هرچه بیشتر بکشی ضربه محکم‌تر است. '
         'وقتی همه‌چیز ایستاد نوبت عوض می‌شود. توپ باید از خط دروازه رد شود؛ گلِ مستقیم از ضربه‌ی شروع حساب نمی‌شود. '
-        'هر بازی ۵ دقیقه است و در تساوی، گل طلایی برنده را تعیین می‌کند. در بازی آنلاین هر نوبت ۱۵ ثانیه است.',
-    rulesEn: 'Pick your team, formation (6 shapes), field and ball. On your turn drag one of your discs back and release; the longer the pull, the harder the shot. '
+        'هر بازی ۵ دقیقه است و در تساوی، گل طلایی برنده را تعیین می‌کند. در بازی آنلاین هر نوبت ۱۰ ثانیه است.',
+    rulesEn: 'Pick your team, formation (9 shapes), field and ball. On your turn drag one of your discs back and release; the longer the pull, the harder the shot. '
         'Turns swap when everything stops. The ball must cross the goal line; a direct goal from the kick-off shot does not count. '
-        'Matches last 5 minutes and a golden goal decides a tie. Online turns are 15 seconds.',
+        'Matches last 5 minutes and a golden goal decides a tie. Online turns are 10 seconds.',
     minPlayers: 2,
     maxPlayers: 2,
     // Online the match is played 1v1, 2v2 or 3v3 (two equal sides, turns rotate inside each side);
