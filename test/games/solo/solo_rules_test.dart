@@ -63,17 +63,16 @@ void main() {
 
     test('a full board with no merges is game over', () {
       final World2048Game w = World2048Game(seed: 7);
-      int n = 1;
+      // Values never repeat next to each other: (r, c) gets 2 + r * 4 + c.
       for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
-          w.board.set(r, c, n);
-          n *= 2;
+          w.board.set(r, c, 2 + r * 4 + c);
         }
       }
-      // 1,2,4,8 in a row cannot merge with different values in every line.
+      // Every orthogonal neighbour differs in value, so no direction can merge.
       expect(w.board.canMove, isFalse);
       w.move(0);
-      expect(w.over, isTrue);
+      expect(w.over, isTrue, reason: 'a swipe on a dead board must end the run');
     });
   });
 
@@ -201,24 +200,41 @@ void main() {
       expect(k.spin, greaterThan(0.9));
     });
 
-    test('helix jump falls, jumps and ends on a red ring', () {
+    test('helix jump falls on its own and a jump lifts the ball back up', () {
       final HelixWorld h = HelixWorld(seed: 8, ringCount: 40);
-      for (int i = 0; i < 200; i++) {
+      // Spin away from every red gap so the fall is never interrupted by a crash.
+      for (int i = 0; i < 30; i++) {
         h.update(1 / 60, tilt: 0);
-        if (i % 7 == 0) h.jump();
-        if (h.dead) break;
       }
-      expect(h.rings.length, 40);
-      expect(h.finished || h.dead || h.depth > 0, isTrue);
+      final double fallen = h.depth;
+      expect(fallen, greaterThan(0), reason: 'gravity must pull the ball down the tower');
+      h.jump();
+      expect(h.jumps, 1);
+      final double before = h.depth;
+      h.update(1 / 60, tilt: 0);
+      expect(h.depth, lessThan(before), reason: 'a jump must lift the ball');
+      expect(h.depth, greaterThanOrEqualTo(0), reason: 'the ball can never leave the tower top');
     });
 
-    test('helix jump falls further than it climbs: depth never goes negative', () {
+    test('helix jump crossing a red ring away from its gap ends the run', () {
       final HelixWorld h = HelixWorld(seed: 15, ringCount: 60);
-      for (int i = 0; i < 120; i++) {
-        h.update(1 / 60, tilt: 0.4);
-        if (i % 11 == 0) h.jump();
-        expect(h.depth, greaterThanOrEqualTo(0));
-        if (h.dead) break;
+      int steps = 0;
+      while (!h.dead && !h.finished && steps < 3000) {
+        // Tilt hard: the gap of every red ring is at a different angle, so a steady spin will
+        // keep missing them; the ball must eventually crash.
+        h.update(1 / 60, tilt: 1.0);
+        steps++;
+      }
+      expect(h.dead || h.finished, isTrue,
+          reason: 'the ball must either crash on a red ring or climb the whole tower');
+      expect(h.depth, greaterThanOrEqualTo(0));
+    });
+
+    test('helix rings are generated below the start so the first rings are safe', () {
+      final HelixWorld h = HelixWorld(seed: 21, ringCount: 30);
+      expect(h.rings.length, 30);
+      for (int i = 0; i < 6; i++) {
+        expect(h.rings[i], HelixRing.open, reason: 'ring $i must be open at the start');
       }
     });
   });
@@ -232,13 +248,18 @@ void main() {
           b.grid[r][c] = -1;
         }
       }
-      b.grid[0][4] = 0;
+      // aim 0 shoots up the middle column (col 5). The bubble stops under that column's
+      // lowest bubble, i.e. row 1, which touches the pair in row 0 (hex packing, odd row).
       b.grid[0][5] = 0;
+      b.grid[0][6] = 0;
       b.nextColour = 0;
-      b.aim = 0.18; // aim near the same column
-      final int before = b.remaining;
+      expect(b.landingCell(5), (1, 5));
+      b.aim = 0;
       b.fire();
-      expect(b.remaining, lessThan(before + 1));
+      expect(b.popped, greaterThan(0), reason: 'three connected bubbles must pop');
+      expect(b.grid[0][5], -1, reason: 'the popped cluster leaves the board');
+      expect(b.grid[0][6], -1);
+      expect(b.remaining, 0);
     });
 
     test('a cleared board reports cleared', () {

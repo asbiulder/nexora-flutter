@@ -179,7 +179,12 @@ class World2048Game {
   int move(int dir) {
     if (over) return 0;
     final int? gained = board.slide(dir);
-    if (gained == null) return 0;
+    if (gained == null) {
+      // A blocked swipe still has to end the run once no direction is legal; otherwise the
+      // player is left staring at a dead board with no overlay.
+      if (!board.canMove) over = true;
+      return 0;
+    }
     score += gained;
     board.spawn();
     if (board.maxTile >= 2048) won = true;

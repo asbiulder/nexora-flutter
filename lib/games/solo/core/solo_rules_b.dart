@@ -225,12 +225,14 @@ class KnifeWorld {
 }
 
 // ---------------------------------------------------------------- helix jump
-enum HelixRing { none, red }
+/// A ring is either open (only a thin frame — the ball always passes) or deadly red (the ball
+/// must be over the gap when it crosses the level).
+enum HelixRing { open, red }
 
 /// A tower of rings; the ball drops through the gap of each ring. Red sections kill.
 class HelixWorld {
   HelixWorld({required this.seed, this.ringCount = 220}) : rng = math.Random(seed) {
-    rings = List<HelixRing>.generate(ringCount, (int i) => HelixRing.none);
+    rings = List<HelixRing>.generate(ringCount, (int i) => HelixRing.open);
     int i = 6;
     while (i < ringCount - 6) {
       final int len = 3 + rng.nextInt(3);
@@ -262,18 +264,22 @@ class HelixWorld {
     spin += tilt * 2.4 * dt;
     fallSpeed = math.min(7.5, fallSpeed + 9 * dt);
     depth += fallSpeed * dt;
+    if (depth < 0) depth = 0; // the ball never leaves the top of the tower
     if (depth >= ringCount - 1) {
       depth = ringCount - 1;
       return; // climbed the whole tower: the UI ends the run as a win
     }
     gapAngle = spin % (math.pi * 2);
-    // The gap is a fixed arc on each ring; if the ball's ring is red and the ball is not
-    // over the gap, it is a fall.
-    if (rings[ring] == HelixRing.red) {
+    // Crossing a red ring level: the gap is a fixed arc per ring, so the player has to spin
+    // the tower to line the ball up, exactly like the real game.
+    final double level = depth - ring;
+    if (level > 0.02 && level < 0.30 && rings[ring] == HelixRing.red) {
       final double gapCentre = (ring * 1.7) % (math.pi * 2);
       double d = (gapCentre - gapAngle).abs();
       if (d > math.pi) d = math.pi * 2 - d;
-      if (d > 0.42) dead = true;
+      if (d > 0.42) {
+        dead = true; // crossed a red ring away from its gap
+      }
     }
   }
 
@@ -333,30 +339,49 @@ class BubbleWorld {
   }
 
   /// Fires the current bubble along [aim]. Returns the number popped.
+  ///
+  /// The bubble rises from the bottom of the aimed column and sticks under the lowest bubble
+  /// already in it, exactly like the real game; a column whose bottom cell is taken cannot be
+  /// used, so the shot tries progressively closer columns instead of teleporting to the top.
   int fire() {
     shots++;
-    // Column target from the aim angle.
-    final int target = (cols / 2 + math.sin(aim) * cols * 0.75).round().clamp(0, cols - 1);
-    int row = -1;
-    for (int r = 0; r < rows; r++) {
-      if (grid[r][target] >= 0) {
-        row = r - 1;
-        break;
+    final int aimed = (cols / 2 + math.sin(aim) * cols * 0.75).round().clamp(0, cols - 1);
+    for (final int target in _landingOrder(aimed)) {
+      final int? row = _landingRow(target);
+      if (row == null) continue;
+      grid[row][target] = nextColour;
+      return _resolve(row, target);
+    }
+    return 0; // every reachable column is full: the shot is wasted
+  }
+
+  /// Aimed column first, then its neighbours, then the rest — so a blocked shot does something
+  /// sensible instead of vanishing.
+  Iterable<int> _landingOrder(int aimed) sync* {
+    yield aimed;
+    for (int d = 1; d < cols; d++) {
+      if (aimed - d >= 0) yield aimed - d;
+      if (aimed + d < cols) yield aimed + d;
+    }
+  }
+
+  /// Where a shot aimed at [col] would stick: the cell the bubble would occupy, or null.
+  /// Exposed so the board can draw a landing marker and tests can target a real cell.
+  (int row, int col)? landingCell(int col) {
+    final int? row = _landingRow(col);
+    return row == null ? null : (row, col);
+  }
+
+  /// Row the shot sticks at in [col], or null when the column is full.
+  int? _landingRow(int col) {
+    for (int r = rows - 1; r >= 0; r--) {
+      if (grid[r][col] >= 0) {
+        final int land = r + 1;
+        if (land >= rows || grid[land][col] >= 0) return null;
+        return land;
       }
     }
-    if (row < 0) {
-      row = rows - 1;
-      for (int r = rows - 1; r >= 0; r--) {
-        if (grid[r][target] < 0) {
-          row = r;
-          break;
-        }
-      }
-    }
-    if (row < 0) return 0; // column full
-    grid[row][target] = nextColour;
-    final int poppedNow = _resolve(row, target);
-    return poppedNow;
+    return rows - 1; // empty column: the bubble rests on the floor
   }
 
   int _resolve(int row, int col) {
