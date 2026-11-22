@@ -346,3 +346,78 @@ The nine foundational files (`mirror_bridge`, `games_core`, `tournaments_v2`, `a
 row — they predate the ledger convention — so their objects were enumerated from the SQL and
 checked directly: **all 29 relations and all 143 functions they declare exist live**. Nothing
 in the repo's server code is unapplied any more.
+
+## Finger soccer v9 — the owner's 3 pitches, 48 badges, 18 balls, score on the art, Flame scene (2026-11-22, branch `arena/5a46ff7d-cocos-c`)
+- **Pitches:** only the owner's three Sockerbox arts remain — Neon Arena (pitch 0), Gold Checker, Gold Stripes (941 x 1672,
+  goals, nets and the two side score displays drawn in). `tool/build_fs_v9_assets.py` builds the field / thumb webps from
+  `files/uploads/` and prints every measurement the engine uses (rails = inner edge of the frame line, posts = the white
+  tubes where they cross the goal line, net depth, score display boxes), scaled by `kBmV9ArtScale` .85. Every older pitch
+  and its art is deleted; a saved / synced pitch index that no longer exists becomes pitch 0 (`bmFieldIndex`).
+  Known: on Neon Arena the bottom goal is drawn ~17 art px deeper than its collider, because both goals use the
+  shallower net depth so the mirrored online phones stay deterministic.
+- **Teams:** 48 badges in three categories — Cars 24, Sport 12, NX 12 — cut from the owner's badge sheets (`discs/v9/`).
+  They reuse the shop catalogue ids (DECISIONS D15). The car / sport badges are real trademarked logos (BMW, Ferrari,
+  Nike, Adidas, …) supplied by the owner; that is a licensing question for the owner before any store release.
+- **Balls:** 18 still balls (`balls/v9/`, preference key `bm.ball.v9`, default ball 0), all rolled by the 3D ball renderer;
+  the v7 GIF balls and sprite sheets are gone (`kBmAnimBalls` is empty).
+- **Score on the art:** the live score is drawn as seven-segment digits on the pitch's own side displays (left/blue =
+  bottom side, right = top side, `BmScoreDisplay`); the HUD score is removed.
+- **Chrome:** the top bar is only menu + clock + formation button (`FsMatchTopBar`); the bottom strip (outside the pitch)
+  carries the one-minute toast and, online, the host page's mic / speaker controls. The game marks itself immersive
+  (`GameLaunch.immersive`) so the host hides its corner buttons and banners while the match runs.
+- **Flame:** the match loop and playfield run on Flame (`ui/fs_flame.dart`, `FsFlameGame`). `update(dt)` advances the
+  unchanged deterministic engine (same fixed steps, same online move log); each layer — pitch, under-layer, discs, ball,
+  over-layer, score — is a Flame component sharing `BmPainter`, and touch arrives through Flame drag events mapped with
+  the same `BmView` transform. `BmPainter` is still a `CustomPainter` (`paint()` runs the same phases in order) so the
+  collider audit draws it directly. Fix found while closing v9: Flame's `GameWidget` calls `update(0)` from inside its
+  `LayoutBuilder` on every resize, which advanced the view during build ("setState() called during build") and broke 9
+  widget tests; zero-length frames are now skipped.
+- **Physics unchanged:** `bm_engine.dart`'s v9 diff is only the score-display fields on `BmFieldS`, `NB` following the ball
+  list and a `Color` import. The render-interp golden was re-recorded because pitch 0 is a different shape (and the old
+  team ids are gone), not because the simulation changed.
+- **Tests:** `test/games/finger_soccer_v9_test.dart` (catalogue, geometry, score displays, balls, teams + shop ids, the
+  Flame match screen, fallbacks); the v5 / v6 / v61 / online-pick tests updated for the new chrome; `test_render/` reads
+  the painter from `BermudaView.flameGame`. Full `flutter test` (808 tests) and `flutter analyze` clean locally.
+- **CI:** commits 74c4cc5 + 06900a0 — Quick Check 45057896910 green, ANIX PRO Android Build 45057896896 green,
+  `ANIX-arm64-v8a-apk` artifact 14768481585 (60,343,269 bytes).
+- **Not done / honest limits:** nothing tested on a phone (build agent has no device). No offline microphone (voice is
+  the online LiveKit room only). Group games stay at the live server bound of 4 online players (no server migration for
+  more). Per-game manual checklists: `docs/anix_pro/TEST_CHECKLISTS.md`.
+
+## App-wide new-UI sweep (2026-11-22, branch `arena/5a46ff7d-cocos-c`)
+Goal from the owner: the UI is completely the new Station Luxe (home page) design, no trace of the old navy/neon look.
+Audit result: the theme tokens (`NxThemeColors.gold/neon/gameplay`, `NxColors.luxe*`, `WorldPalette`) were already the
+Luxe palette, so every screen that reads the theme was already on it. What was left were hard-coded remnants:
+- **Neon accent removed from app chrome.** `NxColors.turquoise` (0xFF2EE6D6) was the "you / owned / done / online" accent
+  on ~40 chrome call sites (admin, tournaments, arcade host/setup, online match, exchange, Nova, onboarding, ORACLE,
+  Orbit, settings, account, Social Station). Those now use the new `NxColors.champagne` (Luxe gold2, 0xFFF6E7BD); the one
+  place where champagne would have been indistinguishable from ink (your own row in a tournament standings table) uses
+  gold. `turquoise` stays only as a gameplay colour inside game boards (NX Cards card colour, Mafia / Quiz highlights),
+  where four distinguishable piece colours are needed.
+- **Neon cyan / violet hard-codes replaced** in the ORACLE buddy / mascot / tour / persona widgets / game sheet / config
+  page, the in-app update banner and the Luxe kit text: 0xFF39E6FF / 0xFF35D6FF -> gold, 0xFF8FF3FF -> champagne,
+  0x6639E6FF -> gold glow, 0xFFF4F0FF (lavender white) -> Luxe ink, 0x66B57CFF -> champagne hairline. Nova's post
+  background presets (user content, chosen per post) were left as they are.
+- **Lavender light skin removed.** `NxThemeColors.neonLight` (pale violet) is gone; light mode is the Luxe light
+  palette (`goldLight`) for either preset.
+- **Dead old screen removed.** The old first-launch "journey" (starfield cinematic, `lib/worlds/journey/`, 4 files +
+  its timeline test) had no route left, yet Menu -> "Replay the first journey" still pointed at `/journey` and opened
+  the 404 page; the menu test listed `/journey` as a registered route although the router never had it. The menu item
+  now replays the current onboarding (`/onboarding`), the test lists the real route, and the unused `journeySeen` setting
+  went with the page.
+- **Unused old widgets / art deleted:** `Nx2Banner`, `Nx2AvatarRing`, `Nx2Tile`, `Nx2IconButton`, `Nx2Bubble`,
+  `Nx2BoardChoice`, `WalletChip`, `AnixTintedIcon` (no references), and 71 never-referenced NX2 neon kit images
+  (cyan / pink / violet buttons, banners, bars, cards, chests, badges; ~3.3 MB) with their `Nx2Assets` constants; the
+  emptied `assets/ui/nx2/bars/` entry left pubspec.
+- Tests: full `flutter test` (802 tests; 6 fewer = the deleted journey timeline test) and `flutter analyze` clean locally.
+
+What remains (not done in this pass, listed honestly):
+- Many screens still build their chrome from the shared `Nx*` / `Nx2*` widgets (`NxWorldScaffold`, `GlassPanel`, `NxPill`,
+  `Nx2Panel`, `Nx2Button` 9-slice art) rather than the `Luxe*` primitives. They are themed with the Luxe tokens, so the
+  colours match, but the NX2 9-slice frames (`assets/ui/nx2/frames`, still used: dock, violet banners, neon rings) are
+  the previous art direction. Replacing them needs per-screen visual review on a device and was not attempted blind.
+- Remaining NX2 art still in use: `framesBannerViolet`, `framesBannerWingsViolet`, `framesRingNeon`,
+  `framesRingWingsBlue/Purple`, `bgBgMain`, `bgBgRoom`, NX2 badges / chests / tiles / ORACLE poses.
+- `assets/ui/anix/*` (buttons, toggles, modals, nav, rank, frames) are referenced through `AnixAssets` path builders and
+  were kept; a per-state usage audit could trim unused states.
+- No screen of this sweep was looked at on a phone; render tests were not re-shot for every screen.
