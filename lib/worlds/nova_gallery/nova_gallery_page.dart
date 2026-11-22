@@ -192,40 +192,35 @@ class _NovaGalleryPageState extends ConsumerState<NovaGalleryPage> {
                   ? Icons.movie_filter_rounded
                   : Icons.edit_rounded),
             ),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: visual.surfaceRaised.withValues(alpha: 0.98),
-        indicatorColor: visual.accent.withValues(alpha: 0.22),
-        selectedIndex: _tab,
-        height: 66,
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        onDestinationSelected: (int i) => setState(() => _tab = i),
-        destinations: <Widget>[
-          NavigationDestination(
-              icon: const Icon(Icons.dynamic_feed_rounded),
-              label: context.tx('فید', 'Feed')),
-          NavigationDestination(
-              icon: const Icon(Icons.explore_rounded),
-              label: context.tx('اکتشاف', 'Explore')),
-          NavigationDestination(
-              icon: const Icon(Icons.movie_filter_rounded),
-              label: context.tx('ریلز', 'Reels')),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text('$unread'),
-              child: const Icon(Icons.notifications_rounded),
-            ),
-            label: context.tx('اعلان‌ها', 'Alerts'),
-          ),
-          NavigationDestination(
-              icon: const Icon(Icons.person_rounded),
-              label: context.tx('پروفایل', 'Profile')),
-        ],
-      ),
+      sections: <NxDockSection>[
+        NxDockSection(
+            icon: Icons.dynamic_feed_outlined,
+            activeIcon: Icons.dynamic_feed_rounded,
+            label: context.tx('فید', 'Feed')),
+        NxDockSection(
+            icon: Icons.explore_outlined,
+            activeIcon: Icons.explore_rounded,
+            label: context.tx('اکتشاف', 'Explore')),
+        NxDockSection(
+            icon: Icons.movie_filter_outlined,
+            activeIcon: Icons.movie_filter_rounded,
+            label: context.tx('ریلز', 'Reels')),
+        NxDockSection(
+            icon: Icons.notifications_none_rounded,
+            activeIcon: Icons.notifications_rounded,
+            badge: unread,
+            label: context.tx('اعلان‌ها', 'Alerts')),
+        NxDockSection(
+            icon: Icons.person_outline_rounded,
+            activeIcon: Icons.person_rounded,
+            label: context.tx('پروفایل', 'Profile')),
+      ],
+      sectionIndex: _tab,
+      onSectionSelect: (int i) => setState(() => _tab = i),
       body: Column(children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              NxSpace.md, kToolbarHeight + NxSpace.xs, NxSpace.md, NxSpace.sm),
+              NxSpace.md, NxSpace.sm, NxSpace.md, NxSpace.sm),
           child: GlassPanel(
             padding: const EdgeInsets.symmetric(
                 horizontal: NxSpace.md, vertical: NxSpace.sm),

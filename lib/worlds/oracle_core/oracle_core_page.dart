@@ -494,7 +494,7 @@ class _OracleCorePageState extends ConsumerState<OracleCorePage> {
           ),
       ],
       body: Column(children: <Widget>[
-        SizedBox(height: kToolbarHeight),
+        const SizedBox(height: NxSpace.sm),
         // Floating ORACLE with a glow halo that follows the reply pose.
         AnimatedContainer(
           duration: NxMotion.normal,

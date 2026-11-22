@@ -93,14 +93,18 @@ class SettingsPage extends ConsumerWidget {
           GlassPanel(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Light mode repaints Material chrome and the theme extension. The rest of the
+              // app (the whole Station Luxe art direction) is dark-only, so this is labelled as
+              // a Material-chrome option instead of implying a full light redesign.
               AnixSwitchTile(
                 contentPadding: EdgeInsets.zero,
                 value: s.appearanceMode == NxAppearanceMode.light,
                 onChanged: (v) => s.appearanceMode =
                     v ? NxAppearanceMode.light : NxAppearanceMode.dark,
-                // Testing hook: the row's title text alone is what a test taps, and a title tap
-                // must toggle the switch exactly like the switch itself.
+                secondary: const Icon(Icons.contrast_rounded, color: NxColors.gold),
                 title: Text(context.tx('نمایش روشن', 'Light appearance')),
+                subtitle: Text(context.tx('روشن‌کردن فیلدها و دیالوگ‌های سیستم',
+                    'Lighter Material fields, dialogs and menus')),
               ),
               Text(context.tx('کیفیت گرافیک', 'Graphics quality'),
                   style: const TextStyle(fontWeight: FontWeight.w700)),

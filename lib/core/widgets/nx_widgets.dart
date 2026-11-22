@@ -152,6 +152,9 @@ class NxPageShell extends StatelessWidget {
     this.leading,
     this.bottomNavigationBar,
     this.dock,
+    this.sections,
+    this.sectionIndex = 0,
+    this.onSectionSelect,
     this.floatingActionButton,
     this.showWallet = true,
     this.search = true,
@@ -175,9 +178,18 @@ class NxPageShell extends StatelessWidget {
   /// Replaces the default back/home button when set.
   final Widget? leading;
 
-  /// When set (or when [dock] is set) the Luxe dock is attached to the bottom.
+  /// When set (or when [dock]/[sections] is set) the Luxe dock is attached to the bottom.
   final Widget? bottomNavigationBar;
+
+  /// App-level dock tab.
   final Nx2Tab? dock;
+
+  /// In-page sections (sub-tabs of one screen, e.g. NOVA's Feed/Explore/Reels). They are drawn
+  /// by [NxDockBar] on the same geometry as the app dock, so sub-tabs never look like a second
+  /// design language.
+  final List<NxDockSection>? sections;
+  final int sectionIndex;
+  final ValueChanged<int>? onSectionSelect;
   final Widget? floatingActionButton;
 
   /// Coins + gems pills on the right of the bar.
@@ -203,7 +215,14 @@ class NxPageShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget? bottom = bottomNavigationBar ?? (dock != null ? Nx2Dock(current: dock) : null);
+    final Widget? bottom = bottomNavigationBar ??
+        (sections != null
+            ? NxDockBar(
+                sections: sections!,
+                index: sectionIndex,
+                onSelect: onSectionSelect,
+              )
+            : (dock != null ? Nx2Dock(current: dock) : null));
     final bool hasBottom = bottom != null;
     final Widget content = safeArea
         ? SafeArea(top: false, bottom: !hasBottom, child: body)
@@ -211,7 +230,10 @@ class NxPageShell extends StatelessWidget {
     return Scaffold(
       backgroundColor: backgroundColor ?? Nx2.deep,
       extendBody: hasBottom,
-      extendBodyBehindAppBar: true,
+      // The body starts *below* the bar. This is the one layout contract of the shell: a page
+      // supplies a body and never pads for the bar itself. (Pages used to add kToolbarHeight by
+      // hand — which was also wrong, because the bar is 64, not 56.)
+      extendBodyBehindAppBar: false,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64),
@@ -230,6 +252,84 @@ class NxPageShell extends StatelessWidget {
       // NxBrandBackground paints the art as a Stack and appends the child last, so the page
       // body is always above the art with a single image decode per screen.
       body: backdrop ? NxBrandBackground(scene: scene, child: content) : content,
+    );
+  }
+}
+
+/// One destination of an in-page [NxDockBar].
+class NxDockSection {
+  const NxDockSection({required this.icon, required this.label, this.badge = 0, this.activeIcon});
+  final IconData icon;
+  final IconData? activeIcon;
+  final String label;
+
+  /// Red count on the icon (0 hides it).
+  final int badge;
+}
+
+/// In-page sections bar. Same height, gold chrome, glass and label behaviour as the app dock,
+/// so a screen with sub-tabs (NOVA Gallery, Orbit Network) keeps the home page's navigation
+/// language instead of dropping a Material [NavigationBar] under a Luxe app bar.
+class NxDockBar extends StatelessWidget implements PreferredSizeWidget {
+  const NxDockBar({super.key, required this.sections, this.index = 0, this.onSelect});
+  final List<NxDockSection> sections;
+  final int index;
+  final ValueChanged<int>? onSelect;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(66);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 66,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0xF20F0E0B), Color(0xFA07080C)],
+        ),
+        border: Border(top: BorderSide(color: Color(0x33D9B872))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: <Widget>[
+            for (int i = 0; i < sections.length; i++)
+              Expanded(
+                child: Nx2Pressable(
+                  onTap: onSelect == null ? null : () => onSelect!(i),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Badge(
+                        isLabelVisible: sections[i].badge > 0,
+                        backgroundColor: Nx2.danger,
+                        label: Text('${sections[i].badge}', style: const TextStyle(fontSize: 9)),
+                        child: Icon(
+                          i == index ? (sections[i].activeIcon ?? sections[i].icon) : sections[i].icon,
+                          size: 22,
+                          color: i == index ? Luxe.gold : Luxe.mute,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        sections[i].label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: i == index ? FontWeight.w900 : FontWeight.w600,
+                          color: i == index ? Luxe.gold2 : Luxe.mute,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

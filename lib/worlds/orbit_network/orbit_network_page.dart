@@ -168,34 +168,27 @@ class _OrbitNetworkPageState extends ConsumerState<OrbitNetworkPage>
               child: const Icon(Icons.add_comment_rounded),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: visual.surfaceRaised.withValues(alpha: 0.98),
-        indicatorColor: visual.accent.withValues(alpha: 0.22),
-        selectedIndex: _tab,
-        height: 66,
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        onDestinationSelected: (int i) => setState(() => _tab = i),
-        destinations: <Widget>[
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text('$unread'),
-              child: const Icon(Icons.chat_bubble_rounded),
-            ),
-            label: context.tx('گفت‌وگوها', 'Chats'),
-          ),
-          NavigationDestination(
-              icon: const Icon(Icons.call_rounded),
-              label: context.tx('تماس‌ها', 'Calls')),
-          NavigationDestination(
-              icon: const Icon(Icons.contacts_rounded),
-              label: context.tx('مخاطبان', 'Contacts')),
-        ],
-      ),
+      sections: <NxDockSection>[
+        NxDockSection(
+            icon: Icons.chat_bubble_outline_rounded,
+            activeIcon: Icons.chat_bubble_rounded,
+            badge: unread,
+            label: context.tx('گفت‌وگوها', 'Chats')),
+        NxDockSection(
+            icon: Icons.call_outlined,
+            activeIcon: Icons.call_rounded,
+            label: context.tx('تماس‌ها', 'Calls')),
+        NxDockSection(
+            icon: Icons.contacts_outlined,
+            activeIcon: Icons.contacts_rounded,
+            label: context.tx('مخاطبان', 'Contacts')),
+      ],
+      sectionIndex: _tab,
+      onSectionSelect: (int i) => setState(() => _tab = i),
       body: Column(children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              NxSpace.md, kToolbarHeight + NxSpace.xs, NxSpace.md, NxSpace.sm),
+              NxSpace.md, NxSpace.sm, NxSpace.md, NxSpace.sm),
           child: GlassPanel(
             padding: const EdgeInsets.symmetric(
                 horizontal: NxSpace.md, vertical: NxSpace.sm),

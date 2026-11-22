@@ -238,7 +238,7 @@ class _CommunityDetailPageState extends ConsumerState<CommunityDetailPage>
       body: Column(children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              NxSpace.md, kToolbarHeight + NxSpace.sm, NxSpace.md, 0),
+              NxSpace.md, NxSpace.sm, NxSpace.md, 0),
           child: GlassPanel(
             tint: accent.withValues(alpha: 0.10),
             borderColor: accent.withValues(alpha: 0.45),
