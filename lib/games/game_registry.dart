@@ -15,7 +15,8 @@ import 'uno/uno_entry.dart';
 
 export 'core/game_contract.dart';
 
-/// GameRegistry (STEP_16): the nine ANIX ARCADE games.
+/// GameRegistry (STEP_16): the ANIX ARCADE catalogue — the nine original games, the seven
+/// multiplayer arcade games and the ten solo arcade games (26 in total).
 final List<GameInfo> kGames = <GameInfo>[
   GameInfo(
     id: 'finger_soccer',
@@ -178,7 +179,7 @@ final List<GameInfo> kGames = <GameInfo>[
     builder: buildMafiaGame,
     supportsOnline: true,
   ),
-  // redesign-2: the ten multiplayer arcade games, added alongside the nine above.
+  // redesign-2: the seven multiplayer arcade games, added alongside the nine above.
   ...kArcadeGames,
   // The ten single-player arcade games: real gameplay (lib/games/solo/), same medals,
   // daily challenge and global score board as the rest of the arcade.

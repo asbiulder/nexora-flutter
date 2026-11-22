@@ -337,8 +337,17 @@ const List<OracleFaq> kOracleFaq = <OracleFaq>[
     must: <List<String>>[
       <String>['what games', 'which games', 'list of games', 'games list', 'all games', 'چه بازی هایی', 'کدوم بازی ها', 'کدام بازی ها', 'لیست بازی', 'بازی هایی'],
     ],
-    textFa: 'در آرکید ۹ بازی داریم: کرام، فوتبال دستی، مار و پله، کوییز، تخته‌نرد، بیلیارد، UNO، لودو و مافیا. اسم هرکدام را بگو تا قوانینش را توضیح بدهم یا بازی را باز کنم.',
-    textEn: 'The Arcade has 9 games: Carrom, Finger Soccer, Snakes & Ladders, Quiz, Backgammon, Billiards, UNO, Ludo and Mafia. Name one and I\'ll explain the rules or open it.',
+    // Keep in sync with kGames (test/core/game_count_claims_test.dart fails if the registry drifts).
+    textFa: 'در آرکید ۲۶ بازی در پنج گروه داریم: ورزشی (فوتبال انگشتی، کارم، بیلیارد، بیلیارد ۸ توپ، مینی گلف، نبرد بسکتبال)، '
+        'تخته‌ای (تخته‌نرد، لودو، مار و پله)، پارتی (کارت‌های NX، کوییز انیکس، مافیا، جاسوس و مافیا)، '
+        'اکشن و مسابقه (مسابقه‌ی کارت، مسابقه‌ی موانع، میدان بمب) و آرکید تک‌نفره (دونده‌ی بی‌پایان، جئو دش، مسابقه‌ی ترافیک، '
+        'میوه‌بُر، چاقو زدن، پرش مارپیچ، حباب‌زن، برج بلوک، تتریس راش و ۲۰۴۸). '
+        'اسم هرکدام را بگو تا قوانینش را توضیح بدهم یا بازی را باز کنم.',
+    textEn: 'The Arcade has 26 games in five groups — Sports (Finger Soccer, Carrom, Billiards, 8 Ball Pool, Mini Golf, '
+        'Basketball Battle), Board (Backgammon, Ludo, Snakes & Ladders), Party (NX Cards, ANIX Quiz, Mafia, Spy & Mafia), '
+        'Action & Racing (Kart Racing, Obstacle Race, Bomb Arena) and Solo Arcade (Endless Runner, Geo Dash, Traffic Racer, '
+        'Fruit Ninja, Knife Hit, Helix Jump, Bubble Shooter, Stack Tower, Tetris Rush, NX 2048). '
+        'Name one and I\'ll explain the rules or open it.',
     actions: <OracleAction>[kGoArcade],
   ),
   OracleFaq(
