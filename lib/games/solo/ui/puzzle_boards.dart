@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../arcade_kit/arcade_shell.dart';
 import '../core/solo_rules.dart';
+import '../core/solo_rules_b.dart';
 import '../core/solo_rules_c.dart';
 import '../solo_kit.dart';
 
@@ -310,8 +311,8 @@ class StackBoardState extends SoloBoardState<StackBoard> {
 
     if (!world.over) {
       final Rect moving = Rect.fromLTWH(left + world.movingLeft * boardW, top - blockH, world.movingWidth * boardW - 2, blockH - 2);
-      LuxeBoardPainter.glow(canvas, moving.center, moving.width * 0.6, LuxeBoardPainter.gold2, 0.12);
-      LuxeBoardPainter.roundedRect(canvas, moving, blockH * 0.22, LuxeBoardPainter.gold2,
+      LuxeBoardPainter.glow(canvas, moving.center, moving.width * 0.6, LuxeBoardPainter.champagne, 0.12);
+      LuxeBoardPainter.roundedRect(canvas, moving, blockH * 0.22, LuxeBoardPainter.champagne,
           border: LuxeBoardPainter.gold.withValues(alpha: 0.7));
     }
 
@@ -425,7 +426,7 @@ class KnifeBoardState extends SoloBoardState<KnifeBoard> {
     final double startY = size.height * 0.86;
     final double endY = c.dy + r * 0.92;
     final double y = LuxeBoardPainter.lerp(startY, endY, _fly);
-    LuxeBoardPainter.glow(canvas, Offset(c.dx, y), 12, LuxeBoardPainter.gold2, 0.3);
+    LuxeBoardPainter.glow(canvas, Offset(c.dx, y), 12, LuxeBoardPainter.champagne, 0.3);
     LuxeBoardPainter.roundedRect(canvas, Rect.fromCenter(center: Offset(c.dx, y - 20), width: 8, height: 62), 4,
         LuxeBoardPainter.champagne, border: LuxeBoardPainter.gold.withValues(alpha: 0.7));
 
