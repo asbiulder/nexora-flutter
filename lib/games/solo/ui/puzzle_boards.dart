@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../arcade_kit/arcade_shell.dart';
 import '../core/solo_rules.dart';
+import '../core/solo_rules_c.dart';
 import '../solo_kit.dart';
 
 // =====================================================================================
@@ -12,11 +13,11 @@ import '../solo_kit.dart';
 class World2048Board extends SoloBoard {
   const World2048Board({super.key, required super.run});
   @override
-  State<World2048Board> createState() => _World2048BoardState();
+  _World2048BoardState createState() => _World2048BoardState();
 }
 
 class _World2048BoardState extends SoloBoardState<World2048Board> {
-  late World2048 world;
+  late World2048Game world;
   final Map<String, double> _pop = <String, double>{};
   int _moves = 0;
 
@@ -37,7 +38,7 @@ class _World2048BoardState extends SoloBoardState<World2048Board> {
 
   @override
   void reset() {
-    world = World2048(seed: widget.run.seed);
+    world = World2048Game(seed: widget.run.seed);
     world.board.spawn();
     world.board.spawn();
     widget.run.set(0);
@@ -153,7 +154,7 @@ class _World2048BoardState extends SoloBoardState<World2048Board> {
 class TetrisBoard extends SoloBoard {
   const TetrisBoard({super.key, required super.run});
   @override
-  State<TetrisBoard> createState() => _TetrisBoardState();
+  _TetrisBoardState createState() => _TetrisBoardState();
 }
 
 class _TetrisBoardState extends SoloBoardState<TetrisBoard> {
@@ -254,7 +255,7 @@ class _TetrisBoardState extends SoloBoardState<TetrisBoard> {
 class StackBoard extends SoloBoard {
   const StackBoard({super.key, required super.run});
   @override
-  State<StackBoard> createState() => _StackBoardState();
+  _StackBoardState createState() => _StackBoardState();
 }
 
 class _StackBoardState extends SoloBoardState<StackBoard> {
@@ -360,7 +361,7 @@ class _StackBoardState extends SoloBoardState<StackBoard> {
 class KnifeBoard extends SoloBoard {
   const KnifeBoard({super.key, required super.run});
   @override
-  State<KnifeBoard> createState() => _KnifeBoardState();
+  _KnifeBoardState createState() => _KnifeBoardState();
 }
 
 class _KnifeBoardState extends SoloBoardState<KnifeBoard> {

@@ -98,7 +98,7 @@ abstract class SoloBoard extends StatefulWidget {
 
   /// Boards supply their concrete state (`_XBoardState`, a `SoloBoardState<XBoard>`).
   @override
-  SoloBoardState<SoloBoard> createState();
+  SoloBoardState<dynamic> createState();
 }
 
 abstract class SoloBoardState<T extends SoloBoard> extends State<T> with SingleTickerProviderStateMixin {

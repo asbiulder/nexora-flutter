@@ -51,7 +51,7 @@ void main() {
     });
 
     test('a new run always spawns two tiles and every move keeps a tile count', () {
-      final World2048 w = World2048(seed: 42);
+      final World2048Game w = World2048Game(seed: 42);
       expect(w.board.cells.expand((List<int> r) => r).where((int v) => v > 0).length, 2);
       for (int i = 0; i < 40 && !w.over; i++) {
         final int before = w.board.total;
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('a full board with no merges is game over', () {
-      final World2048 w = World2048(seed: 7);
+      final World2048Game w = World2048Game(seed: 7);
       int n = 1;
       for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {

@@ -163,8 +163,8 @@ class TetrisWorld {
 }
 
 // ---------------------------------------------------------------- 2048
-class World2048 {
-  World2048({required this.seed}) : board = GridBoard(4, math.Random(seed)) {
+class World2048Game {
+  World2048Game({required this.seed}) : board = GridBoard(4, math.Random(seed)) {
     board.spawn();
     board.spawn();
   }

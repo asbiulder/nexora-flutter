@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../arcade_kit/arcade_shell.dart';
 import '../core/solo_rules_b.dart';
 import '../core/solo_rules_c.dart';
 import '../solo_kit.dart';
@@ -18,7 +17,7 @@ const Color _hazard = Color(0xFFC97A6A);
 class RunnerBoard extends SoloBoard {
   const RunnerBoard({super.key, required super.run});
   @override
-  State<RunnerBoard> createState() => _RunnerBoardState();
+  _RunnerBoardState createState() => _RunnerBoardState();
 }
 
 class _RunnerBoardState extends SoloBoardState<RunnerBoard> {
@@ -129,7 +128,7 @@ class _RunnerBoardState extends SoloBoardState<RunnerBoard> {
 class FruitBoard extends SoloBoard {
   const FruitBoard({super.key, required super.run});
   @override
-  State<FruitBoard> createState() => _FruitBoardState();
+  _FruitBoardState createState() => _FruitBoardState();
 }
 
 class _FruitBoardState extends SoloBoardState<FruitBoard> {
@@ -213,7 +212,7 @@ class _FruitBoardState extends SoloBoardState<FruitBoard> {
 class HelixBoard extends SoloBoard {
   const HelixBoard({super.key, required super.run});
   @override
-  State<HelixBoard> createState() => _HelixBoardState();
+  _HelixBoardState createState() => _HelixBoardState();
 }
 
 class _HelixBoardState extends SoloBoardState<HelixBoard> {
@@ -282,7 +281,7 @@ class _HelixBoardState extends SoloBoardState<HelixBoard> {
 class BubbleBoard extends SoloBoard {
   const BubbleBoard({super.key, required super.run});
   @override
-  State<BubbleBoard> createState() => _BubbleBoardState();
+  _BubbleBoardState createState() => _BubbleBoardState();
 }
 
 class _BubbleBoardState extends SoloBoardState<BubbleBoard> {
@@ -307,7 +306,7 @@ class _BubbleBoardState extends SoloBoardState<BubbleBoard> {
   void _fire() {
     if (_cool > 0) return;
     _cool = 0.25;
-    final int popped = world.fire();
+    world.fire();
     world.pickColour();
     widget.run.set(world.popped * 12);
     if (world.cleared) widget.run.gameOver();
@@ -377,7 +376,7 @@ class _BubbleBoardState extends SoloBoardState<BubbleBoard> {
 class DashBoard extends SoloBoard {
   const DashBoard({super.key, required super.run});
   @override
-  State<DashBoard> createState() => _DashBoardState();
+  _DashBoardState createState() => _DashBoardState();
 }
 
 class _DashBoardState extends SoloBoardState<DashBoard> {
@@ -468,7 +467,7 @@ class _DashBoardState extends SoloBoardState<DashBoard> {
 class TrafficBoard extends SoloBoard {
   const TrafficBoard({super.key, required super.run});
   @override
-  State<TrafficBoard> createState() => _TrafficBoardState();
+  _TrafficBoardState createState() => _TrafficBoardState();
 }
 
 class _TrafficBoardState extends SoloBoardState<TrafficBoard> {
