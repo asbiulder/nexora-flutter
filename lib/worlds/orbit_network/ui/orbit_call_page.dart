@@ -230,7 +230,7 @@ class _OrbitCallPageState extends ConsumerState<OrbitCallPage> {
             child: Icon(icon,
                 color: color != null
                     ? Colors.white
-                    : (active ? Colors.white : NxColors.navyDeep)),
+                    : (active ? Colors.white : NxColors.luxeBg)),
           ),
         ),
       );

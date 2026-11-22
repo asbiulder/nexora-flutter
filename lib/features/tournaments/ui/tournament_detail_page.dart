@@ -477,7 +477,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
                       NxPill(
                           label: '+$waitlist',
                           icon: Icons.hourglass_top_rounded,
-                          color: NxColors.violet),
+                          color: NxColors.goldDeep),
                     NxPill(
                         label: regModeName(context, t.regMode),
                         icon: Icons.how_to_reg_rounded,
@@ -507,7 +507,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
                       NxPill(label: '$totalC 🪙', color: NxColors.gold),
                     if (totalG > 0) ...<Widget>[
                       const SizedBox(width: 6),
-                      NxPill(label: '$totalG 💎', color: NxColors.electricBlue)
+                      NxPill(label: '$totalG 💎', color: NxColors.gold)
                     ],
                   ]),
                   const SizedBox(height: 8),
@@ -792,7 +792,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor:
-                      meReady ? NxColors.navySoft : NxColors.success,
+                      meReady ? NxColors.panelWarm : NxColors.success,
                   minimumSize: const Size.fromHeight(54),
                 ),
                 onPressed: meReady || _busy ? null : () => _ready(m),
@@ -962,14 +962,14 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
         fontWeight: bold ? FontWeight.w900 : FontWeight.w600,
         color: header
             ? NxColors.textDim
-            : (r?.userId == _me ? NxColors.turquoise : NxColors.iceWhite));
+            : (r?.userId == _me ? NxColors.turquoise : NxColors.ink));
     Widget c(String s, {double w = 28, bool bold = false}) => SizedBox(
         width: w, child: Text(s, textAlign: TextAlign.center, style: st(bold)));
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
         border: header
-            ? const Border(bottom: BorderSide(color: NxColors.glassBorder))
+            ? const Border(bottom: BorderSide(color: NxColors.goldLine))
             : null,
         color: qualifies ? NxColors.success.withValues(alpha: 0.08) : null,
       ),
@@ -1071,7 +1071,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
         'pending' => (context.tx('منتظر', 'Waiting'), NxColors.textDim),
         'scheduled' => (
             context.tx('زمان‌بندی', 'Scheduled'),
-            NxColors.electricBlue
+            NxColors.gold
           ),
         'ready_check' => (
             context.tx('آمادگی', 'Ready check'),
@@ -1085,7 +1085,7 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
             m.isDraw ? context.tx('مساوی', 'Draw') : context.tx('تمام', 'Done'),
             NxColors.gold
           ),
-        'walkover' => (context.tx('واگذار', 'Walkover'), NxColors.violet),
+        'walkover' => (context.tx('واگذار', 'Walkover'), NxColors.goldDeep),
         'bye' => ('BYE', NxColors.textDim),
         'disputed' => (context.tx('اختلاف', 'Disputed'), NxColors.danger),
         'void' => (context.tx('باطل', 'Void'), NxColors.textDim),
@@ -1176,11 +1176,11 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
           trailing: e.place != null
               ? NxPill(
                   label: '#${e.place}',
-                  color: e.place == 1 ? NxColors.gold : NxColors.electricBlue)
+                  color: e.place == 1 ? NxColors.gold : NxColors.gold)
               : (e.status == 'waitlist'
                   ? NxPill(
                       label: entryStatusName(context, e.status),
-                      color: NxColors.violet)
+                      color: NxColors.goldDeep)
                   : null),
         );
       },

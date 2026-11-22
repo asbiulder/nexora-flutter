@@ -87,7 +87,7 @@ class _JourneyPageState extends ConsumerState<JourneyPage>
   @override
   Widget build(BuildContext context) {
     final timeline = _timeline;
-    if (timeline == null) return const ColoredBox(color: NxColors.navy);
+    if (timeline == null) return const ColoredBox(color: NxColors.panel);
     final quality = ref.watch(settingsProvider).quality;
     final visual = NxThemeColors.of(context);
 
@@ -250,7 +250,7 @@ class _SceneStage extends StatelessWidget {
                 top: 90,
                 child: _Planet(
                   size: 140,
-                  colors: [NxColors.turquoise, NxColors.violet, NxColors.navy],
+                  colors: [NxColors.turquoise, NxColors.goldDeep, NxColors.panel],
                 ),
               ),
               const Positioned(
@@ -258,7 +258,7 @@ class _SceneStage extends StatelessWidget {
                 bottom: 80,
                 child: _Planet(
                   size: 220,
-                  colors: [NxColors.electricBlue, NxColors.navy],
+                  colors: [NxColors.gold, NxColors.panel],
                 ),
               ),
               Center(
@@ -426,7 +426,7 @@ class _Doors extends StatelessWidget {
       builder: (context, box) {
         final width = (box.maxWidth / 2) * (1 - progress);
         const door =
-            DecoratedBox(decoration: BoxDecoration(color: NxColors.navy));
+            DecoratedBox(decoration: BoxDecoration(color: NxColors.panel));
         return Stack(
           children: [
             Positioned(left: 0, top: 0, bottom: 0, width: width, child: door),

@@ -336,12 +336,12 @@ class _TournamentWizardPageState extends ConsumerState<TournamentWizardPage> {
               child: ChoiceChip(
                 avatar: Icon(steps[i].$2,
                     size: 16,
-                    color: i == _step ? NxColors.navyDeep : tAccent(context)),
+                    color: i == _step ? NxColors.luxeBg : tAccent(context)),
                 label: Text('${i + 1}. ${steps[i].$1}'),
                 selected: i == _step,
                 selectedColor: tAccent(context),
                 labelStyle: TextStyle(
-                    color: i == _step ? NxColors.navyDeep : NxColors.iceWhite,
+                    color: i == _step ? NxColors.luxeBg : NxColors.ink,
                     fontWeight: FontWeight.w700),
                 showCheckmark: false,
                 onSelected: (_) => setState(() => _step = i),

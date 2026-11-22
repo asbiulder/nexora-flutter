@@ -53,11 +53,11 @@ class _AdminPageState extends ConsumerState<AdminPage> {
       if (a.can(AdminPerm.admins)) const _Tab('audit', 'گزارش', 'Audit log', Icons.receipt_long_rounded),
     ];
     if (!a.loaded) {
-      return const Scaffold(backgroundColor: NxColors.navyDeep, body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(backgroundColor: NxColors.luxeBg, body: Center(child: CircularProgressIndicator()));
     }
     if (!a.isAdmin) {
       return Scaffold(
-        backgroundColor: NxColors.navyDeep,
+        backgroundColor: NxColors.luxeBg,
         appBar: AppBar(title: Text(context.tx('پنل مدیریت', 'Admin panel'))),
         body: Center(child: Text(context.tx('این بخش فقط برای ادمین‌هاست.', 'Admins only.'))),
       );
@@ -65,9 +65,9 @@ class _AdminPageState extends ConsumerState<AdminPage> {
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
-        backgroundColor: NxColors.navyDeep,
+        backgroundColor: NxColors.luxeBg,
         appBar: AppBar(
-          backgroundColor: NxColors.navy,
+          backgroundColor: NxColors.panel,
           title: Text(a.owner ? context.tx('پنل مدیر اصلی', 'Main admin panel') : context.tx('پنل مدیریت', 'Admin panel')),
           bottom: TabBar(
             isScrollable: true,
@@ -135,7 +135,7 @@ Widget _card({required Widget child}) => Container(
       decoration: BoxDecoration(
         color: const Color(0x1AFFFFFF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NxColors.glassBorder),
+        border: Border.all(color: NxColors.goldLine),
       ),
       child: child,
     );
@@ -1305,7 +1305,7 @@ Future<void> showPlayerSheet(BuildContext context, WidgetRef ref, String userId)
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: NxColors.navyDeep,
+    backgroundColor: NxColors.luxeBg,
     builder: (BuildContext c) => SizedBox(
       height: MediaQuery.sizeOf(c).height * .88,
       child: _PlayerSheet(userId: userId),

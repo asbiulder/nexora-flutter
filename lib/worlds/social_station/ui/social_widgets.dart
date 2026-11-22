@@ -62,7 +62,7 @@ Color kindColor(CommunityKind k) {
     case CommunityKind.public:
       return kSocialPalette.primary;
     case CommunityKind.private:
-      return NxColors.violet;
+      return NxColors.goldDeep;
     case CommunityKind.topic:
       return NxColors.turquoise;
     case CommunityKind.game:

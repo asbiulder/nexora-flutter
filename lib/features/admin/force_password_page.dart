@@ -68,7 +68,7 @@ class _ForcePasswordPageState extends ConsumerState<ForcePasswordPage> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: NxColors.navyDeep,
+        backgroundColor: NxColors.luxeBg,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(

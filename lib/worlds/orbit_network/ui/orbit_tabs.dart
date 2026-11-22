@@ -169,7 +169,7 @@ class OrbitChatsTab extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                               decoration: BoxDecoration(color: pal.primary, borderRadius: BorderRadius.circular(10)),
                               child: Text('${s.unread}',
-                                  style: const TextStyle(color: NxColors.navyDeep, fontSize: 11, fontWeight: FontWeight.w900)),
+                                  style: const TextStyle(color: NxColors.luxeBg, fontSize: 11, fontWeight: FontWeight.w900)),
                             ),
                         ]),
                       ]),
@@ -255,9 +255,9 @@ class _OfflineCallsTab extends StatelessWidget {
         card(Icons.call_rounded, 'تماس صوتی', 'Voice call', 'صدای شفاف با هاله‌ی صوتی', 'Crystal voice with a reactive aura',
             NxColors.turquoise),
         card(Icons.videocam_rounded, 'تماس تصویری', 'Video call', 'رو در رو، در هر کجای کهکشان',
-            'Face to face, anywhere in the galaxy', NxColors.electricBlue),
+            'Face to face, anywhere in the galaxy', NxColors.gold),
         card(Icons.groups_rounded, 'تماس گروهی', 'Group call', 'گردهمایی صوتی و تصویری دوستان', 'Voice and video with your crew',
-            NxColors.violet),
+            NxColors.goldDeep),
         const SizedBox(height: 20),
         Center(
           child: Column(children: <Widget>[
@@ -547,7 +547,7 @@ class _OnlineCallsTabState extends ConsumerState<_OnlineCallsTab> {
                 final String title = chat == null ? '—' : orbitChatTitle(c, chat);
                 return ListTile(
                   leading: Icon(e.video ? Icons.videocam_rounded : Icons.call_rounded,
-                      color: out ? NxColors.turquoise : NxColors.electricBlue),
+                      color: out ? NxColors.turquoise : NxColors.gold),
                   title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Text(
                     '${out ? c.tx('خروجی', 'Outgoing') : c.tx('ورودی', 'Incoming')} · ${_listTime(c, e.at)}'

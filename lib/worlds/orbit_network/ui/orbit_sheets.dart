@@ -81,7 +81,7 @@ class OrbitBadgePicker extends StatelessWidget {
               decoration: BoxDecoration(
                 color: sel ? WorldPalette.orbit.primary.withValues(alpha: 0.2) : const Color(0x14FFFFFF),
                 borderRadius: BorderRadius.circular(NxRadius.md),
-                border: Border.all(color: sel ? WorldPalette.orbit.primary : NxColors.glassBorder, width: sel ? 2 : 1),
+                border: Border.all(color: sel ? WorldPalette.orbit.primary : NxColors.goldLine, width: sel ? 2 : 1),
               ),
               child: id.isEmpty
                   ? const Icon(Icons.block_rounded, color: NxColors.textDim)

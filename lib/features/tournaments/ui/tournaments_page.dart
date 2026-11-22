@@ -254,7 +254,7 @@ class _TournamentsPageState extends ConsumerState<TournamentsPage>
         floatingActionButton: _organizer
             ? FloatingActionButton.extended(
                 backgroundColor: tAccent(context),
-                foregroundColor: NxColors.navyDeep,
+                foregroundColor: NxColors.luxeBg,
                 onPressed: () async {
                   await context.push('/tournaments/new');
                   unawaited(_load(silent: true));
@@ -568,7 +568,7 @@ class TournamentCard extends StatelessWidget {
                     tAccentSecondary(context)
                   ]),
                 ),
-                child: Icon(formatIcon(t.format), color: NxColors.navyDeep),
+                child: Icon(formatIcon(t.format), color: NxColors.luxeBg),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -595,7 +595,7 @@ class TournamentCard extends StatelessWidget {
               NxPill(
                   label: '${t.capacity}',
                   icon: Icons.groups_rounded,
-                  color: NxColors.electricBlue),
+                  color: NxColors.gold),
               NxPill(
                 label: t.isFree
                     ? context.tx('رایگان', 'Free')
@@ -612,7 +612,7 @@ class TournamentCard extends StatelessWidget {
                 NxPill(
                     label: regModeName(context, t.regMode),
                     icon: Icons.lock_rounded,
-                    color: NxColors.violet),
+                    color: NxColors.goldDeep),
               if (entry != null && entry!.active)
                 NxPill(
                     label: entryStatusName(context, entry!.status),

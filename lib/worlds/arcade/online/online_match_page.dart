@@ -307,7 +307,7 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
         if (await _confirmLeave()) nav.pop();
       },
       child: Scaffold(
-        backgroundColor: NxColors.navyDeep,
+        backgroundColor: NxColors.luxeBg,
         body: Stack(children: <Widget>[
           Positioned.fill(child: body),
           PositionedDirectional(
@@ -415,7 +415,7 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
           const SizedBox(height: 8),
           Text(summary,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: NxColors.iceWhite)),
+              style: const TextStyle(color: NxColors.ink)),
         ],
         if (_oracleLine != null) OracleResultLine(text: _oracleLine!),
         const SizedBox(height: 10),

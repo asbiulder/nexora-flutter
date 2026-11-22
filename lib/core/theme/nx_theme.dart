@@ -8,20 +8,24 @@ import '../ui2/page_turn.dart';
 /// reads [NxThemeColors] from the active theme instead.
 class NxColors {
   NxColors._();
-  static const navy = Color(0xFF0A0F2C);
-  static const navyDeep = Color(0xFF050818);
-  static const navySoft = Color(0xFF141B45);
-  static const electricBlue = Color(0xFF00C2FF);
-  static const violet = Color(0xFF7B3FF2);
-  static const iceWhite = Color(0xFFEAF6FF);
   static const turquoise = Color(0xFF2EE6D6);
-  static const gold = Color(0xFFFFC857);
+  static const gold = Color(0xFFD9B872);
   static const pink = Color(0xFFFF4FA3);
   static const danger = Color(0xFFFF5A6E);
   static const success = Color(0xFF3DDC97);
-  static const glass = Color(0x22FFFFFF);
-  static const glassBorder = Color(0x44FFFFFF);
-  static const textDim = Color(0xB3EAF6FF);
+  static const glass = Color(0x14FFFFFF);
+  static const textDim = Color(0x99F4EAD2);
+
+  // ---- Station Luxe tokens (single art direction) --------------------------------------
+  // The home page's palette: black, warm charcoal, gold. Screens use these names; nothing in
+  // the app should introduce a second background/accent language.
+  static const luxeBg = Color(0xFF07080C);
+  static const panel = Color(0xFF14130F);
+  static const panelWarm = Color(0xFF1D1B15);
+  static const goldLine = Color(0x33D9B872);
+  static const ink = Color(0xFFF4EAD2);
+  static const mutedInk = Color(0x99F4EAD2);
+  static const goldDeep = Color(0xFF8A6A2F);
 }
 
 enum NxAppearanceMode { dark, light }
@@ -107,17 +111,18 @@ class NxThemeColors extends ThemeExtension<NxThemeColors> {
     muted: Color(0xFF6C5A38),
   );
 
-  /// Original visual language used inside active game boards and their HUDs.
+  /// Visual language inside active game boards and their HUDs: the same Station Luxe skin as
+  /// the rest of the app (a board must not be the one blue screen in a gold app).
   static const gameplay = NxThemeColors(
-    accent: NxColors.electricBlue,
-    accentSecondary: NxColors.violet,
-    background: NxColors.navyDeep,
-    backgroundMid: NxColors.navy,
-    surface: NxColors.glass,
-    surfaceRaised: NxColors.navySoft,
-    border: NxColors.glassBorder,
-    text: NxColors.iceWhite,
-    muted: NxColors.textDim,
+    accent: Color(0xFFD9B872),
+    accentSecondary: Color(0xFF8A6A2C),
+    background: Color(0xFF07080C),
+    backgroundMid: Color(0xFF12110D),
+    surface: Color(0xE6141310),
+    surfaceRaised: Color(0xF01C1A14),
+    border: Color(0xFF8A6A2C),
+    text: Color(0xFFF4EAD2),
+    muted: Color(0xFFB9AE95),
     premiumPanels: false,
   );
 
@@ -459,7 +464,7 @@ ThemeData _buildTheme(NxThemeColors visual, NxAppearanceMode appearance) {
           fontFamilyFallback: kNxFontFallback,
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: Color(0xFFEAF6FF)),
+          color: Color(0xFFF4EAD2)),
     ),
     sliderTheme: SliderThemeData(
       activeTrackColor: visual.accent,

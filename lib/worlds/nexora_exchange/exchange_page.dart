@@ -767,7 +767,7 @@ List<Color> cueColors(String id) {
     case 'cue_neon':
       return const <Color>[
         Color(0xFF00E5FF),
-        Color(0xFFEAF6FF),
+        Color(0xFFF4EAD2),
         Color(0xFF0D1B3A),
         Color(0xFF00E5FF),
         Color(0xFF0A1230),
@@ -805,7 +805,7 @@ List<Color> themeColors(String theme) {
       ];
     case 'crystal':
       return const <Color>[
-        Color(0xFFEAF6FF),
+        Color(0xFFF4EAD2),
         Color(0xFFBFE3FF),
         Color(0xFFB79CFF)
       ];

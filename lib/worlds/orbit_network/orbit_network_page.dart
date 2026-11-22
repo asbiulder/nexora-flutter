@@ -58,7 +58,7 @@ class _OrbitNetworkPageState extends ConsumerState<OrbitNetworkPage>
           ),
           ListTile(
             leading: const Icon(Icons.campaign_rounded,
-                color: NxColors.electricBlue),
+                color: NxColors.gold),
             title: Text(c.tx('کانال تازه', 'New channel')),
             subtitle:
                 Text(c.tx('فقط مدیران منتشر می‌کنند', 'Only admins publish')),

@@ -151,11 +151,11 @@ class IdentityTab extends ConsumerWidget {
             ],
           ),
           child: DefaultTextStyle.merge(
-            style: const TextStyle(color: NxColors.iceWhite),
+            style: const TextStyle(color: NxColors.ink),
             child: Theme(
               data: ThemeData.dark(useMaterial3: true),
               child: DefaultTextStyle.merge(
-                style: const TextStyle(color: NxColors.iceWhite),
+                style: const TextStyle(color: NxColors.ink),
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
@@ -246,7 +246,7 @@ class IdentityTab extends ConsumerWidget {
           data: ThemeData.dark(useMaterial3: true),
           child: Container(
             decoration: BoxDecoration(
-                color: NxColors.navy,
+                color: NxColors.panel,
                 borderRadius: BorderRadius.circular(NxRadius.lg)),
             child: ref.watch(onlineProvider).isOnline
                 ? ListTile(

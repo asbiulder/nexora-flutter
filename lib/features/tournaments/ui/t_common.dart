@@ -276,7 +276,7 @@ class TAvatar extends StatelessWidget {
           style: TextStyle(
               fontSize: size * 0.48,
               fontWeight: FontWeight.w900,
-              color: NxColors.navyDeep)),
+              color: NxColors.luxeBg)),
     );
   }
 }

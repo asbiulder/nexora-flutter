@@ -163,7 +163,7 @@ class _GameHostPageState extends ConsumerState<GameHostPage> {
         if (await _confirmExit()) nav.pop();
       },
       child: Scaffold(
-        backgroundColor: NxColors.navyDeep,
+        backgroundColor: NxColors.luxeBg,
         body: Stack(children: [
           Positioned.fill(
             child: gameView,

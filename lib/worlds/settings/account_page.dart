@@ -248,7 +248,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                     NxPill(
                         label: 'XP ${p.xp}',
                         icon: Icons.bolt_rounded,
-                        color: NxColors.electricBlue),
+                        color: NxColors.gold),
                     NxPill(
                         label: '${p.coins}',
                         icon: Icons.toll_rounded,
@@ -256,7 +256,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                     NxPill(
                         label: context.tx('سطح ${p.level}', 'Level ${p.level}'),
                         icon: Icons.stars_rounded,
-                        color: NxColors.violet),
+                        color: NxColors.goldDeep),
                   ]),
                 ]),
           ),

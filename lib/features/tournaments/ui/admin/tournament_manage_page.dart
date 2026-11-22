@@ -706,7 +706,7 @@ class _TournamentManagePageState extends ConsumerState<TournamentManagePage>
               .contains(m.status))
             ListTile(
               leading: const Icon(Icons.replay_rounded,
-                  color: NxColors.electricBlue),
+                  color: NxColors.gold),
               title: Text(ctx.tx('بازی دوباره (بازی فعلی باطل)',
                   'Replay (void the current game)')),
               onTap: () => Navigator.pop(ctx, 'replay'),

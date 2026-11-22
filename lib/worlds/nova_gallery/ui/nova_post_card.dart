@@ -35,7 +35,7 @@ class NovaPostCard extends ConsumerWidget {
       child: GlassPanel(
         padding: const EdgeInsets.all(12),
         tint: post.official ? const Color(0x2200C2FF) : const Color(0x1FFFFFFF),
-        borderColor: post.official ? NxColors.electricBlue.withValues(alpha: 0.5) : null,
+        borderColor: post.official ? NxColors.gold.withValues(alpha: 0.5) : null,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
           Row(children: <Widget>[
             NovaAvatar(name: post.authorName, official: post.official, size: 40),
@@ -49,7 +49,7 @@ class NovaPostCard extends ConsumerWidget {
                   ),
                   if (post.official) ...<Widget>[
                     const SizedBox(width: 4),
-                    const Icon(Icons.verified_rounded, size: 16, color: NxColors.electricBlue),
+                    const Icon(Icons.verified_rounded, size: 16, color: NxColors.gold),
                   ],
                 ]),
                 Text(
@@ -62,7 +62,7 @@ class NovaPostCard extends ConsumerWidget {
                 ),
               ]),
             ),
-            if (post.official) NxPill(label: context.tx('رسمی', 'Official'), color: NxColors.electricBlue),
+            if (post.official) NxPill(label: context.tx('رسمی', 'Official'), color: NxColors.gold),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert_rounded),
               onSelected: (String v) => _menu(context, ref, v),
@@ -89,7 +89,7 @@ class NovaPostCard extends ConsumerWidget {
           Row(children: <Widget>[
             _ActionButton(
               icon: liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: liked ? const Color(0xFFFF4F8B) : NxColors.iceWhite,
+              color: liked ? const Color(0xFFFF4F8B) : NxColors.ink,
               label: '${post.likeCount}',
               animateKey: liked,
               onTap: () {
@@ -110,7 +110,7 @@ class NovaPostCard extends ConsumerWidget {
             const Spacer(),
             _ActionButton(
               icon: saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-              color: saved ? NxColors.gold : NxColors.iceWhite,
+              color: saved ? NxColors.gold : NxColors.ink,
               animateKey: saved,
               onTap: () async {
                 final bool s = await ctrl.toggleSave(post.id);
@@ -178,7 +178,7 @@ Future<void> shareNovaPostToOrbit(BuildContext context, WidgetRef ref, NovaPost 
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.icon, required this.onTap, this.label, this.color = NxColors.iceWhite, this.animateKey});
+  const _ActionButton({required this.icon, required this.onTap, this.label, this.color = NxColors.ink, this.animateKey});
   final IconData icon;
   final VoidCallback onTap;
   final String? label;
@@ -297,7 +297,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                         ]),
                         subtitle: NovaRichText(
                           text: cm.text,
-                          style: const TextStyle(fontSize: 14, height: 1.4, color: NxColors.iceWhite),
+                          style: const TextStyle(fontSize: 14, height: 1.4, color: NxColors.ink),
                           onHashtag: _tagTap,
                           onMention: _mentionTap,
                         ),

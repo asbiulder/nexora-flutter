@@ -486,7 +486,7 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
     final Set<String> inRoom = _seats.map((_Seat s) => s.userId).toSet();
     await showAnixSheet<void>(
       context: context,
-      backgroundColor: NxColors.navy,
+      backgroundColor: NxColors.panel,
       builder: (BuildContext ctx) => SafeArea(
         child: friends.isEmpty
             ? Padding(
@@ -912,7 +912,7 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
             FilledButton.icon(
               style: FilledButton.styleFrom(
                   backgroundColor:
-                      mine.ready ? NxColors.navySoft : NxColors.success,
+                      mine.ready ? NxColors.panelWarm : NxColors.success,
                   minimumSize: const Size.fromHeight(50)),
               onPressed: _busy ? null : () => _toggleReady(!mine.ready),
               icon: Icon(mine.ready

@@ -51,7 +51,7 @@ class OrbitChatAvatar extends StatelessWidget {
     final pal = WorldPalette.orbit;
     Widget inner;
     if (chat.isSaved) {
-      inner = Icon(Icons.bookmark_rounded, color: NxColors.navyDeep, size: size * 0.5);
+      inner = Icon(Icons.bookmark_rounded, color: NxColors.luxeBg, size: size * 0.5);
     } else if (chat.badgeId.isNotEmpty) {
       inner = Padding(
         padding: EdgeInsets.all(size * 0.08),
@@ -337,7 +337,7 @@ class OrbitSharedCard extends StatelessWidget {
     if (item.type == SharedItem.gameInvite) return OrbitInviteCard(gameId: item.gameId ?? '', note: item.text);
     final bool nova = item.type == SharedItem.novaPost;
     final bool community = item.type == SharedItem.communityInvite;
-    final Color accent = nova ? WorldPalette.nova.primary : (community ? WorldPalette.social.primary : NxColors.electricBlue);
+    final Color accent = nova ? WorldPalette.nova.primary : (community ? WorldPalette.social.primary : NxColors.gold);
     NovaVisual visual = NovaVisual.none;
     if (nova) {
       final String vk = '${item.extra['visual'] ?? 'none'}';

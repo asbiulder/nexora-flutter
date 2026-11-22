@@ -403,7 +403,7 @@ class _QuizViewState extends State<QuizView> with TickerProviderStateMixin {
               _l.tx('کوییز انیکس', 'ANIX Quiz'),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: NxColors.iceWhite,
+                color: NxColors.ink,
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.2,
@@ -761,7 +761,7 @@ class _QuizViewState extends State<QuizView> with TickerProviderStateMixin {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style:
-                      const TextStyle(color: NxColors.iceWhite, fontSize: 12)),
+                      const TextStyle(color: NxColors.ink, fontSize: 12)),
             ),
             _mark(a, NxColors.turquoise),
             const SizedBox(width: 6),
@@ -844,7 +844,7 @@ class _QuizViewState extends State<QuizView> with TickerProviderStateMixin {
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor: NxColors.turquoise,
-                foregroundColor: NxColors.navyDeep,
+                foregroundColor: NxColors.luxeBg,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(NxRadius.md)),
               ),
