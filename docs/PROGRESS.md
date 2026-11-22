@@ -410,6 +410,8 @@ Luxe palette, so every screen that reads the theme was already on it. What was l
   (cyan / pink / violet buttons, banners, bars, cards, chests, badges; ~3.3 MB) with their `Nx2Assets` constants; the
   emptied `assets/ui/nx2/bars/` entry left pubspec.
 - Tests: full `flutter test` (802 tests; 6 fewer = the deleted journey timeline test) and `flutter analyze` clean locally.
+- CI: commits 0a60881 + 5919778 — Quick Check 45059376515 green, ANIX PRO Android Build 45059376499 green,
+  `ANIX-arm64-v8a-apk` artifact 14769376884 (56,888,723 bytes; ~3.4 MB smaller than the v9 build, the deleted NX2 art).
 
 What remains (not done in this pass, listed honestly):
 - Many screens still build their chrome from the shared `Nx*` / `Nx2*` widgets (`NxWorldScaffold`, `GlassPanel`, `NxPill`,
