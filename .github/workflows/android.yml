@@ -250,8 +250,14 @@ jobs:
       - name: Analyze
         if: env.KEEPALIVE != 'true'
         run: |
-          set -o pipefail
-          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.txt
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1
+          status=$?
+          cat analyze.txt
+          grep -E ' • ' analyze.txt | grep -vE '^Analyzing' | head -n 80 | while IFS= read -r line; do
+            echo "::error title=Flutter analyze issue::$line"
+          done
+          exit "$status"
 
       - name: Tests
         if: env.KEEPALIVE != 'true'
