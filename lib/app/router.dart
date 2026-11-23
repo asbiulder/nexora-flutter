@@ -42,7 +42,6 @@ import '../core/settings/app_settings.dart';
 import 'auth_gate.dart';
 
 GoRouter buildRouter(WidgetRef ref) {
-  final profile = ref.read(profileProvider);
   final settings = ref.read(settingsProvider);
   final online = ref.read(onlineProvider);
   final String next;
@@ -51,10 +50,19 @@ GoRouter buildRouter(WidgetRef ref) {
         hasUser: online.user != null,
         anonymous: online.isGuest,
       );
+  // Signed-in accounts already picked their username at sign-up; that is their identity, so the identity page is
+  // only for guests (local profile) and never comes back once a name exists.
+  bool identityReady() {
+    final ProfileService p = ref.read(profileProvider);
+    if (p.hasIdentity) return true;
+    if (access() != NxAccess.signedIn) return false;
+    return p.adoptAccountName(ref.read(onlineProvider).accountUsername);
+  }
+
   final NxAccess start = access();
   if (start == NxAccess.needsAuth) {
     next = '/auth';
-  } else if (!profile.hasIdentity) {
+  } else if (!identityReady()) {
     next = '/onboarding';
   } else {
     next = '/hub';
@@ -72,10 +80,12 @@ GoRouter buildRouter(WidgetRef ref) {
       // router only has to leave the callback URL (it has no page) and land where the session decides.
       if (u.host == 'login-callback' || u.path == '/login-callback') {
         if (access() != NxAccess.signedIn) return '/auth';
-        return ref.read(profileProvider).hasIdentity ? '/hub' : '/onboarding';
+        return identityReady() ? '/hub' : '/onboarding';
       }
-      final String? gate = authRedirect(u, access(), hasIdentity: ref.read(profileProvider).hasIdentity);
+      final String? gate = authRedirect(u, access(), hasIdentity: identityReady());
       if (gate != null) return gate;
+      // The identity page is a one-time step: once a name exists (or the account brings one) it is never shown again.
+      if (u.path == '/onboarding' && identityReady()) return '/hub';
       // Accounts that must change their password (the default main admin on first sign-in) go nowhere else first.
       if (ref.read(adminAccessProvider).mustChangePassword &&
           !<String>{'/force-password', '/intro', '/account'}.contains(u.path)) {

@@ -154,14 +154,6 @@ final List<NexoraMenuSection> kNexoraMenuSections = <NexoraMenuSection>[
         descriptionEn: 'Language, appearance, audio and accessibility',
         icon: Icons.settings_rounded,
       ),
-      const NexoraMenuDestination(
-        path: '/onboarding',
-        titleFa: 'بازپخش سفر آغازین',
-        titleEn: 'Replay the first journey',
-        descriptionFa: 'مرور دوباره‌ی راهنمای شروع',
-        descriptionEn: 'Review the getting-started journey',
-        icon: Icons.movie_filter_rounded,
-      ),
     ],
   ),
 ];

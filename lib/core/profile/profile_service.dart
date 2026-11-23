@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -100,6 +101,20 @@ class ProfileService extends ChangeNotifier {
   int streak = 0;
 
   bool get hasIdentity => username.isNotEmpty;
+
+  /// A signed-in account already chose its username at sign-up: that IS the digital identity, so the identity page
+  /// must never ask for it again. Adopts [accountName] when no local identity exists yet (fresh install, new phone,
+  /// first launch after sign-up, local data cleared). Returns whether an identity exists afterwards.
+  /// Safe to call from a router redirect: listeners are notified after the current frame's work.
+  bool adoptAccountName(String? accountName) {
+    if (hasIdentity) return true;
+    final String n = (accountName ?? '').trim();
+    if (n.length < 2) return false;
+    username = n;
+    unawaited(_saveLocal());
+    scheduleMicrotask(notifyListeners);
+    return true;
+  }
 
   void _load() {
     final j = _store.getJson(_key);
