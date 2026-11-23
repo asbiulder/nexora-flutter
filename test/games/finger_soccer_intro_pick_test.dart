@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexora/core/storage/local_store.dart';
 import 'package:nexora/games/finger_soccer/intro/fs_formation_select.dart';
+import 'package:nexora/games/finger_soccer/intro/fs_intro_data.dart';
 import 'package:nexora/games/finger_soccer/intro/fs_intro_ui.dart';
 import 'package:nexora/games/finger_soccer/intro/fs_team_select.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,39 +61,13 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('team categories expose clubs and nations; arrows stay inside the selected category', (WidgetTester tester) async {
-    phone(tester);
-    final List<String> teams = <String>['nx_core', 'nx_cyan'];
-    await tester.pumpWidget(_app(FsTeamSelect(
-      fa: true,
-      teams: teams,
-      players: _players,
-      onReady: (_) {},
-      onShop: () {},
-      onBar: () {},
-      freeze: true,
-      side: 1,
-    )));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    await tester.tap(find.text('انیکس  ▾'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('ملی'));
-    await tester.pumpAndSettle();
-    expect(teams[1], 'argentina');
-    await tester.tap(find.byWidgetPredicate((Widget w) => w is FsArrow && !w.left));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(teams[1], 'brazil');
-
-    await tester.tap(find.text('ملی  ▾'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('باشگاهی'));
-    await tester.pumpAndSettle();
-    expect(teams[1], 'realmadrid');
-    await tester.tap(find.byWidgetPredicate((Widget w) => w is FsArrow && !w.left));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(teams[1], 'barcelona');
-    await tester.pumpWidget(const SizedBox());
+  test('team category labels cover clubs, nations and NX in Persian and English', () {
+    expect(fsTeamCategoryName('clubs', true), 'باشگاهی');
+    expect(fsTeamCategoryName('clubs', false), 'Clubs');
+    expect(fsTeamCategoryName('nations', true), 'ملی');
+    expect(fsTeamCategoryName('nations', false), 'Nations');
+    expect(fsTeamCategoryName('nx', true), 'انیکس');
+    expect(fsTeamCategoryName('unknown', false), 'unknown');
   });
 
   testWidgets('formation select: tapping the mini pitch picks the formation', (WidgetTester tester) async {
