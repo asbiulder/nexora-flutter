@@ -671,7 +671,10 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
               child: Text(context.tx('انصراف', 'Withdraw'))),
       ]);
       // Check-in: opens 10 minutes before the start; only checked-in players enter the automatic draw.
-      if (me.status == 'approved' && t.cfgB('checkin', false) && (t.status == 'registering' || t.status == 'closed')) {
+      // Waitlisted players may check in too: they take places freed by approved players who do not show up.
+      if ((me.status == 'approved' || me.status == 'waitlist') &&
+          t.cfgB('checkin', false) &&
+          (t.status == 'registering' || t.status == 'closed')) {
         final DateTime opens = t.startAt.subtract(const Duration(minutes: 10));
         final bool open = DateTime.now().toUtc().isAfter(opens.toUtc());
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
@@ -682,7 +685,11 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
               const Icon(Icons.verified_rounded, color: NxColors.success),
               const SizedBox(width: 8),
               Expanded(
-                  child: Text(context.tx('حضورت ثبت شد — منتظر قرعه‌کشی', 'Checked in — waiting for the draw'),
+                  child: Text(
+                      me.status == 'waitlist'
+                          ? context.tx('حضورت ثبت شد — اگر جایی خالی شود وارد می‌شوی',
+                              'Checked in — you get a place if one frees up')
+                          : context.tx('حضورت ثبت شد — منتظر قرعه‌کشی', 'Checked in — waiting for the draw'),
                       style: const TextStyle(fontWeight: FontWeight.w800, color: NxColors.success))),
             ])
           else
@@ -736,6 +743,12 @@ class _TournamentDetailPageState extends ConsumerState<TournamentDetailPage>
                         const TextStyle(color: NxColors.textDim, fontSize: 12)),
               ),
           ]);
+    } else if (me != null && !me.active && me.status != 'withdrawn') {
+      // removed / disqualified / rejected / did not check in: say so instead of a generic "closed"
+      body = Text(
+        '${entryStatusName(context, me.status)}${(me.note ?? '').isNotEmpty && me.note != 'not_drawn' && me.note != 'no_checkin' ? ' · ${me.note}' : ''}',
+        style: const TextStyle(color: NxColors.danger, fontWeight: FontWeight.w800),
+      );
     } else {
       body = Text(
         t.status == 'scheduled'

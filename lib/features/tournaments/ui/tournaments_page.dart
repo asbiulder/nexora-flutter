@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/online/cloud_profile_sync.dart';
 import '../../../core/online/online_service.dart';
 import '../../../core/settings/app_settings.dart';
 import '../../../core/theme/nx_theme.dart';
@@ -171,8 +172,58 @@ class _TournamentsPageState extends ConsumerState<TournamentsPage>
     return out;
   }
 
+  /// Invite code / deep link: shows what the code joins (and its fee) and asks before anything is charged.
+  Future<bool> _confirmJoin(String code) async {
+    final bool fa = ref.read(settingsProvider).isFa;
+    final TResult p = await _repo.peekCode(code);
+    if (!mounted) return false;
+    if (!p.ok && p.error != 'peek_unavailable') {
+      luxeToast(context, tErrorText(p.error, fa));
+      return false;
+    }
+    final Map<String, dynamic> d = p.data;
+    final String? mine = d['my_status'] as String?;
+    if (p.ok && (mine == 'approved' || mine == 'pending' || mine == 'waitlist')) {
+      // already in: just open the tournament
+      final String? t = d['tournament_id'] as String?;
+      luxeToast(context, entryStatusName(context, mine!));
+      if (t != null) unawaited(context.push('/tournaments/$t'));
+      return false;
+    }
+    final int coins = (d['fee_coins'] as num?)?.toInt() ?? 0;
+    final int gems = (d['fee_gems'] as num?)?.toInt() ?? 0;
+    final String title = '${d['title'] ?? code}';
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AnixDialog(
+        title: Text(p.ok ? title : ctx.tx('ورود با کد $code', 'Join with code $code')),
+        content: Text(!p.ok
+            ? ctx.tx('با این کد ثبت‌نام می‌کنی؛ اگر ورودیه داشته باشد از حسابت کم می‌شود.',
+                'You register with this code; an entry fee, if any, is charged.')
+            : (coins == 0 && gems == 0
+                ? ctx.tx('ثبت‌نام رایگان است.', 'Registration is free.')
+                : ctx.tx(
+                    'ورودیه: $coins سکه${gems > 0 ? ' و $gems جم' : ''}. تا پایان ثبت‌نام می‌توانی انصراف بدهی و کامل پس بگیری.',
+                    'Entry: $coins coins${gems > 0 ? ' and $gems gems' : ''}. Withdraw before registration closes for a full refund.')) +
+                (d['requires_approval'] == true
+                    ? ctx.tx('\nثبت‌نام بعد از تأیید برگزارکننده قطعی می‌شود.', '\nAn organizer approves each registration.')
+                    : '')),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tx('انصراف', 'Cancel'))),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(coins == 0 && gems == 0
+                  ? ctx.tx('ثبت‌نام', 'Register')
+                  : ctx.tx('پرداخت و ثبت‌نام', 'Pay & register'))),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
   Future<void> _join(String code) async {
     final bool fa = ref.read(settingsProvider).isFa;
+    if (!await _confirmJoin(code) || !mounted) return;
     final TResult r = await _repo.joinCode(code);
     if (!mounted) return;
     final String? t = r.data['tournament_id'] as String?;
@@ -181,6 +232,7 @@ class _TournamentsPageState extends ConsumerState<TournamentsPage>
               ? 'ثبت شد: ${entryStatusName(context, '${r.data['status']}')}'
               : 'Done: ${entryStatusName(context, '${r.data['status']}')}')
           : tErrorText(r.error, fa));
+    if (r.ok) unawaited(ref.read(cloudSyncProvider).refreshWallet());
     if (t != null) {
       unawaited(_load(silent: true));
       unawaited(context.push('/tournaments/$t'));
