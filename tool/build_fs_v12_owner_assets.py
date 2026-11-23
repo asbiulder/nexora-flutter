@@ -4,9 +4,10 @@
 Usage:
   python3 tool/build_fs_v12_owner_assets.py /path/to/sheets
 
-The source directory must contain the ten filenames from the 2026-11-23 owner upload. The builder keeps one art per
-unique club/country/brand, removes only edge-connected dark sheet backgrounds, fits the complete coin inside a common
-256px transparent canvas, and writes assets/games/bermuda/discs/v12 plus a Dart definitions fragment on stdout.
+The source directory must contain the team sheets, four-ball sheet and sole field from the 2026-11-23 owner upload.
+The builder keeps one art per unique club/country/brand, removes only edge-connected dark sheet backgrounds, fits the
+complete coin inside a common 256px transparent canvas, normalizes every ball to the same 390px visible diameter on a
+418px canvas, restores the exact field, and writes a Dart team-definitions fragment on stdout.
 """
 from __future__ import annotations
 
@@ -18,7 +19,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/tmp/arena-coding-uploads')
-OUT = ROOT / 'assets/games/bermuda/discs/v12'
+ASSET_ROOT = ROOT / 'assets/games/bermuda'
+OUT = ASSET_ROOT / 'discs/v12'
+BALL_SOURCE = 'Picsart_26-11-24_01-03-54-987.png'
+FIELD_SOURCE = 'Picsart_26-11-24_01-14-28-444.jpg'
+DEDUP_REFERENCE = 'file_0000000089b0822fb0f9106a798cac30.png'
 
 # (id, category, English, Persian). Coordinates below are row/column in each source sheet.
 items: list[tuple[str, str, str, str, str, int, int, int, int]] = []
@@ -116,7 +121,7 @@ manual: list[tuple[str,str,str,str,str,int,int]] = [
 # Validate ids before touching output.
 all_ids = [x[0] for x in items] + [x[0] for x in manual]
 assert len(all_ids) == len(set(all_ids)), 'duplicate team id'
-for filename in {x[4] for x in items} | {x[4] for x in manual}:
+for filename in {x[4] for x in items} | {x[4] for x in manual} | {BALL_SOURCE, FIELD_SOURCE, DEDUP_REFERENCE}:
     assert (SRC / filename).exists(), SRC / filename
 
 if OUT.exists():
@@ -159,6 +164,35 @@ for team_id, cat, en, fa, filename, cols, nrows, row, col in items:
 for team_id, cat, en, fa, filename, cx, cy in manual:
     size = 174
     finish(SRC / filename, f'{size}x{size}+{cx-size//2}+{cy-size//2}', OUT / f'{team_id}.webp', fuzz='10%')
+
+# Four owner balls: trim each independently, then normalize the visible sphere rather than the grid cell. This fixes
+# the source sheet's differing object scales while preserving aspect and gives all four the same collider contract.
+ball_out = ASSET_ROOT / 'balls/v12'
+if ball_out.exists():
+    shutil.rmtree(ball_out)
+ball_out.mkdir(parents=True)
+ball_crops = {
+    'nx_ball_lime': '602x624+0+0',
+    'nx_ball_blue': '601x624+602+0',
+    'nx_ball_purple': '602x624+0+624',
+    'nx_ball_red': '601x624+602+624',
+}
+for slug, crop in ball_crops.items():
+    subprocess.run([
+        'convert', str(SRC / BALL_SOURCE), '-crop', crop, '+repage', '-channel', 'A', '-threshold', '5%', '+channel',
+        '-trim', '+repage', '-resize', '390x390',
+        '-gravity', 'center', '-background', 'none', '-extent', '418x418', '-quality', '94', str(ball_out / f'{slug}.webp'),
+    ], check=True)
+
+# The match uses the supplied field byte-for-byte; only its small shop thumbnail is derived.
+field_out = ASSET_ROOT / 'fields/nx_sockerbox_owner.jpg'
+field_out.parent.mkdir(parents=True, exist_ok=True)
+shutil.copyfile(SRC / FIELD_SOURCE, field_out)
+thumb_out = ASSET_ROOT / 'thumbs/nx_sockerbox_owner.webp'
+thumb_out.parent.mkdir(parents=True, exist_ok=True)
+subprocess.run([
+    'convert', str(field_out), '-resize', '240x380', '-quality', '90', str(thumb_out),
+], check=True)
 
 # Stable, plausible play stats. Elite football nations/clubs get a small explicit bump; visual-brand categories are
 # consistently premium. Stats affect shot power/accuracy, never collision dimensions.

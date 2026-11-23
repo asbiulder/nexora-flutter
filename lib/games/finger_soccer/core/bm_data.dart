@@ -357,7 +357,7 @@ const List<BmTrail> kBmTR = <BmTrail>[
 const List<String> kBmTRN = <String>["Bolt", "Prism", "Wave", "Starlight", "Smoke", "Rainbow", "Neon", "Yin", "Fire", "Blade", "Ghost", "Ember", "Plasma", "Copper Ghost", "Stardust", "Twilight", "Gold Flame", "Thunder", "Cobalt Neon", "Aurora", "Crimson Blade", "Teal Storm", "Royal Ember", "Gold Yin", "Red Smoke", "Gilded Star", "Noir Chrome", "Violet Strike", "Emerald Edge", "Royal Blue Gold", "Crimson Noir", "Blaze Orange", "Aqua Wave", "Sunset Pro", "Elite Cobalt", "Crown Luxury"];
 
 /// v12: exactly the four balls from the owner's 2 x 2 source sheet. The source's transparent cut-outs are centred
-/// independently so every colour uses the same 418 px texture/collider contract. BmBallRenderer supplies real roll.
+/// independently to a 390 px visible sphere on the same 418 px texture/collider contract. BmBallRenderer supplies roll.
 const List<String> kBmBallN = <String>['NX Lime', 'NX Blue', 'NX Purple', 'NX Red'];
 const List<String> kBmBallFa = <String>['NX لیمویی', 'NX آبی', 'NX بنفش', 'NX قرمز'];
 const List<String> kBmBallSlug = <String>['nx_ball_lime', 'nx_ball_blue', 'nx_ball_purple', 'nx_ball_red'];
@@ -392,7 +392,7 @@ const Map<int, BmAnimBall> kBmAnimBalls = <int, BmAnimBall>{};
 /// Art fills: disc rim radius / half sprite size, ball radius / half frame size.
 /// The painter draws every sprite so the rim lands exactly on the physics radius.
 const double kBmDiscArtFill = 123 / 128;
-const double kBmBallArtFill = 76 / 80;
+const double kBmBallArtFill = 195 / 209;
 
 class BmFa {
   const BmFa(this.k, this.c, this.g);
