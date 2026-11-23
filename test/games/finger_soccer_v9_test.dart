@@ -203,8 +203,13 @@ void main() {
         expect(top.y + bot.y, closeTo(2 * e.CY, .01));
         // mouth ~0.33 of the playing width like the reference
         expect((top.x2 - top.x1) / e.Fw, closeTo(.32, .03), reason: f.id);
-        // net depth inside the drawn goal (back bar ~98-100 art px behind the line)
-        expect(e.DEPTH / k, inInclusiveRange(95, 102), reason: f.id);
+        // Net depth is measured separately per owner's art (Neon Arena ~80 px, gold pitches ~98 px).
+        const Map<String, double> netDepthPx = <String, double>{
+          'nx_neon_arena': 80,
+          'nx_gold_checker': 98,
+          'nx_gold_stripes': 98,
+        };
+        expect(e.DEPTH / k, closeTo(netDepthPx[f.id]!, 0.1), reason: f.id);
         // rails on the inner edge of the frame line (art px 85..87 / 852..856 / 106..109)
         expect(e.Fl / k, inInclusiveRange(84, 90), reason: f.id);
         expect(e.Fr / k, inInclusiveRange(849, 858), reason: f.id);

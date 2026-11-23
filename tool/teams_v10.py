@@ -154,7 +154,7 @@ TEAMS = [
     ('elite_barcelona',  'elite', 'Barcelona Prism',   'بارسلونا منشوری',   'barcelona_ii',   10, 10),
     ('elite_bayern',     'elite', 'Bayern Redline',    'بایرن سرخ',         'bayern_ii',      10, 9),
     ('elite_psg',        'elite', 'Paris Noir',        'پاریس شب',          'psg_ii',         9, 10),
-    ('elite_chelsea',    'elite', 'Chelsea Cobalt',    'چلسی کبالت',        'chelsea_ii',     9, 10),
+    ('elite_chelsea',    'elite', 'Chelsea Cobalt',    'چلسی کبالت',        'chelsea',        9, 10),
     ('elite_dortmund',   'elite', 'Dortmund Amber',    'دورتموند کهربایی',  'dortmund_ii',    10, 9),
     # ---------------------------------------------------------------- legends (2) — the original bosses
     ('nx_merciless', 'legends', 'Merciless',  'بی‌رحم',  'arena_golem',  10, 10),
