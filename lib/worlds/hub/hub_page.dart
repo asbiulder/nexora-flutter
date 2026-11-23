@@ -199,13 +199,27 @@ class _Brand extends StatelessWidget {
         height: 92,
         child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
           Expanded(
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                  boxShadow: <BoxShadow>[BoxShadow(color: Color(0x40D9B872), blurRadius: 30, spreadRadius: -6)]),
-              child: Image.asset('assets/branding/anix_logo.webp',
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0x66D9B872), width: 1.2),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(color: Color(0x40D9B872), blurRadius: 24, spreadRadius: -6),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset(
+                'assets/games/shared/nx_arena_hero.png',
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  'assets/branding/anix_logo.webp',
                   cacheWidth: 300,
                   errorBuilder: (_, __, ___) => const Text('ANIX',
-                      style: TextStyle(fontSize: 36, color: Luxe.gold, letterSpacing: 8))),
+                      style: TextStyle(fontSize: 36, color: Luxe.gold, letterSpacing: 8)),
+                ),
+              ),
             ),
           ),
           ShaderMask(
