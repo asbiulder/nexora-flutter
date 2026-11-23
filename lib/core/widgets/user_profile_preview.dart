@@ -130,10 +130,15 @@ class _UserProfilePreviewSheetState extends State<_UserProfilePreviewSheet> {
     if (text.isEmpty || c == null || me == null || _sending) return;
     setState(() => _sending = true);
     try {
-      await c.from('direct_messages').insert(<String, dynamic>{
-        'sender_id': me,
-        'receiver_id': widget.userId,
-        'body': text,
+      // Direct messages live in Orbit's nx_chats / nx_messages (there is no direct_messages table):
+      // open (or reuse) the 1:1 chat, then send through the server-checked RPC.
+      final dynamic chatId = await c.rpc('nx_open_direct', params: <String, dynamic>{'p_user': widget.userId});
+      await c.rpc('nx_send_message', params: <String, dynamic>{
+        'p_chat': '$chatId',
+        'p_kind': 'text',
+        'p_text': text.length > 4000 ? text.substring(0, 4000) : text,
+        'p_payload': <String, dynamic>{},
+        'p_reply_to': null,
       });
       _msgCtrl.clear();
       if (mounted) {
