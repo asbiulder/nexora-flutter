@@ -5,13 +5,19 @@ import 'dart:async';
 import 'package:nexora/core/online/match_link.dart';
 
 class FakeMatchServer {
-  FakeMatchServer({required this.players, this.legacyTurnGate = false, this.seed = 4242, this.settings});
+  FakeMatchServer(
+      {required this.players, this.legacyTurnGate = false, this.strictSeats = false, this.seed = 4242, this.settings});
 
   final List<String> players;
 
   /// Reproduces 20261117350000_g_turn_authority (the buggy server function): every non-snap/system/forfeit move
   /// must come from turn_seat, and each one rotates turn_seat.
   final bool legacyTurnGate;
+
+  /// Reproduces 20261123100000_g_online_multiplayer_v7: the real kind is read from move['_k'] of wrapped rows;
+  /// 'move' / 'forfeit' only for the caller's own seat (answer reason 'seat'); a forfeited seat cannot post.
+  final bool strictSeats;
+  final Set<int> forfeited = <int>{};
   final int seed;
   final Map<String, dynamic>? settings;
   final List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];
@@ -40,7 +46,18 @@ class FakeMatchServer {
     if (caller < 0) throw StateError('not a player');
     if (status != 'playing') return <String, dynamic>{'ok': false, 'reason': 'over'};
     if (seq != lastSeq + 1) return <String, dynamic>{'ok': false, 'reason': 'seq', 'last_seq': lastSeq};
-    if (seat != caller && !<String>{'snap', 'timeout', 'forfeit', 'system'}.contains(kind)) {
+    if (strictSeats) {
+      final String real = kind == 'system' && move['_k'] is String ? move['_k'] as String : kind;
+      if (forfeited.contains(caller) && real != 'forfeit') {
+        refused++;
+        return <String, dynamic>{'ok': false, 'reason': 'forfeited', 'last_seq': lastSeq};
+      }
+      if (seat != caller && !<String>{'snap', 'timeout', 'system'}.contains(real)) {
+        refused++;
+        return <String, dynamic>{'ok': false, 'reason': 'seat', 'last_seq': lastSeq};
+      }
+      if (real == 'forfeit') forfeited.add(seat);
+    } else if (seat != caller && !<String>{'snap', 'timeout', 'forfeit', 'system'}.contains(kind)) {
       throw StateError('seat mismatch');
     }
     if (legacyTurnGate && !<String>{'snap', 'system', 'forfeit'}.contains(kind)) {
