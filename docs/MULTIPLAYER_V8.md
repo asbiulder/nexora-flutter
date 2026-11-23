@@ -1,8 +1,8 @@
 # Multiplayer v8 — full-stack recovery pass
 
-Date: 2026-11-23  
-Games project: `eyzafhrefnqlwcjpcdyg`  
-Migration: `supabase/games/migrations/20261123214630_g_multiplayer_v8.sql`
+- Date: 2026-11-23
+- Games project: `eyzafhrefnqlwcjpcdyg`
+- Migration: `supabase/games/migrations/20261123214630_g_multiplayer_v8.sql`
 
 ## Scope
 
