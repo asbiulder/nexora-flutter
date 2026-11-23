@@ -1,6 +1,7 @@
 // Data adapters for the finger-soccer pre-match intro (splash -> team select -> formation select).
 // Teams and formations come straight from the engine (kBmTeams, kBmForms / bmSlots); this file only adds the
 // Persian display names and reads the formation list in whatever shape the engine defines it.
+import '../core/bm_data.dart';
 import '../core/bm_engine.dart';
 
 /// What the intro hands to the match: one team id and one formation index per side (side 0 = bottom / team one).

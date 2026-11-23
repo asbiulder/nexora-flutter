@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nexora/core/economy/gem_shop.dart';
 
+import '../core/bm_data.dart';
 import '../core/bm_engine.dart';
 import 'fs_intro_data.dart';
 import 'fs_intro_ui.dart';
