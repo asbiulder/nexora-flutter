@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/online/online_service.dart';
+import '../../../core/online/quick_match_state.dart';
 import '../../../core/online/room_capacity.dart';
 import '../../../core/online/room_voice.dart';
 import '../../../core/online/social_api.dart';
@@ -109,23 +110,40 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
     } else {
       await _loadOpen();
     }
-    _poll = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (_roomId != null) {
-        unawaited(_refresh());
+    _poll?.cancel(); // _boot runs again from the 'go online' retry: never stack two lobby loops
+    _poll = Timer.periodic(const Duration(seconds: 4), (_) => _tick());
+  }
+
+  void _tick() {
+    if (_roomId == null) {
+      unawaited(_loadOpen());
+      return;
+    }
+    unawaited(_refresh());
+    switch (lobbyTick(
+      hasRoom: _room != null,
+      quick: _room?['quick'] == true,
+      status: _room?['status'] as String?,
+      seated: _seats.any((_Seat x) => x.userId == _me),
+      inMatch: _inMatch,
+      busy: _busy || _requeueBusy,
+    )) {
+      case LobbyTick.rejoinQueue:
+        // Quick lobby lost under us (dropped as a silent seat after the app slept, lobby closed, or a match
+        // started without us): never sit in a dead lobby — go back into matchmaking.
+        _dropRoom();
+        unawaited(_quick());
+      case LobbyTick.requeue:
+        // ANIX PRO: keep matchmaking while waiting. Two players who tapped at the same moment each opened a
+        // lobby; re-calling nx_quick moves the newer one into the older lobby (and starts it), so they pair.
+        unawaited(_requeue());
+      case LobbyTick.ping:
         // Heartbeat: quick match only pairs with players whose lobby is still open on their phone.
-        if (_room?['status'] == 'lobby' && !_inMatch) {
-          if (_room?['quick'] == true) {
-            // ANIX PRO: keep matchmaking while waiting. Two players who tapped at the same moment each opened a
-            // lobby; re-calling nx_quick moves the newer one into the older lobby (and starts it), so they pair.
-            unawaited(_requeue());
-          } else {
-            unawaited(_c?.rpc('nx_lobby_ping', params: <String, dynamic>{'p_room': _roomId}).then((_) {}, onError: (Object _) {}));
-          }
-        }
-      } else {
-        unawaited(_loadOpen());
-      }
-    });
+        unawaited(_c?.rpc('nx_lobby_ping', params: <String, dynamic>{'p_room': _roomId}).then((_) {}, onError: (Object _) {}));
+      case LobbyTick.openMatch:
+      case LobbyTick.idle:
+        break; // _refresh opens a running match
+    }
   }
 
   @override
@@ -396,11 +414,36 @@ class _OnlineLobbyPageState extends ConsumerState<OnlineLobbyPage> {
     _inMatch = true;
     NxSfx.instance.play('ready');
     _lastMatchSeen = matchId;
-    await Navigator.of(context).push(MaterialPageRoute<void>(
+    final String? outcome = await Navigator.of(context).push(MaterialPageRoute<String>(
       builder: (_) => OnlineMatchPage(matchId: matchId, gameId: widget.gameId),
     ));
     _inMatch = false;
-    if (mounted) await _refresh();
+    if (!mounted) return;
+    await _refresh();
+    if (!mounted) return;
+    // Quick rooms close when their match ends (20261123100000_g_online_multiplayer_v7) instead of returning to a full
+    // lobby that silently restarted a rematch. Leave the closed room; when the match was called off before it began,
+    // go straight back into matchmaking.
+    final bool quick = _room?['quick'] == true;
+    final bool closed = _room == null || _room?['status'] == 'closed';
+    if (quick && (closed || outcome == 'abandoned')) {
+      _dropRoom();
+      if (outcome == 'abandoned' && _c != null) await _quick();
+    }
+  }
+
+  void _dropRoom() {
+    final RealtimeChannel? ch = _ch;
+    if (ch != null) unawaited(_c?.removeChannel(ch));
+    _ch = null;
+    setState(() {
+      _roomId = null;
+      _room = null;
+      _seats = <_Seat>[];
+      _present.clear();
+      _realtimeConnected = false;
+    });
+    unawaited(_loadOpen());
   }
 
   Future<void> _leave() async {
