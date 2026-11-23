@@ -81,7 +81,7 @@ class GemShop extends ChangeNotifier {
   /// A team the player may field: [teamId] when owned, otherwise the default free team. A retired v9 id (its art no
   /// longer ships) is never fielded, even if the server inventory still lists it.
   String usableTeam(String teamId) =>
-      (kRetiredTeams.contains(teamId) || !kBmTeams.any((BmTeam t) => t.id == teamId)) ? kDefaultTeam
+      (kRetiredTeams.contains(teamId) || !kBmTeamDefs.any((BmTeamDef t) => t.id == teamId)) ? kDefaultTeam
       : (ownsTeam(teamId) ? teamId : kDefaultTeam);
 
   void _applyWallet(dynamic r) {

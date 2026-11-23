@@ -171,15 +171,15 @@ class BmFieldS {
 final List<BmFieldS> kBmFields = kBmFieldsRaw.map(BmFieldS.new).toList(growable: false);
 
 class BmTeam {
-  const BmTeam(this.id, this.cat, this.name, this.asset, this.power, this.accuracy);
-  final String id, cat, name, asset;
+  const BmTeam(this.id, this.cat, this.name, this.faName, this.asset, this.power, this.accuracy);
+  final String id, cat, name, faName, asset;
   /// 1..10: shot impulse multiplier (see [BmEngine.fire]) and aim precision.
   final int power, accuracy;
 }
 
 /// Every piece set, in picker order (see kBmTeamDefs: Club, National, Luxury).
 final List<BmTeam> kBmTeams = kBmTeamDefs
-    .map((BmTeamDef d) => BmTeam(d.id, d.cat, d.name, 'assets/games/bermuda/${d.art}.webp', d.power, d.accuracy))
+    .map((BmTeamDef d) => BmTeam(d.id, d.cat, d.name, d.faName, 'assets/games/bermuda/${d.art}.webp', d.power, d.accuracy))
     .toList(growable: false);
 
 BmTeam bmTeam(String id) => kBmTeams.firstWhere((BmTeam t) => t.id == id, orElse: () => kBmTeams.first);
