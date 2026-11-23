@@ -423,3 +423,20 @@ What remains (not done in this pass, listed honestly):
 - `assets/ui/anix/*` (buttons, toggles, modals, nav, rank, frames) are referenced through `AnixAssets` path builders and
   were kept; a per-state usage audit could trim unused states.
 - No screen of this sweep was looked at on a phone; render tests were not re-shot for every screen.
+
+## Tournaments launch hardening (2026-11-23, branch `fix/tournaments-complete`)
+Server: `supabase/games/migrations/20261123100000_g_tournaments_launch.sql` (games project, **not applied yet**).
+- Escrow only holds real money: fees of `nx_unlimited` accounts no longer inflate the prize pool (and their refunds no
+  longer reduce it). Wallet deltas carry `nx.reason` (`tournament_entry_fee` / `tournament_refund` / `tournament_prize`).
+- Payout keeps its idempotency keys + `paid_out`; skips players without a mirror row; no zero house-fee lines.
+- Cancel ends games still being played (accepted first, then `nx_matches` → abandoned) so nothing re-enters the engine.
+- Check-in: an organizer's "draw now"/"start now" before the window opens no longer removes everyone; waitlisted
+  players can check in and fill places freed by no-shows (promoted at the draw); the check-in reminder reaches them.
+- Disqualification after the draw (`nx_t_remove_entry` on drawn/live): open matches → walkovers, running game ended,
+  future matches → walkovers / byes in `_nx_t_check`; fee stays in the pool; notification `disqualified`.
+- `nx_matches.status = 'disputed'` (phones disagree) → tournament dispute instead of a 3-minute auto-accept as a
+  no-winner game. Match tools accept Bo 1..15; editing a match time moves its 10-minute reminder.
+- `nx_t_code_peek`: invite codes / `nexora://t/<code>` show the title and fee and ask before charging.
+Client: join-by-code confirmation, waitlist check-in, disqualify button + match time/Bo editing + runner list in the
+manage page, stale device reminders cancelled (`domain/reminders.dart`), missing notification texts and error codes,
+`BestOf` range 1..15 like the server. Tests: `test/features/tournaments/tournament_launch_test.dart`.
