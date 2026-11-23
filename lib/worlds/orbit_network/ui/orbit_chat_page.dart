@@ -12,6 +12,8 @@ import '../../nova_gallery/models/art_asset.dart';
 import '../../nova_gallery/ui/nova_composer.dart' show showArtAssetPicker;
 import '../models/orbit_models.dart';
 import '../../../core/online/online_service.dart';
+import '../../../core/backend/backend_gateway.dart';
+import '../../../core/backend/supabase_backend.dart';
 import '../data/supabase_orbit_repository.dart';
 import '../state/orbit_controller.dart';
 import 'orbit_call_page.dart';
@@ -46,7 +48,19 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
     super.initState();
     _ctrl.openChat(widget.chatId);
     _text.addListener(_onText);
+    // Voice calls start instantly: fetch the 15 min call grant while the user reads the chat.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final BackendGateway be = ref.read(backendProvider);
+      if (be is SupabaseBackend && _uuid.hasMatch(widget.chatId)) {
+        be.prefetchLiveKitGrant(widget.chatId);
+      }
+    });
   }
+
+  static final RegExp _uuid = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false);
 
   void _onText() => setState(() {});
 
