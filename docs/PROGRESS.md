@@ -425,7 +425,7 @@ What remains (not done in this pass, listed honestly):
 - No screen of this sweep was looked at on a phone; render tests were not re-shot for every screen.
 
 ## Tournaments launch hardening (2026-11-23, branch `fix/tournaments-complete`)
-Server: `supabase/games/migrations/20261123100000_g_tournaments_launch.sql` (games project, **not applied yet**).
+Server: `supabase/games/migrations/20261123100100_g_tournaments_launch.sql` (games project, **not applied yet**).
 - Escrow only holds real money: fees of `nx_unlimited` accounts no longer inflate the prize pool (and their refunds no
   longer reduce it). Wallet deltas carry `nx.reason` (`tournament_entry_fee` / `tournament_refund` / `tournament_prize`).
 - Payout keeps its idempotency keys + `paid_out`; skips players without a mirror row; no zero house-fee lines.
