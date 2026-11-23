@@ -330,6 +330,7 @@ class _OnlineMatchPageState extends ConsumerState<OnlineMatchPage>
         skins: Map<String, String>.from(ref.read(profileProvider).equipped),
         seed: l.seed,
         net: l,
+        tournamentMatchId: widget.tournamentMatchId,
         onFinish: _onGameFinish,
         immersive: _immersive,
       );

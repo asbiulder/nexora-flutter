@@ -41,7 +41,8 @@ class _ObstacleGameState extends ArcadeLoopState<ObstacleGame> {
   double? _touchX;
   bool _jump = false;
   bool _done = false;
-  bool _loggedFinish = false;
+  bool _loggedResult = false;
+  bool _sentEnd = false;
   String _banner = '';
   double _bannerT = 0;
   double _endIn = -1;
@@ -78,11 +79,20 @@ class _ObstacleGameState extends ArcadeLoopState<ObstacleGame> {
   }
 
   void _onMove(NetMove m) {
+    final String type = '${m.data['t']}';
+    if (type == 'end') {
+      final List<int> order = <int>[
+        for (final dynamic v in (m.data['o'] as List<dynamic>? ?? const <dynamic>[]))
+          if (v is num) v.toInt(),
+      ];
+      _finish(order.length == race.runners.length ? order : race.ranking());
+      return;
+    }
     final int s = (m.data['s'] as num?)?.toInt() ?? -1;
     if (s < 0 || s >= race.runners.length) return;
     final double at = ((m.data['ms'] as num?)?.toInt() ?? 0) / 1000;
-    if (m.data['t'] == 'fin') race.markFinished(s, at);
-    if (m.data['t'] == 'out') race.eliminate(s, at);
+    if (type == 'fin') race.markFinished(s, at);
+    if (type == 'out') race.eliminate(s, at);
   }
 
   void _say(String text, [double secs = 1.4]) {
@@ -103,9 +113,16 @@ class _ObstacleGameState extends ArcadeLoopState<ObstacleGame> {
       race.input(me, steer, _jump);
       _jump = false;
       race.step(dt, simulate: rt == null ? null : <int>{me});
-      if (mine.finished && !_loggedFinish && rt != null) {
-        _loggedFinish = true;
-        unawaited(rt!.log(<String, dynamic>{'t': 'fin', 's': me, 'ms': (mine.finishTime * 1000).round()}));
+      if (mine.done && !_loggedResult && rt != null) {
+        _loggedResult = true;
+        if (mine.finished) {
+          unawaited(rt!.log(<String, dynamic>{'t': 'fin', 's': me, 'ms': (mine.finishTime * 1000).round()}));
+        } else {
+          // Elimination used to exist only on this phone. Other phones kept this runner alive forever and `allDone`
+          // never became true. Persist it just like a finish, including ordering time.
+          race.eliminate(me, race.time);
+          unawaited(rt!.log(<String, dynamic>{'t': 'out', 's': me, 'ms': (race.time * 1000).round()}));
+        }
       }
     }
     if (before > 0) {
@@ -146,7 +163,13 @@ class _ObstacleGameState extends ArcadeLoopState<ObstacleGame> {
       }
       final List<int> active = r.activeSeats;
       final bool allDone = active.every((int s) => race.runners[s].done);
-      if (!_done && race.countdown <= 0 && (allDone || active.length <= 1)) _finish();
+      if (!_done && !_sentEnd && r.isHost && race.countdown <= 0 && (allDone || active.length <= 1)) {
+        _sentEnd = true;
+        final List<int> order = race.ranking();
+        // One durable end row makes every phone use the authority's exact final order (including simultaneous DNFs).
+        unawaited(r.log(<String, dynamic>{'t': 'end', 'o': order}));
+        _finish(order);
+      }
     } else if (!_done && mine.done) {
       _endIn = _endIn < 0 ? 1.6 : _endIn - dt;
       if (_endIn <= 0) {
@@ -213,10 +236,10 @@ class _ObstacleGameState extends ArcadeLoopState<ObstacleGame> {
     fx.update(dt);
   }
 
-  void _finish() {
+  void _finish([List<int>? finalOrder]) {
     if (_done) return;
     _done = true;
-    final List<int> order = race.ranking();
+    final List<int> order = finalOrder ?? race.ranking();
     final Runner mine = race.runners[me];
     if (order.first == me) {
       _say(l.tx('قهرمان مسابقه!', 'YOU WIN!'), 4);

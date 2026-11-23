@@ -119,7 +119,7 @@ class _SpyGameViewState extends ArcadeLoopState<SpyGameView> {
     if (!ok) return;
     HapticFeedback.selectionClick();
     if (tn != null) {
-      unawaited(tn!.send(<String, dynamic>{'a': a, 'v': v}));
+      unawaited(tn!.send(<String, dynamic>{'a': a, 'v': v, if (a == 'vote') kNetFloat: true}));
       tn!.turn = _turnSeat;
     }
     setState(() {});
@@ -163,7 +163,8 @@ class _SpyGameViewState extends ArcadeLoopState<SpyGameView> {
       for (final int s in g.activeSeats) {
         if (!g.votes.containsKey(s) && s != me) {
           // Filed as a 'timeout' row: the server only accepts ordinary moves for the sender's own seat.
-          unawaited(t.net.send(<String, dynamic>{'a': 'vote', 'v': -1}, kind: 'timeout', asSeat: s));
+          unawaited(t.net.send(<String, dynamic>{'a': 'vote', 'v': -1, kNetFloat: true},
+              kind: 'timeout', asSeat: s));
           g.vote(s, -1);
         }
       }

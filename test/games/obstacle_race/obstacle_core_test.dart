@@ -103,6 +103,20 @@ void main() {
       expect(r.runners[0].phase, RunPhase.out);
     });
 
+    test('a local DNF can still become the durable online out result', () {
+      final ObstacleRace r = ObstacleRace(seed: 4, count: 2)..countdown = 0;
+      final Runner p = r.runners[0];
+      p.phase = RunPhase.dnf;
+      p.outAt = 12;
+      expect(p.done, isTrue);
+      r.eliminate(0, 12);
+      expect(p.phase, RunPhase.out);
+      expect(r.outOrder, <int>[0]);
+      // Duplicate replay/catch-up rows are idempotent.
+      r.eliminate(0, 13);
+      expect(r.outOrder, <int>[0]);
+    });
+
     test('qualifying window: the others are eliminated when it runs out', () {
       final ObstacleRace r = ObstacleRace(seed: 5, count: 3)..countdown = 0;
       run(r, 1, only: <int>{});

@@ -150,6 +150,7 @@ class CrController extends ChangeNotifier {
       _say('شروع! مهره‌های سفید مال شماست', 'Break! You play the white coins',
           kCrGold);
     }
+    launch.net?.turnSeat = match.turn;
     _pushHud();
   }
 
@@ -725,6 +726,7 @@ class CrController extends ChangeNotifier {
 
   void _onNewTurn() {
     timeLeft = CrConfig.turnSeconds;
+    launch.net?.turnSeat = match.turn;
     _stage = _BotStage.idle;
     _botShot = null;
     _search = null;

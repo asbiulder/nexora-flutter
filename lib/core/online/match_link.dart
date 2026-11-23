@@ -81,6 +81,21 @@ int authoritySeat({
   required Set<int> connected,
   required Set<int> forfeited,
   required bool presenceKnown,
+}) =>
+    authoritySeatForMatch(
+      seatCount: seatCount,
+      mySeat: mySeat,
+      connected: connected,
+      forfeited: forfeited,
+      presenceKnown: presenceKnown,
+    );
+
+int authoritySeatForMatch({
+  required int seatCount,
+  required int mySeat,
+  required Set<int> connected,
+  required Set<int> forfeited,
+  required bool presenceKnown,
 }) {
   for (int s = 0; s < seatCount; s++) {
     if (forfeited.contains(s)) continue;
@@ -93,6 +108,13 @@ int authoritySeat({
 /// settings.grace_sec; lobby games give the player on turn 40 s and a waiting player 90 s.
 @visibleForTesting
 int absenceLimitSec({required bool onTurn, int? graceSec}) => graceSec ?? (onTurn ? 40 : 90);
+
+/// Maximum time a connected player may hold a turn without producing a logged move. Individual games with a
+/// shorter clock advance normally before this fallback is reached; this is the app-wide deadlock breaker for games
+/// without their own clock. Room/tournament settings may override it, but never below 30 s or above 5 minutes.
+@visibleForTesting
+int turnLimitSec(Map<String, dynamic> settings) =>
+    ((settings['turn_sec'] as num?)?.toInt() ?? 90).clamp(30, 300);
 
 /// Supabase implementation of [NetLink].
 ///
@@ -176,6 +198,10 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
   final Map<int, DateTime> _absentSince = <int, DateTime>{};
   final StreamController<NetLiveMessage> _live = StreamController<NetLiveMessage>.broadcast();
   int? _turnSeat;
+  int _turnEpoch = 0;
+  DateTime? _turnSince;
+  bool _publishingTurn = false;
+  bool _idleForfeitPending = false;
   int _desyncs = 0;
 
   /// Fires when this phone's view diverged from the log (e.g. a send lost a race): rebuild + replay.
@@ -196,20 +222,27 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
   @override
   int get desyncs => _desyncs;
   @override
-  set turnSeat(int? seat) => _turnSeat = seat;
+  set turnSeat(int? seat) {
+    _turnSeat = seat;
+    _turnEpoch++;
+    _turnSince = seat == null ? null : DateTime.now();
+    _idleForfeitPending = false;
+    if (isAuthority) unawaited(_publishTurn());
+  }
 
   bool _presenceKnown = false;
 
   @override
-  bool get isAuthority =>
-      authoritySeat(
+  int get authoritySeat => authoritySeatForMatch(
         seatCount: seatCount,
         mySeat: mySeat,
         connected: _connected,
         forfeited: _forfeited,
         presenceKnown: _presenceKnown || _c == null,
-      ) ==
-      mySeat;
+      );
+
+  @override
+  bool get isAuthority => authoritySeat == mySeat;
 
   MatchEnd _endFrom(Map<String, dynamic> m) => MatchEnd(
         winners: ((m['winner_seats'] as List<dynamic>?) ?? const <dynamic>[]).map((dynamic e) => (e as num).toInt()).toList(),
@@ -271,9 +304,69 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
     try {
       final dynamic r = await c.rpc('nx_match_ping', params: <String, dynamic>{'p_match': matchId});
       if (r is Map && r['status'] is String && r['status'] != 'playing' && !_disposed) unawaited(_catchUp());
+      // Re-publish on every heartbeat. If the previous authority disappeared, the newly elected phone already knows
+      // the game's current turn and takes over the server deadline without waiting for another game action.
+      if (isAuthority && _turnSeat != null) unawaited(_publishTurn());
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST202' || e.message.contains('nx_match_ping')) _pingSupported = false;
     } catch (_) {}
+  }
+
+  bool _turnRpcSupported = true;
+  bool _idleRpcSupported = true;
+
+  /// Mirrors the deterministic game's current turn to the server. The RPC accepts only the lowest recently active,
+  /// non-forfeited seat, so a modified client cannot move another player's deadline. Older deployments simply skip
+  /// this optional deadlock protection.
+  Future<void> _publishTurn() async {
+    final SupabaseClient? c = _c;
+    final int? seat = _turnSeat;
+    if (c == null || seat == null || !_turnRpcSupported || _publishingTurn || _disposed || isOver || !isAuthority) {
+      return;
+    }
+    _publishingTurn = true;
+    try {
+      await c.rpc('nx_match_turn', params: <String, dynamic>{
+        'p_match': matchId,
+        'p_seat': seat,
+        'p_epoch': _turnEpoch,
+        'p_seconds': turnLimitSec(settings),
+      });
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202' || e.message.contains('nx_match_turn')) _turnRpcSupported = false;
+    } catch (e) {
+      debugPrint('publish turn failed: $e');
+    } finally {
+      _publishingTurn = false;
+    }
+  }
+
+  Future<void> _forfeitIdle(int seat) async {
+    final SupabaseClient? c = _c;
+    if (c == null || !_idleRpcSupported || _idleForfeitPending || _disposed || isOver || !isAuthority) return;
+    _idleForfeitPending = true;
+    try {
+      final dynamic r = await c.rpc('nx_idle_forfeit', params: <String, dynamic>{
+        'p_match': matchId,
+        'p_seat': seat,
+      });
+      if (r is Map && r['ok'] == false && r['reason'] == 'too_early') {
+        // The server's clock is authoritative. Give it another heartbeat interval rather than hammering the RPC.
+        _turnSince = DateTime.now().subtract(Duration(seconds: turnLimitSec(settings) - 10));
+      }
+      await _catchUp();
+    } on PostgrestException catch (e) {
+      // A build may briefly run against the previous migration. Absence forfeits continue to work normally.
+      if (e.code == 'PGRST202' || e.message.contains('nx_idle_forfeit')) {
+        _idleRpcSupported = false;
+      } else {
+        debugPrint('idle forfeit seat $seat failed: $e');
+      }
+    } catch (e) {
+      debugPrint('idle forfeit seat $seat failed: $e');
+    } finally {
+      _idleForfeitPending = false;
+    }
   }
 
   void _syncPresence() {
@@ -297,12 +390,23 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
         _absentSince.remove(s);
       }
       if (!_disposed) notifyListeners();
+      if (isAuthority && _turnSeat != null) unawaited(_publishTurn());
     }
   }
 
   void _watchAbsent() {
     if (isOver || !_presenceKnown || !isAuthority) return;
     final DateTime now = DateTime.now();
+    final int? turn = _turnSeat;
+    final DateTime? turnSince = _turnSince;
+    if (turn != null &&
+        turn >= 0 &&
+        turn < seatCount &&
+        !_forfeited.contains(turn) &&
+        turnSince != null &&
+        now.difference(turnSince).inSeconds >= turnLimitSec(settings)) {
+      unawaited(_forfeitIdle(turn));
+    }
     for (int s = 0; s < seatCount; s++) {
       if (s == mySeat || _forfeited.contains(s) || _connected.contains(s)) continue;
       final DateTime since = _absentSince.putIfAbsent(s, () => now);
@@ -487,6 +591,9 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
           _requestResync();
         }
       }
+      // nx_push_move also carries a legacy turn field. Publish the game's post-move turn after the row lands so the
+      // generic fallback deadline cannot be overwritten by that compatibility field.
+      if (ok && isAuthority && _turnSeat != null) await _publishTurn();
       done.complete(ok);
     });
     return done.future;
@@ -545,6 +652,7 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
         }
         await _catchUp();
       }
+      if (ok && isAuthority && _turnSeat != null) await _publishTurn();
       done.complete(ok);
     });
     return done.future;

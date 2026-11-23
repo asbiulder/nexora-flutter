@@ -64,6 +64,7 @@ abstract class NetLink {
   Set<int> get forfeitedSeats;
 
   /// The lowest connected, non-forfeited seat. Posts snapshots and handles absent players.
+  int get authoritySeat;
   bool get isAuthority;
 
   /// Fires when presence / authority / forfeits change.

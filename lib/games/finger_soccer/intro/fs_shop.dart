@@ -89,17 +89,15 @@ class FsShop extends StatefulWidget {
 
 /// [label, isNew]
 const List<String> kFsTeamShopCategories = <String>[
-  'clubs', 'nations', 'nx', 'cars', 'sport', 'elite', 'legends',
+  'clubs', 'nations', 'cars', 'luxury', 'sport',
 ];
 
 const List<(String, bool)> kFsShopTabs = <(String, bool)>[
   ('باشگاهی', false),
   ('ملی', false),
-  ('انیکس', false),
   ('خودرو', false),
+  ('لوکس', false),
   ('ورزشی', false),
-  ('ویژه', false),
-  ('افسانه', false),
   ('اختصاصی', true),
   ('بازیکن', false),
   ('زمین', false),
@@ -193,11 +191,11 @@ class _FsShopState extends State<FsShop> {
       return <Widget>[for (final BmTeam t in kBmTeams.where((BmTeam t) => t.cat == cat)) _teamCard(t)];
     }
     switch (_tab) {
-      case 7:
+      case 5:
         return <Widget>[_customCard()];
-      case 8:
+      case 6:
         return <Widget>[_emptyCard('بازیکن ها به‌زودی')];
-      case 9:
+      case 7:
         return <Widget>[
           for (int i = 0; i < kBmFieldsRaw.length; i++)
             _artCard(bmFieldName(i, widget.fa), 'assets/games/bermuda/thumbs/${kBmFieldsRaw[i].id}.webp', i == _field, () {
@@ -205,7 +203,7 @@ class _FsShopState extends State<FsShop> {
               _savePref(kBmFieldPref, i);
             }, square: true),
         ];
-      case 10:
+      case 8:
         return <Widget>[
           for (int i = 0; i < NB; i++)
             _artCard(widget.fa ? kBmBallFa[i] : kBmBallN[i], bmBallThumb(i), i == _ball, () {

@@ -7,18 +7,15 @@ import '../../games/finger_soccer/core/bm_data.dart';
 import '../online/online_service.dart';
 import '../profile/profile_service.dart';
 
-/// Finger-soccer teams that are always unlocked (no purchase). v10 (owner art 2026-11-22): the three starter NX
-/// faction coins — NX Core, NX Cyan and NX Mercury. The v9 starter ids (`club32`, `club33`, `nat26`) were the old
-/// house badges; their art is gone, so a saved setup that still names one resolves to [kDefaultTeam] (see
-/// GemShop.usableTeam) and the server seed keeps those three catalog rows priced 0 but inactive.
-const Set<String> kFreeTeams = <String>{'nx_core', 'nx_cyan', 'nx_frost_blue'};
+/// The owner's three starter teams remain free: Persepolis, Esteghlal and Iran. Their stable ids also match the
+/// server catalogue, so existing inventories migrate without showing a removed disc.
+const Set<String> kFreeTeams = <String>{'club32', 'club33', 'nat26'};
 
 /// Default team for a new player / when a saved team is not owned.
-const String kDefaultTeam = 'nx_core';
+const String kDefaultTeam = kBmStarterTeamId;
 
-/// v9 starter ids that no longer exist as art. A saved setup naming one is migrated to [kDefaultTeam].
-const Set<String> kRetiredTeams = <String>{'club32', 'club33', 'club34', 'club35', 'club36', 'club37', 'club38', 'club39',
-  'nat24', 'nat25', 'nat26', 'nat27'};
+/// Starter/faction ids from the replaced v10 art set. Any saved selection resolves to [kDefaultTeam].
+const Set<String> kRetiredTeams = <String>{'nx_core', 'nx_cyan', 'nx_frost_blue'};
 
 /// Inventory / catalog id of a finger-soccer team (`fs_team:club0`).
 String teamItemId(String teamId) => 'fs_team:$teamId';

@@ -355,6 +355,7 @@ class _BilliardsGameState extends State<BilliardsGame>
   }
 
   void _prepareTurn() {
+    _l.net?.turnSeat = _match.isOver ? null : _match.current;
     _scene.pull = 0;
     _scene.strikeOffset = 0;
     _scene.cueOpacity = 1;

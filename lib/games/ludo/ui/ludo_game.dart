@@ -453,6 +453,7 @@ class _LudoGameState extends State<LudoGame> with TickerProviderStateMixin {
       await _wait(m.captures.isEmpty ? 380 : 650);
       if (!mounted) return;
       final int seat = _s.turn;
+      _l.net?.turnSeat = seat;
       if (_isBot(seat)) {
         _botTurn(seat);
       } else if (_isRemote(seat)) {

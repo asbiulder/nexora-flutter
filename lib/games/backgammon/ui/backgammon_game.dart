@@ -337,6 +337,7 @@ class _BackgammonGameState extends State<BackgammonGame>
     if (!mounted) return;
     final BgTurnTracker t = BgTurnTracker(_s, _turn, dice);
     _s.turn = _turn;
+    _l.net?.turnSeat = _turn;
     setState(() {
       _tracker = t;
       _shownDice = List<int>.from(t.pool);

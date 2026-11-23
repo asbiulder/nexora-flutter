@@ -100,22 +100,21 @@ void main() {
     });
 
     test('the catalogue the README advertises is the one that ships', () {
-      // v10: 122 teams (Clubs 47, Nations 19, NX 12, Cars 24, Sport 12, Elite 6, Legends 2) from the owner's crest
-      // archive, the owner's 5 pitches (v11), 18 balls.
-      expect(kBmTeamDefs.length, 122);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'clubs').length, 47);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nations').length, 19);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nx').length, 12);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'cars').length, 24);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'sport').length, 12);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'elite').length, 6);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'legends').length, 2);
-      expect(kBmFieldsRaw.length, 5);
-      expect(kBmBallN.length, 18);
+      // v12: 174 supplied built-in teams in five correct categories, plus the custom-photo entitlement.
+      expect(kBmTeamDefs.length, 175);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'clubs').length, 65);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nations').length, 40);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'cars').length, 20);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'luxury').length, 27);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'sport').length, 22);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'custom').length, 1);
+      expect(kBmFieldsRaw.length, 1);
+      expect(kBmBallN.length, 4);
       final String readme = File('README.md').readAsStringSync();
-      expect(readme, contains('122 teams'));
-      expect(readme, contains('5 pitches'));
-      expect(readme, contains('۱۲۲ تیم'));
+      expect(readme, contains('174 supplied teams'));
+      expect(readme, contains('1 pitch'));
+      expect(readme, contains('4 balls'));
+      expect(readme, contains('۱۷۴ تیم'));
     });
   });
 }

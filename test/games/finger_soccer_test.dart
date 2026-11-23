@@ -33,7 +33,7 @@ BmConfig _cfg({bool mirror = false, String mode = 'bot'}) => BmConfig(
       teams: const <String>['club0', 'club1'],
       form: const <int>[0, 3],
       names: const <String>['A', 'B'],
-      field: 6,
+      field: 0,
       ball: 0,
       matchTime: 300,
       ai: mode == 'bot',
@@ -53,13 +53,14 @@ void main() {
     expect(kBmLaunch, closeTo(1.97, 1e-9)); // v6: 10/10 recordings (docs/FS_V6_CALIBRATION.md)
     expect(BmEngine.strikeOf(2) / BmEngine.strikeOf(10), closeTo(.40, .01));
     expect(STEP, 1 / 240);
-    expect(kBmFields.length, 5); // v11: only the owner's five pitch arts
-    expect(NB, 18); // v9: only the owner's 18 balls
+    expect(kBmFields.length, 1); // v12: only the supplied Sockerbox pitch
+    expect(NB, 4); // v12: only the supplied lime, blue, purple and red balls
     expect(kBmBallN.length, NB);
     expect(kBmBallFa.length, NB);
-    final BmFieldS f = kBmFields.firstWhere((BmFieldS x) => x.id == 'nx_checker_silver');
+    final BmFieldS f = kBmFields.single;
+    expect(f.id, 'nx_sockerbox_owner');
     expect(f.W, (810 * FS).roundToDouble());
-    expect(f.L, (79 * FS).roundToDouble());
+    expect(f.L, (76 * FS).roundToDouble());
     final BmEngine e = BmEngine(_Hooks(), rng: math.Random(1));
     e.startMatch(_cfg());
     expect(e.bodies.length, 11);
@@ -109,13 +110,14 @@ void main() {
       ..layout(e, const Size(360, 800));
     final Rect art = view.artRect(e);
     expect(art.top, greaterThanOrEqualTo(84 - 0.01));
-    expect(art.bottom, lessThanOrEqualTo(800 - 78 + 0.01));
-    expect(art.left, greaterThanOrEqualTo(-0.01));
-    expect(art.right, lessThanOrEqualTo(360.01));
+    expect(art.bottom, lessThanOrEqualTo(800 - 68 + 0.01));
+    expect(art.left, greaterThanOrEqualTo(-7)); // v12 safely overscans only the decorative frame
+    expect(art.right, lessThanOrEqualTo(367));
+    expect(art.width, greaterThan(360));
     expect(art.center.dx, closeTo(180, 0.01));
-    expect(art.center.dy, closeTo((84 + 722) / 2, 0.5));
-    // the art keeps its own aspect
-    expect(art.width / art.height, closeTo(1086 / 1448, .003));
+    expect(art.center.dy, closeTo((84 + 732) / 2, 0.5));
+    // the art keeps the supplied 1992 x 3155 portrait aspect (within logical-coordinate rounding).
+    expect(art.width / art.height, closeTo(1992 / 3155, .003));
   });
 
   test('sprites are drawn so their rim is exactly the collider', () {
@@ -128,28 +130,22 @@ void main() {
     expect(pitchWidth, inInclusiveRange(360 * 0.75, 360 * 0.92));
   });
 
-  test('teams: v10 categories, plausible varied stats, art present', () {
-    const List<String> categories = <String>[
-      'clubs', 'nations', 'nx', 'cars', 'sport', 'elite', 'legends',
-    ];
+  test('teams: v12 owner categories, plausible varied stats, complete cropped art', () {
+    const List<String> categories = <String>['clubs', 'nations', 'cars', 'luxury', 'sport'];
     expect(kBmCats.map((List<Object> c) => c[0]).toList(), categories);
     expect(kBmTeams.map((BmTeam t) => t.id).toSet().length, kBmTeams.length);
     for (final BmTeam t in kBmTeams) {
-      expect(categories, contains(t.cat));
+      expect(t.cat == 'custom' || categories.contains(t.cat), isTrue, reason: t.id);
       expect(t.power, inInclusiveRange(1, 10));
       expect(t.accuracy, inInclusiveRange(1, 10));
       expect(File(t.asset).existsSync(), isTrue, reason: t.asset);
     }
     for (final String c in categories) {
       final Iterable<BmTeam> teams = kBmTeams.where((BmTeam t) => t.cat == c);
-      expect(teams, isNotEmpty, reason: c);
-    }
-    for (final String c in <String>['clubs', 'nations', 'nx', 'cars', 'sport']) {
-      final Iterable<BmTeam> teams = kBmTeams.where((BmTeam t) => t.cat == c);
-      expect(teams.length, greaterThanOrEqualTo(12), reason: c);
+      expect(teams.length, greaterThanOrEqualTo(20), reason: c);
       expect(teams.map((BmTeam t) => t.power).toSet().length, greaterThanOrEqualTo(3), reason: c);
     }
-    expect(bmTeam('club0').name, 'BMW');
+    expect(bmTeam('club0').name, 'Real Madrid');
     for (final BmFieldS f in kBmFields) {
       expect(f.builtInGoals, isTrue, reason: f.id); // v9: goals drawn into every pitch art
       expect(File(f.asset).existsSync(), isTrue, reason: f.asset);
@@ -186,20 +182,20 @@ void main() {
       return math.sqrt(b.vx * b.vx + b.vy * b.vy);
     }
 
-    // v10 teams: NX Frost (nx_frost) 10 / 10, Real Madrid (realmadrid) 10 / 10, NX Core (nx_core) 6 / 6
-    expect(shotSpeed('nx_frost'), closeTo(shotSpeed('realmadrid'), 1e-9));
-    expect(shotSpeed('realmadrid'), greaterThan(shotSpeed('nx_core')));
-    expect(shotSpeed('nx_frost') / shotSpeed('nx_core'), closeTo(BmEngine.strikeOf(10) / BmEngine.strikeOf(6), 1e-9));
+    // v12 teams: Real Madrid and Argentina are 10/10; Juventus is the lower 7/7 calibration side.
+    expect(shotSpeed('club0'), closeTo(shotSpeed('nat0'), 1e-9));
+    expect(shotSpeed('club0'), greaterThan(shotSpeed('club12')));
+    expect(shotSpeed('club0') / shotSpeed('club12'), closeTo(BmEngine.strikeOf(10) / BmEngine.strikeOf(7), 1e-9));
     // accuracy 10: exact aim, every seed
     for (int s = 0; s < 20; s++) {
-      expect(shotAngleErr('nx_frost', s).abs(), lessThan(1e-9));
+      expect(shotAngleErr('club0', s).abs(), lessThan(1e-9));
     }
     // a weaker side misses by up to its accuracy bound, and not always by zero
-    final List<double> errs = <double>[for (int s = 0; s < 40; s++) shotAngleErr('nx_core', s)];
-    final double bound = BmEngine.aimErrorOf(6, 1);
+    final List<double> errs = <double>[for (int s = 0; s < 40; s++) shotAngleErr('club12', s)];
+    final double bound = BmEngine.aimErrorOf(7, 1);
     expect(errs.every((double x) => x.abs() <= bound + 1e-9), isTrue);
     expect(errs.where((double x) => x.abs() > bound * .2).length, greaterThan(5));
-    expect(shotAngleErr('nx_core', 11), shotAngleErr('nx_core', 11));
+    expect(shotAngleErr('club12', 11), shotAngleErr('club12', 11));
   });
 
   test('bot vs bot plays a long match without escaping the pitch', () {

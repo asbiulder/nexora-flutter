@@ -45,6 +45,7 @@ class _KartGameState extends ArcadeLoopState<KartGame> {
   bool _drift = false;
   bool _itemTap = false;
   bool _done = false;
+  bool _sentEnd = false;
   double _endTimer = -1;
   String _banner = '';
   double _bannerTime = 0;
@@ -114,7 +115,11 @@ class _KartGameState extends ArcadeLoopState<KartGame> {
       final int s = (m.data['s'] as num).toInt();
       race.finish(s, ((m.data['ms'] as num).toInt()) / 1000);
     } else if (t == 'end') {
-      _finishRace();
+      final List<int> order = <int>[
+        for (final dynamic v in (m.data['o'] as List<dynamic>? ?? const <dynamic>[]))
+          if (v is num) v.toInt(),
+      ];
+      _finishRace(order.length == race.karts.length ? order : null);
     }
   }
 
@@ -192,13 +197,20 @@ class _KartGameState extends ArcadeLoopState<KartGame> {
         k.shield = st['sh'] == 1 ? 1 : 0;
       });
       // authority closes the race 40 s after the first finisher, or when everyone active finished
-      if (r.isHost && !_done && race.finishOrder.isNotEmpty) {
+      if (r.isHost && !_done && !_sentEnd && race.finishOrder.isNotEmpty) {
         final bool all = r.activeSeats.every((int s) => race.karts[s].finished);
         _endTimer = _endTimer < 0 ? 40 : _endTimer - dt;
         if (all || _endTimer <= 0) {
+          _sentEnd = true;
           _endTimer = 1e9;
-          unawaited(r.log(<String, dynamic>{'t': 'end'}));
-          _finishRace();
+          final Set<int> gone = r.net.forfeitedSeats;
+          final List<int> order = <int>[
+            ...race.standings().where((Kart k) => !gone.contains(k.seat)).map((Kart k) => k.seat),
+            ...race.standings().where((Kart k) => gone.contains(k.seat)).map((Kart k) => k.seat),
+          ];
+          // DNF progress is ephemeral state, so the authority persists the exact final order for reconnect/replay.
+          unawaited(r.log(<String, dynamic>{'t': 'end', 'o': order}));
+          _finishRace(order);
         }
       }
     } else if (!_done) {
@@ -282,11 +294,11 @@ class _KartGameState extends ArcadeLoopState<KartGame> {
     race.events.clear();
   }
 
-  void _finishRace() {
+  void _finishRace([List<int>? finalOrder]) {
     if (_done) return;
     _done = true;
     _resolving = false;
-    final List<int> order = race.standings().map((Kart k) => k.seat).toList();
+    final List<int> order = finalOrder ?? race.standings().map((Kart k) => k.seat).toList();
     final int place = order.indexOf(me) + 1;
     _setBanner(ordinalEn(place), 1e9);
     final GameResult res = rankedResult(l, order, whatFa: 'مسابقه‌ی کارت', whatEn: 'Kart race');

@@ -42,6 +42,13 @@ void main() {
     expect(absenceLimitSec(onTurn: true, graceSec: 60), 60);
   });
 
+  test('connected-turn deadlock fallback is bounded and configurable', () {
+    expect(turnLimitSec(const <String, dynamic>{}), 90);
+    expect(turnLimitSec(const <String, dynamic>{'turn_sec': 45}), 45);
+    expect(turnLimitSec(const <String, dynamic>{'turn_sec': 1}), 30);
+    expect(turnLimitSec(const <String, dynamic>{'turn_sec': 999}), 300);
+  });
+
   test('MatchEnd: abandoned and forfeit reasons', () {
     expect(const MatchEnd(winners: <int>[], reason: 'abandoned').isAbandoned, isTrue);
     expect(const MatchEnd(winners: <int>[], reason: 'abandoned').isForfeit, isFalse);

@@ -511,8 +511,8 @@ class FsDisc3D extends StatelessWidget {
               decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFDADDE1)),
               child: ClipOval(
                 child: Transform.scale(
-                  // Generated badges place their rim at radius 120 in a 128px sprite.
-                  scale: 128 / 120,
+                  // v12 crops place the complete rim at radius 123 in a 128px sprite.
+                  scale: 128 / 123,
                   child: networkUrl != null && networkUrl!.isNotEmpty
                       ? Image.network(networkUrl!, fit: BoxFit.cover, gaplessPlayback: true,
                           errorBuilder: (_, __, ___) => Image.asset(asset, fit: BoxFit.cover, gaplessPlayback: true))

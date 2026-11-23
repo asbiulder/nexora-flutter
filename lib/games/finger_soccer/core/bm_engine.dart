@@ -12,7 +12,7 @@ import 'bm_data.dart';
 // PR / BR are the radii of the DRAWN disc and ball (rim of the normalised sprites, see kBmDiscArtFill /
 // kBmBallArtFill): the collider is exactly what the player sees.
 // Finger-soccer proportions (owner request 2026-11, v2): on the old 112-unit discs the pitch looked huge and the pieces
-// tiny. Disc diameter is now 150 world units, about 1/6 of the playing width (880-945 on every pitch) like a real
+// tiny. Disc diameter is now 106 world units, close to the supplied pitch's table-football proportions, like a real
 // table set; the ball is half the disc diameter. The goal sprite grows with them (kBmGoalArtScale) so the mouth stays
 // about 2.7 discs wide, and the view fits the whole world to any phone (BmView.layout).
 // Reference proportions (owner request 2026-11-20, measured on his reference screenshot, pitch 620 px wide): disc
@@ -29,9 +29,7 @@ const double kBmGoalArtScale = 0.92; // mouth = 0.34 of the playing width (refer
 /// net depth unchanged), and the posts / mouth / side nets are still built from the drawn sprite, so the colliders
 /// keep matching the art. Before: 1.
 const double kBmGoalMouthScale = 0.965;
-/// Match balls: 0-3 the owner's animated balls (kBmAnimBalls), 4 the classic black / white ball of the reference
-/// recordings (kBmClassicBall, v6), 5 NX Spin (v7 default) and 6 NX Star, the owner's GIF balls played with the
-/// GIF's own frames and timing (kBmAnimBalls, gifTimed).
+/// Match balls: exactly the owner's four v12 textures (lime, blue, purple and red), all rolled by BmBallRenderer.
 final int NB = kBmBallN.length;
 /// Weighty pieces (owner request 2026-11): discs are heavy (mass 8) and the ball lighter (2.6) but not a ping-pong
 /// ball. BKICK keeps a disc striking the ball launching it 5% harder than plain elastic transfer.
@@ -184,7 +182,8 @@ final List<BmTeam> kBmTeams = kBmTeamDefs
     .map((BmTeamDef d) => BmTeam(d.id, d.cat, d.name, d.faName, 'assets/games/bermuda/${d.art}.webp', d.power, d.accuracy))
     .toList(growable: false);
 
-BmTeam bmTeam(String id) => kBmTeams.firstWhere((BmTeam t) => t.id == id, orElse: () => kBmTeams.first);
+BmTeam bmTeam(String id) =>
+    kBmTeams.firstWhere((BmTeam t) => t.id == id, orElse: () => kBmTeams.firstWhere((BmTeam t) => t.id == kBmStarterTeamId));
 
 /// A team shape: five discs (the keeper first) as [x, d] in the team's own frame. x is the fraction of the playing
 /// width, left to right as the team sees it from its own goal; d is the depth from its own goal line as a fraction of
@@ -370,7 +369,7 @@ class BmEngine {
   double get goalVisualDepth => GGw > 0 ? GGh * GGleg : DEPTH;
   BmFieldS get field => kBmFields[setFld];
 
-  List<String> sel = <String>['club0', 'club1'];
+  List<String> sel = <String>[kBmStarterTeamId, kBmStarterOpponentId];
   List<int> form = <int>[0, 0];
 
   List<BmBody> bodies = <BmBody>[];

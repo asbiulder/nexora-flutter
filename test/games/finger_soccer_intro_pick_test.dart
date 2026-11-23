@@ -32,7 +32,7 @@ void main() {
 
   testWidgets('team select: the arrows pick the team shown (free team / opponent side)', (WidgetTester tester) async {
     phone(tester);
-    final List<String> teams = <String>['nx_core', 'club9'];
+    final List<String> teams = <String>['club32', 'club9'];
     List<String>? ready;
     await tester.pumpWidget(_app(FsTeamSelect(
       fa: true,
@@ -41,32 +41,34 @@ void main() {
       onReady: (List<String> t) => ready = t,
       onShop: () {},
       onBar: () {},
+      ownedOnlySide0: false,
       freeze: true,
     )));
     await tester.pump(const Duration(milliseconds: 300));
-    // side one: nx_core (NX Core) -> next is nx_cyan, also a free team
+    // side one: Persepolis -> Porto in the alphabetic club catalogue.
     await tester.tap(find.byWidgetPredicate((Widget w) => w is FsArrow && !w.left));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(teams[0], 'nx_cyan');
-    // side two (opponent, no ownership needed): club9 -> club10
+    expect(teams[0], 'club16');
+    // side two: Paris Saint-Germain -> Paykan.
     await tester.tap(find.text('تیم دو'));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.byWidgetPredicate((Widget w) => w is FsArrow && !w.left));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(teams[1], 'club10');
+    expect(teams[1], 'club_paykan');
     await tester.tap(find.text('آماده'));
     await tester.pump(const Duration(milliseconds: 300));
-    expect(ready, <String>['nx_cyan', 'club10']);
+    expect(ready, <String>['club16', 'club_paykan']);
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
   });
 
-  test('team category labels cover clubs, nations and NX in Persian and English', () {
+  test('team category labels cover the final five categories in Persian and English', () {
     expect(fsTeamCategoryName('clubs', true), 'باشگاهی');
     expect(fsTeamCategoryName('clubs', false), 'Clubs');
     expect(fsTeamCategoryName('nations', true), 'ملی');
     expect(fsTeamCategoryName('nations', false), 'Nations');
-    expect(fsTeamCategoryName('nx', true), 'انیکس');
+    expect(fsTeamCategoryName('luxury', true), 'لوکس');
+    expect(fsTeamCategoryName('luxury', false), 'Luxury');
     expect(fsTeamCategoryName('unknown', false), 'unknown');
   });
 
@@ -74,7 +76,7 @@ void main() {
     phone(tester);
     int? done;
     await tester.pumpWidget(_app(FsFormationSelect(
-      discAsset: 'assets/games/bermuda/discs/v10/nx_core_green.webp',
+      discAsset: 'assets/games/bermuda/discs/v12/club32.webp',
       initial: 0,
       onDone: (int f) => done = f,
       onBar: () {},

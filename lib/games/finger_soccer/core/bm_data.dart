@@ -38,7 +38,7 @@ class BmField {
 
 /// Geometry of the two side score displays drawn into a pitch art (image px of the art, [artW] wide). Each display
 /// stacks two seven-segment digit cells: tens on top, ones below. The left display shows the bottom / home side, the
-/// right one the other side. v11: measured per art (the five owner arts place and size their displays differently).
+/// right one the other side. The v12 values are measured on the sole supplied Sockerbox art.
 class BmScoreDisplay {
   const BmScoreDisplay(this.artW, this.leftCx, this.rightCx, this.tensCy, this.onesCy, this.digitW, this.digitH);
   final double artW, leftCx, rightCx, tensCy, onesCy, digitW, digitH;
@@ -48,35 +48,48 @@ class BmScoreDisplay {
 const Color kBmScoreLeft = Color(0xFF2F86FF);
 
 const List<BmField> kBmFieldsRaw = <BmField>[
-  // Owner supplied 1992 x 3155 portrait pitches. The logical rows retain the same playable-width convention while
-  // the renderer uses the full-resolution art without downscaling the source files on disk.
-  BmField('nx_green_plain', 'Green Plain', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'سبز ساده'),
-  BmField('nx_rings_green_new', 'Green Rings', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'حلقه‌های سبز'),
-  BmField('nx_checker_green', 'Green Checker', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'شطرنجی سبز'),
-  BmField('nx_stripes_green', 'Green Stripes', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'راه‌راه سبز'),
-  BmField('nx_stripes_teal', 'Teal Stripes', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'راه‌راه فیروزه‌ای'),
-  BmField('nx_ember_street', 'Ember Street', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'خیابانی آتشین'),
-  BmField('nx_black_sockerbox', 'Black Sockerbox', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'ساکرباکس مشکی'),
+  // v12: this is the only match pitch. Keep the owner's 1992 x 3155 JPEG at full resolution; the logical geometry
+  // maps the visible inner rails and built-in goals to the existing finger-soccer physics coordinate system.
+  BmField(
+    'nx_sockerbox_owner',
+    'NX Sockerbox',
+    810,
+    1283,
+    76,
+    734,
+    72,
+    1175,
+    622,
+    0,
+    'none',
+    rc: 10,
+    gh0: 116,
+    gr0: 5,
+    gd0: 72,
+    asset: 'assets/games/bermuda/fields/nx_sockerbox_owner.jpg',
+    score: BmScoreDisplay(1992, 123, 1869, 1330, 1446, 52, 64),
+    faName: 'زمین ساکرباکس NX',
+  ),
 ];
 
-/// Ids of pitches removed from the game (v7, v9 and v11). Kept only so tests can check they never come back.
+/// Ids of pitches removed from the game. Kept only so regressions can prove that the one-field v12 catalogue never
+/// silently brings an older pitch back.
 const List<String> kBmRemovedFieldIds = <String>[
   'neon_cup', 'street_cage', 'sockerbox', 'gold_leather', 'neon_grass', 'royal_gold',
-  // v9: every older pitch
   'nexora_green', 'forest', 'ice', 'ocean', 'street', 'streetarena', 'lava', 'stadium', 'checker', 'futsal', 'arena',
   'arena2', 'desert', 'grove', 'pool', 'neon', 'royal', 'mahogany', 'leather', 'aqua', 'asphalt', 'court', 'cyberbox',
   'realmadrid', 'psg', 'acmilan', 'barcelona', 'persepolis', 'esteghlal', 'mancity',
-  // v11: the three v9 Sockerbox arts
   'nx_neon_arena', 'nx_gold_checker', 'nx_gold_stripes',
+  'nx_checker_silver', 'nx_rings_green', 'nx_street', 'nx_neon_blue', 'nx_royal_purple',
+  'nx_green_plain', 'nx_rings_green_new', 'nx_checker_green', 'nx_stripes_green', 'nx_stripes_teal',
+  'nx_ember_street', 'nx_black_sockerbox',
 ];
 
-/// A saved / synced pitch index -> a valid one: anything missing or out of range (e.g. a removed v6 pitch) is the
-/// default pitch 0 (v11: Silver Checker).
-int bmFieldIndex(int? i) => (i == null || i < 0 || i >= kBmFieldsRaw.length) ? 0 : i;
+/// A saved / synced pitch index -> the sole v12 pitch.
+int bmFieldIndex(int? i) => 0;
 
-/// Local preference key of the chosen pitch. v11: new key, so an index saved for the old v9 pitches (`bm.field`) is
-/// never read as one of the new pitches: every player starts on pitch 0 until they pick again.
-const String kBmFieldPref = 'bm.field.v11';
+/// New key prevents an index from any earlier multi-pitch catalogue being interpreted as the owner pitch.
+const String kBmFieldPref = 'bm.field.v12';
 
 /// Pitch [i]'s name in the UI language (Persian when [fa] and the pitch has one).
 String bmFieldName(int i, bool fa) {
@@ -92,19 +105,17 @@ const Map<String, List<double>> kBmGS = <String, List<double>>{
   'white': <double>[840, 307, 0.0470, 0.9548, 0.0167, 0.0945, 0.9967],
 };
 
-/// v10 (owner art 2026-11-22): the catalogue is the owner's full crest archive — 47 club badges,
-/// 19 national crests and 12 NX faction coins, plus the 6 elite "second finish" coins and the
-/// 2 bosses, cut one disc per coin by tool/build_fs_v10_assets.py (clubs 47, nations 19, nx 12, cars 24, sport 12, elite 6, legends 2). The v9 car and sport
-/// sets are kept as they are (same ids, same art on discs/v9). This table is generated: edit tool/teams_v10.py.
+/// v12 categories for the owner's replacement catalogue. Alternate artwork is deduplicated by identity, while every
+/// unique supplied club, national team, car, luxury brand and sports brand is retained.
+const String kBmStarterTeamId = 'club32';
+const String kBmStarterOpponentId = 'club33';
+
 const List<List<Object>> kBmCats = <List<Object>>[
   <Object>['clubs', 'Clubs', 'باشگاهی'],
   <Object>['nations', 'Nations', 'ملی'],
-  <Object>['nx', 'NX', 'انیکس'],
   <Object>['cars', 'Cars', 'خودرو'],
+  <Object>['luxury', 'Luxury', 'لوکس'],
   <Object>['sport', 'Sport', 'ورزشی'],
-  <Object>['elite', 'Elite', 'ویژه'],
-  <Object>['legends', 'Legends', 'افسانه‌ای'],
-  <Object>['custom', 'Custom', 'اختصاصی'],
 ];
 
 /// One selectable piece set. [power] scales the shot impulse, [accuracy] narrows the aim spread (both 1..10).
@@ -118,133 +129,184 @@ class BmTeamDef {
   final int power, accuracy;
 }
 
-/// Shop catalogue ids: `club0..club31` and `nat20..nat23` are the v9 car / sport sets (their ids are the prices the
-/// live nx_catalog already sells); everything else is a v10 id. Free teams: NX Core, NX Cyan, NX Mercury
-/// (gem_shop.dart kFreeTeams), so a new player can always field a team.
+/// Final v12 owner catalogue. Every built-in disc comes from the supplied sheets, is cropped to one complete coin,
+/// and belongs to exactly one visible category. The custom photo team remains a separate shop entitlement.
 const List<BmTeamDef> kBmTeamDefs = <BmTeamDef>[
-  BmTeamDef('realmadrid', 'clubs', 'Real Madrid', 'رئال مادرید', 'discs/v10/realmadrid', 10, 10),
-  BmTeamDef('barcelona', 'clubs', 'Barcelona', 'بارسلونا', 'discs/v10/barcelona', 10, 9),
-  BmTeamDef('bayern', 'clubs', 'Bayern München', 'بایرن مونیخ', 'discs/v10/bayern', 9, 10),
-  BmTeamDef('mancity', 'clubs', 'Manchester City', 'منچستر سیتی', 'discs/v10/mancity', 9, 10),
-  BmTeamDef('liverpool', 'clubs', 'Liverpool', 'لیورپول', 'discs/v10/liverpool', 10, 8),
-  BmTeamDef('manunited', 'clubs', 'Manchester United', 'منچستر یونایتد', 'discs/v10/manunited', 8, 9),
-  BmTeamDef('arsenal', 'clubs', 'Arsenal', 'آرسنال', 'discs/v10/arsenal', 8, 9),
-  BmTeamDef('chelsea', 'clubs', 'Chelsea', 'چلسی', 'discs/v10/chelsea', 8, 9),
-  BmTeamDef('tottenham', 'clubs', 'Tottenham Hotspur', 'تاتنهام', 'discs/v10/tottenham', 8, 8),
-  BmTeamDef('newcastle', 'clubs', 'Newcastle United', 'نیوکاسل', 'discs/v10/newcastle', 8, 8),
-  BmTeamDef('astonvilla', 'clubs', 'Aston Villa', 'استون ویلا', 'discs/v10/astonvilla', 8, 8),
-  BmTeamDef('westham', 'clubs', 'West Ham United', 'وستهام', 'discs/v10/westham', 7, 8),
-  BmTeamDef('everton', 'clubs', 'Everton', 'اورتون', 'discs/v10/everton', 7, 7),
-  BmTeamDef('leipzig', 'clubs', 'RB Leipzig', 'لایپزیگ', 'discs/v10/leipzig', 8, 8),
-  BmTeamDef('dortmund', 'clubs', 'Borussia Dortmund', 'دورتموند', 'discs/v10/dortmund', 9, 8),
-  BmTeamDef('leverkusen', 'clubs', 'Bayer Leverkusen', 'بایر لورکوزن', 'discs/v10/leverkusen', 8, 8),
-  BmTeamDef('wolfsburg', 'clubs', 'VfL Wolfsburg', 'وولفسبورگ', 'discs/v10/wolfsburg', 7, 8),
-  BmTeamDef('inter', 'clubs', 'Inter', 'اینتر', 'discs/v10/inter', 9, 8),
-  BmTeamDef('acmilan', 'clubs', 'AC Milan', 'آ.ث. میلان', 'discs/v10/acmilan', 9, 8),
-  BmTeamDef('juventus', 'clubs', 'Juventus', 'یوونتوس', 'discs/v10/juventus', 9, 8),
-  BmTeamDef('napoli', 'clubs', 'Napoli', 'ناپولی', 'discs/v10/napoli', 8, 9),
-  BmTeamDef('roma', 'clubs', 'Roma', 'آ.اس. رم', 'discs/v10/roma', 7, 8),
-  BmTeamDef('lazio', 'clubs', 'Lazio', 'لاتزیو', 'discs/v10/lazio', 8, 8),
-  BmTeamDef('fiorentina', 'clubs', 'Fiorentina', 'فیورنتینا', 'discs/v10/fiorentina', 7, 8),
-  BmTeamDef('psg', 'clubs', 'Paris Saint-Germain', 'پاری سن ژرمن', 'discs/v10/psg', 10, 9),
-  BmTeamDef('marseille', 'clubs', 'Olympique Marseille', 'مارسی', 'discs/v10/marseille', 8, 8),
-  BmTeamDef('lyon', 'clubs', 'Olympique Lyonnais', 'لیون', 'discs/v10/lyon', 8, 8),
-  BmTeamDef('galatasaray', 'clubs', 'Galatasaray', 'گالاتاسرای', 'discs/v10/galatasaray', 8, 8),
-  BmTeamDef('fenerbahce', 'clubs', 'Fenerbahçe', 'فنرباغچه', 'discs/v10/fenerbahce', 8, 8),
-  BmTeamDef('benfica', 'clubs', 'Benfica', 'بنفیکا', 'discs/v10/benfica', 8, 9),
-  BmTeamDef('sporting', 'clubs', 'Sporting CP', 'اسپورتینگ', 'discs/v10/sporting', 8, 8),
-  BmTeamDef('ajax', 'clubs', 'Ajax', 'آژاکس', 'discs/v10/ajax', 8, 9),
-  BmTeamDef('sevilla', 'clubs', 'Sevilla', 'سویا', 'discs/v10/sevilla', 8, 8),
-  BmTeamDef('valencia', 'clubs', 'Valencia', 'والنسیا', 'discs/v10/valencia', 7, 8),
-  BmTeamDef('villarreal', 'clubs', 'Villarreal', 'ویارئال', 'discs/v10/villarreal', 7, 8),
-  BmTeamDef('atletico', 'clubs', 'Atlético Madrid', 'اتلتیکو مادرید', 'discs/v10/atletico', 9, 9),
-  BmTeamDef('flamengo', 'clubs', 'Flamengo', 'فلامینگو', 'discs/v10/flamengo', 8, 8),
-  BmTeamDef('riverplate', 'clubs', 'River Plate', 'ریور پلاته', 'discs/v10/riverplate', 8, 8),
-  BmTeamDef('boca', 'clubs', 'Boca Juniors', 'بوکا جونیورز', 'discs/v10/boca', 8, 8),
-  BmTeamDef('corinthians', 'clubs', 'Corinthians', 'کورینتیانس', 'discs/v10/corinthians', 7, 8),
-  BmTeamDef('shakhtar', 'clubs', 'Shakhtar Donetsk', 'شاختار دونتسک', 'discs/v10/shakhtar', 8, 7),
-  BmTeamDef('intermiami', 'clubs', 'Inter Miami', 'اینتر میامی', 'discs/v10/intermiami', 9, 9),
-  BmTeamDef('alhilal', 'clubs', 'Al Hilal', 'الهلال', 'discs/v10/alhilal', 9, 8),
-  BmTeamDef('alnassr', 'clubs', 'Al Nassr', 'النصر', 'discs/v10/alnassr', 9, 8),
-  BmTeamDef('losc', 'clubs', 'Lille LOSC', 'لیل', 'discs/v10/losc', 8, 8),
-  BmTeamDef('persepolis', 'clubs', 'Persepolis', 'پرسپولیس', 'discs/v10/persepolis', 9, 8),
-  BmTeamDef('esteghlal', 'clubs', 'Esteghlal', 'استقلال', 'discs/v10/esteghlal', 9, 8),
-  BmTeamDef('argentina', 'nations', 'Argentina', 'آرژانتین', 'discs/v10/argentina', 10, 10),
-  BmTeamDef('brazil', 'nations', 'Brazil', 'برزیل', 'discs/v10/brazil', 10, 9),
-  BmTeamDef('france', 'nations', 'France', 'فرانسه', 'discs/v10/france', 9, 9),
-  BmTeamDef('germany', 'nations', 'Germany', 'آلمان', 'discs/v10/germany', 9, 9),
-  BmTeamDef('spain', 'nations', 'Spain', 'اسپانیا', 'discs/v10/spain', 9, 9),
-  BmTeamDef('italy', 'nations', 'Italy', 'ایتالیا', 'discs/v10/italy', 8, 9),
-  BmTeamDef('england', 'nations', 'England', 'انگلیس', 'discs/v10/england', 9, 8),
-  BmTeamDef('portugal', 'nations', 'Portugal', 'پرتغال', 'discs/v10/portugal', 9, 8),
-  BmTeamDef('netherlands', 'nations', 'Netherlands', 'هلند', 'discs/v10/netherlands', 9, 8),
-  BmTeamDef('belgium', 'nations', 'Belgium', 'بلژیک', 'discs/v10/belgium', 8, 8),
-  BmTeamDef('croatia', 'nations', 'Croatia', 'کرواسی', 'discs/v10/croatia', 8, 8),
-  BmTeamDef('uruguay', 'nations', 'Uruguay', 'اروگوئه', 'discs/v10/uruguay', 8, 8),
-  BmTeamDef('japan', 'nations', 'Japan', 'ژاپن', 'discs/v10/japan', 7, 8),
-  BmTeamDef('argentina_ii', 'nations', 'Argentina 1978', 'آرژانتین ۱۹۷۸', 'discs/v10/argentina_ii', 10, 9),
-  BmTeamDef('germany_ii', 'nations', 'Germany 1954', 'آلمان ۱۹۵۴', 'discs/v10/germany_ii', 9, 8),
-  BmTeamDef('brazil_ii', 'nations', 'Brazil 1970', 'برزیل ۱۹۷۰', 'discs/v10/brazil_ii', 10, 9),
-  BmTeamDef('italy_ii', 'nations', 'Italy 1982', 'ایتالیا ۱۹۸۲', 'discs/v10/italy_ii', 8, 9),
-  BmTeamDef('france_ii', 'nations', 'France 1998', 'فرانسه ۱۹۹۸', 'discs/v10/france_ii', 9, 9),
-  BmTeamDef('spain_ii', 'nations', 'Spain 2010', 'اسپانیا ۲۰۱۰', 'discs/v10/spain_ii', 9, 9),
-  BmTeamDef('nx_core', 'nx', 'NX Core', 'NX هسته', 'discs/v10/nx_core_green', 6, 6),
-  BmTeamDef('nx_cyan', 'nx', 'NX Cyan', 'NX فیروزه', 'discs/v10/nx_cyan', 7, 7),
-  BmTeamDef('nx_frost', 'nx', 'NX Frost', 'NX یخ', 'discs/v10/nx_frost', 10, 10),
-  BmTeamDef('nx_frost_blue', 'nx', 'NX Glacier', 'NX یخچال', 'discs/v10/nx_frost_blue', 9, 9),
-  BmTeamDef('nx_dragon', 'nx', 'NX Dragon', 'NX اژدها', 'discs/v10/nx_dragon_gold', 10, 9),
-  BmTeamDef('nx_dragon2', 'nx', 'NX Wyrm', 'NX اژدهای شعله', 'discs/v10/nx_dragon_gloss', 9, 9),
-  BmTeamDef('nx_phoenix', 'nx', 'NX Phoenix', 'NX ققنوس', 'discs/v10/nx_phoenix_violet', 9, 10),
-  BmTeamDef('nx_phoenix2', 'nx', 'NX Ember', 'NX ققنوس ارغوانی', 'discs/v10/nx_phoenix_purple', 9, 9),
-  BmTeamDef('nx_lion', 'nx', 'NX Lion', 'NX شیر', 'discs/v10/nx_lion_gold', 9, 9),
-  BmTeamDef('nx_lion2', 'nx', 'NX Crimson', 'NX شیر سرخ', 'discs/v10/nx_lion_red', 9, 8),
-  BmTeamDef('nx_eagle', 'nx', 'NX Eagle', 'NX عقاب', 'discs/v10/nx_eagle_gold', 8, 9),
-  BmTeamDef('nx_eagle2', 'nx', 'NX Valkyrie', 'NX والکیری', 'discs/v10/nx_eagle_white', 8, 9),
-  BmTeamDef('club0', 'cars', 'BMW', 'بی‌ام‌و', 'discs/v9/bmw', 9, 9),
-  BmTeamDef('club1', 'cars', 'Mercedes-Benz', 'مرسدس بنز', 'discs/v9/mercedes', 9, 9),
-  BmTeamDef('club2', 'cars', 'Audi', 'آئودی', 'discs/v9/audi', 8, 9),
-  BmTeamDef('club3', 'cars', 'Bugatti', 'بوگاتی', 'discs/v9/bugatti', 10, 9),
-  BmTeamDef('club4', 'cars', 'Ferrari', 'فراری', 'discs/v9/ferrari', 10, 9),
-  BmTeamDef('club5', 'cars', 'Porsche', 'پورشه', 'discs/v9/porsche', 9, 10),
-  BmTeamDef('club6', 'cars', 'McLaren', 'مک‌لارن', 'discs/v9/mclaren', 10, 8),
-  BmTeamDef('club7', 'cars', 'Aston Martin', 'استون مارتین', 'discs/v9/aston_martin', 8, 9),
-  BmTeamDef('club8', 'cars', 'Volkswagen', 'فولکس‌واگن', 'discs/v9/volkswagen', 7, 8),
-  BmTeamDef('club9', 'cars', 'Lamborghini', 'لامبورگینی', 'discs/v9/lamborghini', 10, 8),
-  BmTeamDef('club10', 'cars', 'Toyota', 'تویوتا', 'discs/v9/toyota', 7, 9),
-  BmTeamDef('club11', 'cars', 'Nissan', 'نیسان', 'discs/v9/nissan', 7, 8),
-  BmTeamDef('club12', 'cars', 'BMW II', 'بی‌ام‌و ۲', 'discs/v9/bmw_ii', 9, 9),
-  BmTeamDef('club13', 'cars', 'Mercedes-Benz II', 'مرسدس بنز ۲', 'discs/v9/mercedes_ii', 9, 9),
-  BmTeamDef('club14', 'cars', 'Audi II', 'آئودی ۲', 'discs/v9/audi_ii', 8, 9),
-  BmTeamDef('club15', 'cars', 'Toyota II', 'تویوتا ۲', 'discs/v9/toyota_ii', 7, 9),
-  BmTeamDef('club16', 'cars', 'Ferrari II', 'فراری ۲', 'discs/v9/ferrari_ii', 10, 9),
-  BmTeamDef('club17', 'cars', 'Porsche II', 'پورشه ۲', 'discs/v9/porsche_ii', 9, 10),
-  BmTeamDef('club18', 'cars', 'Honda', 'هوندا', 'discs/v9/honda', 7, 8),
-  BmTeamDef('club19', 'cars', 'Ford', 'فورد', 'discs/v9/ford', 8, 7),
-  BmTeamDef('club20', 'cars', 'Volkswagen II', 'فولکس‌واگن ۲', 'discs/v9/volkswagen_ii', 7, 8),
-  BmTeamDef('club21', 'cars', 'Lamborghini II', 'لامبورگینی ۲', 'discs/v9/lamborghini_ii', 10, 8),
-  BmTeamDef('club22', 'cars', 'Chevrolet', 'شورلت', 'discs/v9/chevrolet', 8, 7),
-  BmTeamDef('club23', 'cars', 'Nissan II', 'نیسان ۲', 'discs/v9/nissan_ii', 7, 8),
-  BmTeamDef('club24', 'sport', 'Nike', 'نایکی', 'discs/v9/nike', 9, 8),
-  BmTeamDef('club25', 'sport', 'Adidas', 'آدیداس', 'discs/v9/adidas', 8, 9),
-  BmTeamDef('club26', 'sport', 'Puma', 'پوما', 'discs/v9/puma', 8, 8),
-  BmTeamDef('club27', 'sport', 'Under Armour', 'آندر آرمور', 'discs/v9/under_armour', 8, 7),
-  BmTeamDef('club28', 'sport', 'Reebok', 'ریباک', 'discs/v9/reebok', 7, 7),
-  BmTeamDef('club29', 'sport', 'New Balance', 'نیوبالانس', 'discs/v9/new_balance', 7, 8),
-  BmTeamDef('club30', 'sport', 'Nike II', 'نایکی ۲', 'discs/v9/nike_ii', 9, 8),
-  BmTeamDef('club31', 'sport', 'Adidas II', 'آدیداس ۲', 'discs/v9/adidas_ii', 8, 9),
-  BmTeamDef('nat20', 'sport', 'Puma II', 'پوما ۲', 'discs/v9/puma_ii', 8, 8),
-  BmTeamDef('nat21', 'sport', 'Under Armour II', 'آندر آرمور ۲', 'discs/v9/under_armour_ii', 8, 7),
-  BmTeamDef('nat22', 'sport', 'New Balance II', 'نیوبالانس ۲', 'discs/v9/new_balance_ii', 7, 8),
-  BmTeamDef('nat23', 'sport', 'Reebok II', 'ریباک ۲', 'discs/v9/reebok_ii', 7, 7),
-  BmTeamDef('elite_realmadrid', 'elite', 'Real Madrid Gold', 'رئال مادرید طلایی', 'discs/v10/realmadrid_ii', 10, 10),
-  BmTeamDef('elite_barcelona', 'elite', 'Barcelona Prism', 'بارسلونا منشوری', 'discs/v10/barcelona_ii', 10, 10),
-  BmTeamDef('elite_bayern', 'elite', 'Bayern Redline', 'بایرن سرخ', 'discs/v10/bayern_ii', 10, 9),
-  BmTeamDef('elite_psg', 'elite', 'Paris Noir', 'پاریس شب', 'discs/v10/psg_ii', 9, 10),
-  BmTeamDef('elite_chelsea', 'elite', 'Chelsea Cobalt', 'چلسی کبالت', 'discs/v10/chelsea', 9, 10),
-  BmTeamDef('elite_dortmund', 'elite', 'Dortmund Amber', 'دورتموند کهربایی', 'discs/v10/dortmund_ii', 10, 9),
-  BmTeamDef('nx_merciless', 'legends', 'Merciless', 'بی‌رحم', 'discs/v10/arena_golem', 10, 10),
-  BmTeamDef('nx_capo', 'legends', 'Capo', 'کاپو', 'discs/v10/arena_dragon', 10, 10),
-  BmTeamDef('custom_team', 'custom', 'My Custom Team', 'تیم اختصاصی من', 'discs/v10/nx_core_green', 8, 8),
+  BmTeamDef('club11', 'clubs', 'AC Milan', 'آ.ث. میلان', 'discs/v12/club11', 8, 9),
+  BmTeamDef('club14', 'clubs', 'Ajax', 'آژاکس', 'discs/v12/club14', 7, 10),
+  BmTeamDef('club21', 'clubs', 'Al Hilal', 'الهلال', 'discs/v12/club21', 10, 10),
+  BmTeamDef('club20', 'clubs', 'Al Nassr', 'النصر', 'discs/v12/club20', 7, 10),
+  BmTeamDef('club_aluminium', 'clubs', 'Aluminium Arak', 'آلومینیوم اراک', 'discs/v12/club_aluminium', 7, 9),
+  BmTeamDef('club5', 'clubs', 'Arsenal', 'آرسنال', 'discs/v12/club5', 9, 8),
+  BmTeamDef('club_arvand', 'clubs', 'Arvand Khorramshahr', 'اروند خرمشهر', 'discs/v12/club_arvand', 9, 9),
+  BmTeamDef('club_atalanta', 'clubs', 'Atalanta', 'آتالانتا', 'discs/v12/club_atalanta', 9, 10),
+  BmTeamDef('club13', 'clubs', 'Atletico Madrid', 'اتلتیکو مادرید', 'discs/v12/club13', 9, 9),
+  BmTeamDef('club1', 'clubs', 'Barcelona', 'بارسلونا', 'discs/v12/club1', 10, 9),
+  BmTeamDef('club_basel', 'clubs', 'Basel', 'بازل', 'discs/v12/club_basel', 10, 8),
+  BmTeamDef('club_leverkusen', 'clubs', 'Bayer Leverkusen', 'بایر لورکوزن', 'discs/v12/club_leverkusen', 10, 10),
+  BmTeamDef('club7', 'clubs', 'Bayern Munich', 'بایرن مونیخ', 'discs/v12/club7', 10, 9),
+  BmTeamDef('club15', 'clubs', 'Benfica', 'بنفیکا', 'discs/v12/club15', 7, 8),
+  BmTeamDef('club23', 'clubs', 'Besiktas', 'بشیکتاش', 'discs/v12/club23', 9, 8),
+  BmTeamDef('club17', 'clubs', 'Boca Juniors', 'بوکا جونیورز', 'discs/v12/club17', 10, 7),
+  BmTeamDef('club8', 'clubs', 'Borussia Dortmund', 'دورتموند', 'discs/v12/club8', 8, 8),
+  BmTeamDef('club_gladbach', 'clubs', 'Borussia Mönchengladbach', 'مونشن\u200cگلادباخ', 'discs/v12/club_gladbach', 8, 7),
+  BmTeamDef('club37', 'clubs', 'Celtic', 'سلتیک', 'discs/v12/club37', 7, 8),
+  BmTeamDef('club_chadormalu', 'clubs', 'Chadormalu', 'چادرملو', 'discs/v12/club_chadormalu', 7, 9),
+  BmTeamDef('club6', 'clubs', 'Chelsea', 'چلسی', 'discs/v12/club6', 8, 10),
+  BmTeamDef('club_dinamo', 'clubs', 'Dinamo Zagreb', 'دینامو زاگرب', 'discs/v12/club_dinamo', 10, 7),
+  BmTeamDef('club33', 'clubs', 'Esteghlal', 'استقلال', 'discs/v12/club33', 9, 8),
+  BmTeamDef('club_fiorentina', 'clubs', 'Fiorentina', 'فیورنتینا', 'discs/v12/club_fiorentina', 10, 7),
+  BmTeamDef('club19', 'clubs', 'Flamengo', 'فلامینگو', 'discs/v12/club19', 8, 10),
+  BmTeamDef('club_foolad', 'clubs', 'Foolad', 'فولاد', 'discs/v12/club_foolad', 8, 8),
+  BmTeamDef('club_galatasaray', 'clubs', 'Galatasaray', 'گالاتاسرای', 'discs/v12/club_galatasaray', 9, 8),
+  BmTeamDef('club_golgohar', 'clubs', 'Gol Gohar Sirjan', 'گل\u200cگهر سیرجان', 'discs/v12/club_golgohar', 9, 8),
+  BmTeamDef('club10', 'clubs', 'Inter Milan', 'اینتر میلان', 'discs/v12/club10', 10, 8),
+  BmTeamDef('club12', 'clubs', 'Juventus', 'یوونتوس', 'discs/v12/club12', 7, 7),
+  BmTeamDef('club_kheybar', 'clubs', 'Kheybar Khorramabad', 'خیبر خرم\u200cآباد', 'discs/v12/club_kheybar', 9, 8),
+  BmTeamDef('club_lazio', 'clubs', 'Lazio', 'لاتزیو', 'discs/v12/club_lazio', 10, 8),
+  BmTeamDef('club_leicester', 'clubs', 'Leicester City', 'لسترسیتی', 'discs/v12/club_leicester', 8, 10),
+  BmTeamDef('club_lille', 'clubs', 'Lille', 'لیل', 'discs/v12/club_lille', 9, 10),
+  BmTeamDef('club4', 'clubs', 'Liverpool', 'لیورپول', 'discs/v12/club4', 7, 7),
+  BmTeamDef('club_malavan', 'clubs', 'Malavan', 'ملوان', 'discs/v12/club_malavan', 7, 7),
+  BmTeamDef('club2', 'clubs', 'Manchester City', 'منچستر سیتی', 'discs/v12/club2', 10, 9),
+  BmTeamDef('club3', 'clubs', 'Manchester United', 'منچستر یونایتد', 'discs/v12/club3', 10, 7),
+  BmTeamDef('club_meskerman', 'clubs', 'Mes Kerman', 'مس کرمان', 'discs/v12/club_meskerman', 10, 8),
+  BmTeamDef('club_mesrafsanjan', 'clubs', 'Mes Rafsanjan', 'مس رفسنجان', 'discs/v12/club_mesrafsanjan', 8, 8),
+  BmTeamDef('club26', 'clubs', 'Napoli', 'ناپولی', 'discs/v12/club26', 10, 10),
+  BmTeamDef('club_nassaji', 'clubs', 'Nassaji Mazandaran', 'نساجی مازندران', 'discs/v12/club_nassaji', 9, 7),
+  BmTeamDef('club25', 'clubs', 'Olympique Marseille', 'مارسی', 'discs/v12/club25', 10, 9),
+  BmTeamDef('club9', 'clubs', 'Paris Saint-Germain', 'پاری سن ژرمن', 'discs/v12/club9', 9, 9),
+  BmTeamDef('club_paykan', 'clubs', 'Paykan', 'پیکان', 'discs/v12/club_paykan', 7, 10),
+  BmTeamDef('club32', 'clubs', 'Persepolis', 'پرسپولیس', 'discs/v12/club32', 9, 8),
+  BmTeamDef('club16', 'clubs', 'Porto', 'پورتو', 'discs/v12/club16', 7, 7),
+  BmTeamDef('club30', 'clubs', 'PSV Eindhoven', 'پی\u200cاس\u200cوی', 'discs/v12/club30', 8, 7),
+  BmTeamDef('club_leipzig', 'clubs', 'RB Leipzig', 'لایپزیگ', 'discs/v12/club_leipzig', 7, 8),
+  BmTeamDef('club0', 'clubs', 'Real Madrid', 'رئال مادرید', 'discs/v12/club0', 10, 10),
+  BmTeamDef('club_salzburg', 'clubs', 'Red Bull Salzburg', 'سالزبورگ', 'discs/v12/club_salzburg', 7, 9),
+  BmTeamDef('club18', 'clubs', 'River Plate', 'ریور پلاته', 'discs/v12/club18', 9, 9),
+  BmTeamDef('club22', 'clubs', 'Roma', 'آ.اس. رم', 'discs/v12/club22', 10, 8),
+  BmTeamDef('club_sanatnaft', 'clubs', 'Sanat Naft Abadan', 'صنعت نفت آبادان', 'discs/v12/club_sanatnaft', 10, 9),
+  BmTeamDef('club_sepahan', 'clubs', 'Sepahan', 'سپاهان', 'discs/v12/club_sepahan', 7, 7),
+  BmTeamDef('club28', 'clubs', 'Sevilla', 'سویا', 'discs/v12/club28', 7, 9),
+  BmTeamDef('club_shahin', 'clubs', 'Shahin Bushehr', 'شاهین بوشهر', 'discs/v12/club_shahin', 7, 8),
+  BmTeamDef('club36', 'clubs', 'Shakhtar Donetsk', 'شاختار دونتسک', 'discs/v12/club36', 9, 9),
+  BmTeamDef('club27', 'clubs', 'Sporting CP', 'اسپورتینگ', 'discs/v12/club27', 8, 10),
+  BmTeamDef('club24', 'clubs', 'Tottenham Hotspur', 'تاتنهام', 'discs/v12/club24', 8, 7),
+  BmTeamDef('club_tractor', 'clubs', 'Tractor', 'تراکتور', 'discs/v12/club_tractor', 10, 8),
+  BmTeamDef('club29', 'clubs', 'Valencia', 'والنسیا', 'discs/v12/club29', 10, 9),
+  BmTeamDef('club_westham', 'clubs', 'West Ham United', 'وستهام', 'discs/v12/club_westham', 9, 7),
+  BmTeamDef('club_zenit', 'clubs', 'Zenit', 'زنیت', 'discs/v12/club_zenit', 9, 9),
+  BmTeamDef('club_zobahan', 'clubs', 'Zob Ahan', 'ذوب\u200cآهن', 'discs/v12/club_zobahan', 10, 8),
+  BmTeamDef('nat_algeria', 'nations', 'Algeria', 'الجزایر', 'discs/v12/nat_algeria', 8, 10),
+  BmTeamDef('nat0', 'nations', 'Argentina', 'آرژانتین', 'discs/v12/nat0', 10, 10),
+  BmTeamDef('nat20', 'nations', 'Australia', 'استرالیا', 'discs/v12/nat20', 9, 8),
+  BmTeamDef('nat9', 'nations', 'Belgium', 'بلژیک', 'discs/v12/nat9', 8, 8),
+  BmTeamDef('nat1', 'nations', 'Brazil', 'برزیل', 'discs/v12/nat1', 10, 9),
+  BmTeamDef('nat_cameroon', 'nations', 'Cameroon', 'کامرون', 'discs/v12/nat_cameroon', 7, 8),
+  BmTeamDef('nat_chile', 'nations', 'Chile', 'شیلی', 'discs/v12/nat_chile', 8, 8),
+  BmTeamDef('nat29', 'nations', 'Colombia', 'کلمبیا', 'discs/v12/nat29', 9, 10),
+  BmTeamDef('nat14', 'nations', 'Croatia', 'کرواسی', 'discs/v12/nat14', 10, 8),
+  BmTeamDef('nat13', 'nations', 'Denmark', 'دانمارک', 'discs/v12/nat13', 9, 7),
+  BmTeamDef('nat_ecuador', 'nations', 'Ecuador', 'اکوادور', 'discs/v12/nat_ecuador', 10, 8),
+  BmTeamDef('nat24', 'nations', 'Egypt', 'مصر', 'discs/v12/nat24', 8, 9),
+  BmTeamDef('nat7', 'nations', 'England', 'انگلیس', 'discs/v12/nat7', 8, 10),
+  BmTeamDef('nat2', 'nations', 'France', 'فرانسه', 'discs/v12/nat2', 10, 10),
+  BmTeamDef('nat3', 'nations', 'Germany', 'آلمان', 'discs/v12/nat3', 10, 9),
+  BmTeamDef('nat_ghana', 'nations', 'Ghana', 'غنا', 'discs/v12/nat_ghana', 10, 7),
+  BmTeamDef('nat26', 'nations', 'Iran', 'ایران', 'discs/v12/nat26', 8, 8),
+  BmTeamDef('nat_iraq', 'nations', 'Iraq', 'عراق', 'discs/v12/nat_iraq', 8, 7),
+  BmTeamDef('nat6', 'nations', 'Italy', 'ایتالیا', 'discs/v12/nat6', 10, 8),
+  BmTeamDef('nat_ivorycoast', 'nations', 'Ivory Coast', 'ساحل عاج', 'discs/v12/nat_ivorycoast', 10, 8),
+  BmTeamDef('nat18', 'nations', 'Japan', 'ژاپن', 'discs/v12/nat18', 9, 9),
+  BmTeamDef('nat16', 'nations', 'Mexico', 'مکزیک', 'discs/v12/nat16', 8, 10),
+  BmTeamDef('nat22', 'nations', 'Morocco', 'مراکش', 'discs/v12/nat22', 9, 10),
+  BmTeamDef('nat8', 'nations', 'Netherlands', 'هلند', 'discs/v12/nat8', 7, 10),
+  BmTeamDef('nat_newzealand', 'nations', 'New Zealand', 'نیوزیلند', 'discs/v12/nat_newzealand', 8, 10),
+  BmTeamDef('nat_nigeria', 'nations', 'Nigeria', 'نیجریه', 'discs/v12/nat_nigeria', 10, 7),
+  BmTeamDef('nat12', 'nations', 'Poland', 'لهستان', 'discs/v12/nat12', 9, 9),
+  BmTeamDef('nat4', 'nations', 'Portugal', 'پرتغال', 'discs/v12/nat4', 9, 7),
+  BmTeamDef('nat27', 'nations', 'Qatar', 'قطر', 'discs/v12/nat27', 8, 7),
+  BmTeamDef('nat28', 'nations', 'Saudi Arabia', 'عربستان', 'discs/v12/nat28', 9, 9),
+  BmTeamDef('nat21', 'nations', 'Senegal', 'سنگال', 'discs/v12/nat21', 10, 7),
+  BmTeamDef('nat_serbia', 'nations', 'Serbia', 'صربستان', 'discs/v12/nat_serbia', 9, 8),
+  BmTeamDef('nat19', 'nations', 'South Korea', 'کره جنوبی', 'discs/v12/nat19', 8, 10),
+  BmTeamDef('nat5', 'nations', 'Spain', 'اسپانیا', 'discs/v12/nat5', 10, 9),
+  BmTeamDef('nat11', 'nations', 'Sweden', 'سوئد', 'discs/v12/nat11', 9, 10),
+  BmTeamDef('nat15', 'nations', 'Switzerland', 'سوئیس', 'discs/v12/nat15', 10, 10),
+  BmTeamDef('nat23', 'nations', 'Tunisia', 'تونس', 'discs/v12/nat23', 8, 7),
+  BmTeamDef('nat_uae', 'nations', 'UAE', 'امارات', 'discs/v12/nat_uae', 10, 10),
+  BmTeamDef('nat10', 'nations', 'Uruguay', 'اروگوئه', 'discs/v12/nat10', 9, 10),
+  BmTeamDef('nat17', 'nations', 'USA', 'آمریکا', 'discs/v12/nat17', 8, 8),
+  BmTeamDef('car_alfaromeo', 'cars', 'Alfa Romeo', 'آلفارومئو', 'discs/v12/car_alfaromeo', 8, 10),
+  BmTeamDef('car7', 'cars', 'Aston Martin', 'استون مارتین', 'discs/v12/car7', 9, 9),
+  BmTeamDef('car_audi', 'cars', 'Audi', 'آئودی', 'discs/v12/car_audi', 8, 9),
+  BmTeamDef('car8', 'cars', 'Bentley', 'بنتلی', 'discs/v12/car8', 8, 9),
+  BmTeamDef('car4', 'cars', 'BMW', 'بی\u200cام\u200cو', 'discs/v12/car4', 10, 10),
+  BmTeamDef('car9', 'cars', 'Bugatti', 'بوگاتی', 'discs/v12/car9', 8, 8),
+  BmTeamDef('car11', 'cars', 'Cadillac', 'کادیلاک', 'discs/v12/car11', 9, 8),
+  BmTeamDef('car1', 'cars', 'Ferrari', 'فراری', 'discs/v12/car1', 9, 8),
+  BmTeamDef('car_koenigsegg', 'cars', 'Koenigsegg', 'کونیگزگ', 'discs/v12/car_koenigsegg', 9, 10),
+  BmTeamDef('car0', 'cars', 'Lamborghini', 'لامبورگینی', 'discs/v12/car0', 9, 10),
+  BmTeamDef('car_landrover', 'cars', 'Land Rover', 'لندرور', 'discs/v12/car_landrover', 10, 10),
+  BmTeamDef('car10', 'cars', 'Lexus', 'لکسوس', 'discs/v12/car10', 9, 8),
+  BmTeamDef('car6', 'cars', 'Maserati', 'مازراتی', 'discs/v12/car6', 8, 8),
+  BmTeamDef('car12', 'cars', 'McLaren', 'مک\u200cلارن', 'discs/v12/car12', 10, 8),
+  BmTeamDef('car3', 'cars', 'Mercedes-Benz', 'مرسدس بنز', 'discs/v12/car3', 9, 9),
+  BmTeamDef('car_pagani', 'cars', 'Pagani', 'پاگانی', 'discs/v12/car_pagani', 9, 8),
+  BmTeamDef('car5', 'cars', 'Porsche', 'پورشه', 'discs/v12/car5', 9, 9),
+  BmTeamDef('car2', 'cars', 'Rolls-Royce', 'رولزرویس', 'discs/v12/car2', 8, 9),
+  BmTeamDef('car13', 'cars', 'Tesla', 'تسلا', 'discs/v12/car13', 9, 8),
+  BmTeamDef('car_volvo', 'cars', 'Volvo', 'ولوو', 'discs/v12/car_volvo', 8, 9),
+  BmTeamDef('lux11', 'luxury', 'Burberry', 'بربری', 'discs/v12/lux11', 10, 8),
+  BmTeamDef('lux8', 'luxury', 'Cartier', 'کارتیه', 'discs/v12/lux8', 8, 8),
+  BmTeamDef('lux1', 'luxury', 'Chanel', 'شنل', 'discs/v12/lux1', 10, 10),
+  BmTeamDef('lux_coach', 'luxury', 'Coach', 'کوچ', 'discs/v12/lux_coach', 9, 10),
+  BmTeamDef('lux5', 'luxury', 'Dior', 'دیور', 'discs/v12/lux5', 10, 10),
+  BmTeamDef('lux_esteelauder', 'luxury', 'Estée Lauder', 'استی لادر', 'discs/v12/lux_esteelauder', 10, 9),
+  BmTeamDef('lux9', 'luxury', 'Fendi', 'فندی', 'discs/v12/lux9', 8, 8),
+  BmTeamDef('lux2', 'luxury', 'Gucci', 'گوچی', 'discs/v12/lux2', 10, 9),
+  BmTeamDef('lux_hm', 'luxury', 'H&M', 'اچ\u200cاندام', 'discs/v12/lux_hm', 9, 10),
+  BmTeamDef('lux3', 'luxury', 'Hermès', 'هرمس', 'discs/v12/lux3', 10, 9),
+  BmTeamDef('lux_katespade', 'luxury', 'Kate Spade', 'کیت اسپید', 'discs/v12/lux_katespade', 10, 9),
+  BmTeamDef('lux_lancome', 'luxury', 'Lancôme', 'لانکوم', 'discs/v12/lux_lancome', 10, 10),
+  BmTeamDef('lux0', 'luxury', 'Louis Vuitton', 'لویی ویتون', 'discs/v12/lux0', 8, 10),
+  BmTeamDef('lux_mac', 'luxury', 'MAC', 'مک', 'discs/v12/lux_mac', 10, 10),
+  BmTeamDef('lux_pandora', 'luxury', 'Pandora', 'پاندورا', 'discs/v12/lux_pandora', 9, 10),
+  BmTeamDef('lux_pink', 'luxury', 'Pink', 'پینک', 'discs/v12/lux_pink', 8, 8),
+  BmTeamDef('lux4', 'luxury', 'Prada', 'پرادا', 'discs/v12/lux4', 10, 8),
+  BmTeamDef('lux7', 'luxury', 'Rolex', 'رولکس', 'discs/v12/lux7', 8, 10),
+  BmTeamDef('lux_sephora', 'luxury', 'Sephora', 'سفورا', 'discs/v12/lux_sephora', 10, 9),
+  BmTeamDef('lux13', 'luxury', 'Swarovski', 'سواروسکی', 'discs/v12/lux13', 8, 8),
+  BmTeamDef('lux_tiffany', 'luxury', 'Tiffany & Co.', 'تیفانی', 'discs/v12/lux_tiffany', 8, 10),
+  BmTeamDef('lux_uniqlo', 'luxury', 'Uniqlo', 'یونیکلو', 'discs/v12/lux_uniqlo', 10, 8),
+  BmTeamDef('lux10', 'luxury', 'Valentino', 'ولنتینو', 'discs/v12/lux10', 10, 10),
+  BmTeamDef('lux6', 'luxury', 'Versace', 'ورساچه', 'discs/v12/lux6', 10, 10),
+  BmTeamDef('lux_victoriassecret', 'luxury', "Victoria's Secret", 'ویکتوریا سیکرت', 'discs/v12/lux_victoriassecret', 9, 10),
+  BmTeamDef('lux12', 'luxury', 'Yves Saint Laurent', 'ایو سن لوران', 'discs/v12/lux12', 9, 9),
+  BmTeamDef('lux_zara', 'luxury', 'Zara', 'زارا', 'discs/v12/lux_zara', 10, 10),
+  BmTeamDef('spt1', 'sport', 'Adidas', 'آدیداس', 'discs/v12/spt1', 8, 10),
+  BmTeamDef('spt_arena', 'sport', 'Arena', 'آرنا', 'discs/v12/spt_arena', 9, 8),
+  BmTeamDef('spt7', 'sport', 'Asics', 'اسیکس', 'discs/v12/spt7', 9, 10),
+  BmTeamDef('spt_columbia', 'sport', 'Columbia', 'کلمبیا', 'discs/v12/spt_columbia', 10, 10),
+  BmTeamDef('spt10', 'sport', 'Converse', 'کانورس', 'discs/v12/spt10', 8, 10),
+  BmTeamDef('spt_dunlop', 'sport', 'Dunlop', 'دانلوپ', 'discs/v12/spt_dunlop', 10, 10),
+  BmTeamDef('spt_ea7', 'sport', 'EA7', 'ای\u200cای سون', 'discs/v12/spt_ea7', 8, 8),
+  BmTeamDef('spt_head', 'sport', 'Head', 'هد', 'discs/v12/spt_head', 9, 9),
+  BmTeamDef('spt6', 'sport', 'Jordan', 'جردن', 'discs/v12/spt6', 8, 10),
+  BmTeamDef('spt_mizuno', 'sport', 'Mizuno', 'میزونو', 'discs/v12/spt_mizuno', 8, 9),
+  BmTeamDef('spt12', 'sport', 'NBA', 'ان\u200cبی\u200cای', 'discs/v12/spt12', 10, 10),
+  BmTeamDef('spt4', 'sport', 'New Balance', 'نیوبالانس', 'discs/v12/spt4', 8, 8),
+  BmTeamDef('spt0', 'sport', 'Nike', 'نایکی', 'discs/v12/spt0', 9, 9),
+  BmTeamDef('spt2', 'sport', 'Puma', 'پوما', 'discs/v12/spt2', 9, 8),
+  BmTeamDef('spt5', 'sport', 'Reebok', 'ریباک', 'discs/v12/spt5', 8, 9),
+  BmTeamDef('spt_skechers', 'sport', 'Skechers', 'اسکچرز', 'discs/v12/spt_skechers', 10, 8),
+  BmTeamDef('spt9', 'sport', 'Speedo', 'اسپیدو', 'discs/v12/spt9', 10, 10),
+  BmTeamDef('spt_northface', 'sport', 'The North Face', 'نورث فیس', 'discs/v12/spt_northface', 9, 8),
+  BmTeamDef('spt13', 'sport', 'Umbro', 'آمبرو', 'discs/v12/spt13', 9, 9),
+  BmTeamDef('spt3', 'sport', 'Under Armour', 'آندر آرمور', 'discs/v12/spt3', 10, 10),
+  BmTeamDef('spt11', 'sport', 'Vans', 'ونس', 'discs/v12/spt11', 8, 9),
+  BmTeamDef('spt8', 'sport', 'Wilson', 'ویلسون', 'discs/v12/spt8', 8, 8),
+  BmTeamDef('custom_team', 'custom', 'My Custom Team', 'تیم اختصاصی من', 'discs/v12/club32', 8, 8),
 ];
 
 class BmTrail {
@@ -294,22 +356,21 @@ const List<BmTrail> kBmTR = <BmTrail>[
 
 const List<String> kBmTRN = <String>["Bolt", "Prism", "Wave", "Starlight", "Smoke", "Rainbow", "Neon", "Yin", "Fire", "Blade", "Ghost", "Ember", "Plasma", "Copper Ghost", "Stardust", "Twilight", "Gold Flame", "Thunder", "Cobalt Neon", "Aurora", "Crimson Blade", "Teal Storm", "Royal Ember", "Gold Yin", "Red Smoke", "Gilded Star", "Noir Chrome", "Violet Strike", "Emerald Edge", "Royal Blue Gold", "Crimson Noir", "Blaze Orange", "Aqua Wave", "Sunset Pro", "Elite Cobalt", "Crown Luxury"];
 
-/// v9 (owner request 2026-11-22): the match balls are the owner's ball art only (18 balls from four sheets, trimmed to
-/// their circle by tool/build_fs_v9_assets.py into `assets/games/bermuda/balls/v9/<slug>.webp`). Every ball is a flat
-/// art that fills its square; the 3D ball renderer (BmBallRenderer) rolls it with the ball's real motion.
-const List<String> kBmBallN = <String>['NX Black 1', 'NX Black 2', 'NX Black 3', 'NX Black 4', 'NX Black 5', 'NX Black 6', 'NX Color 1', 'NX Color 2', 'NX Color 3', 'NX Color 4', 'NX Color 5', 'NX Color 6'];
-const List<String> kBmBallFa = <String>['NX مشکی ۱', 'NX مشکی ۲', 'NX مشکی ۳', 'NX مشکی ۴', 'NX مشکی ۵', 'NX مشکی ۶', 'NX رنگی ۱', 'NX رنگی ۲', 'NX رنگی ۳', 'NX رنگی ۴', 'NX رنگی ۵', 'NX رنگی ۶'];
-const List<String> kBmBallSlug = <String>['nx_ball_black_1', 'nx_ball_black_2', 'nx_ball_black_3', 'nx_ball_black_4', 'nx_ball_black_5', 'nx_ball_black_6', 'nx_ball_color_1', 'nx_ball_color_2', 'nx_ball_color_3', 'nx_ball_color_4', 'nx_ball_color_5', 'nx_ball_color_6'];
+/// v12: exactly the four balls from the owner's 2 x 2 source sheet. The source's transparent cut-outs are centred
+/// independently to a 390 px visible sphere on the same 418 px texture/collider contract. BmBallRenderer supplies roll.
+const List<String> kBmBallN = <String>['NX Lime', 'NX Blue', 'NX Purple', 'NX Red'];
+const List<String> kBmBallFa = <String>['NX لیمویی', 'NX آبی', 'NX بنفش', 'NX قرمز'];
+const List<String> kBmBallSlug = <String>['nx_ball_lime', 'nx_ball_blue', 'nx_ball_purple', 'nx_ball_red'];
 const int kBmDefaultBall = 0;
 
-/// Preference key of the player's match ball. v9 uses a new key: every saved index named an old ball.
-const String kBmBallPref = 'bm.ball.v9';
+/// New key resets every saved index from the removed v9 catalogue.
+const String kBmBallPref = 'bm.ball.v12';
 
-/// A saved / synced ball index -> a valid one (missing or unknown = the default ball).
+/// A saved / synced ball index -> a valid one (missing or unknown = the lime default).
 int bmBallIndex(int? i) => (i == null || i < 0 || i >= kBmBallN.length) ? kBmDefaultBall : i;
 
 /// The art of ball [i] (also its picker / shop thumbnail).
-String bmBallArt(int i) => 'assets/games/bermuda/balls/v9/${kBmBallSlug[bmBallIndex(i)]}.webp';
+String bmBallArt(int i) => 'assets/games/bermuda/balls/v12/${kBmBallSlug[bmBallIndex(i)]}.webp';
 String bmBallThumb(int i) => bmBallArt(i);
 
 class BmAnimBall {
@@ -325,14 +386,13 @@ class BmAnimBall {
   int frameAt(double ms) => (ms / frameMs).floor() % frames;
 }
 
-/// Animated sprite-sheet balls. v9: none (every ball is rolled by the 3D renderer); the painter keeps the sheet path
-/// so a future animated ball only needs an entry here.
+/// Animated sprite-sheet balls. v12 has none: the four supplied ball textures are rolled by the 3D renderer.
 const Map<int, BmAnimBall> kBmAnimBalls = <int, BmAnimBall>{};
 
-/// Art fills (tool/build_fs_v9_assets.py): disc rim radius / half sprite size, ball radius / half frame size.
+/// Art fills: disc rim radius / half sprite size, ball radius / half frame size.
 /// The painter draws every sprite so the rim lands exactly on the physics radius.
-const double kBmDiscArtFill = 120 / 128;
-const double kBmBallArtFill = 76 / 80;
+const double kBmDiscArtFill = 123 / 128;
+const double kBmBallArtFill = 195 / 209;
 
 class BmFa {
   const BmFa(this.k, this.c, this.g);
@@ -342,12 +402,8 @@ class BmFa {
 }
 
 const Map<String, BmFa> kBmFA = <String, BmFa>{
-  // v11 pitches: firework colours taken from each art's frame / display colours.
-  'nx_checker_silver': BmFa(1, <int>[0xFFE8EEF6, 0xFF2F86FF, 0xFF5BD12A], 0),
-  'nx_rings_green': BmFa(5, <int>[0xFF2AFF15, 0xFFB6FFA0, 0xFFFFFFFF], 0),
-  'nx_street': BmFa(1, <int>[0xFFFFC21F, 0xFF35FF06, 0xFFFFFFFF], 0),
-  'nx_neon_blue': BmFa(5, <int>[0xFF2F86FF, 0xFFFF3B30, 0xFFFFC94A], 0),
-  'nx_royal_purple': BmFa(1, <int>[0xFFB04DFF, 0xFFFFC94A, 0xFFFFFFFF], 0),
+  // Blue/red frame lights and warm grass highlights sampled from the sole v12 pitch.
+  'nx_sockerbox_owner': BmFa(1, <int>[0xFF16BFFF, 0xFFFF3B24, 0xFFFFE0A0], 0),
   // fallback used by the engine for any id without its own entry
   'stadium': BmFa(1, <int>[0xFFFFD86B, 0xFFFFFFFF, 0xFFFFE9A8], 0),
 };
