@@ -48,37 +48,15 @@ class BmScoreDisplay {
 const Color kBmScoreLeft = Color(0xFF2F86FF);
 
 const List<BmField> kBmFieldsRaw = <BmField>[
-  // v11 (owner request 2026-11-23): the ONLY pitches are the owner's five arts (1086 x 1448 px each, goals, nets and
-  // the two side score displays drawn in), in the owner's order. Every value is measured on the art by
-  // tool/build_fs_v11_assets.py (run it to reprint these rows): one raw unit = 1086 / 810 art px (w0 810, so the
-  // playing width stays ~880 world units like v9: discs ~0.12 of it). The rails (l0 r0 t0 b0) are the inner edge of
-  // each art's frame rail, offset by the engine's 4 world units so BmEngine.geo()'s walls land exactly on the drawn
-  // line; cs0 is the halfway line (the builder remaps the field rows so the drawn line sits halfway between the goal
-  // lines); rc is the frame's corner radius (world units, median of the four drawn corners; royal's corners are
-  // square, the arcs inside are markings); gh0 / gr0 are the white post tubes (centre offset from the centre line,
-  // tube radius, averaged over the four posts because the engine keeps them symmetric); gd0 is the net depth to the
-  // back bar, the shallower of the two drawn goals (both goals keep the same depth so mirrored online phones stay
-  // deterministic). score = the two printed digit cells of each side display, scoreLeft / scoreRight their colours.
-  BmField('nx_checker_silver', 'Silver Checker', 810, 1080, 79, 731, 54, 1023, 538, 0, 'none',
-      rc: 30.9, gh0: 105.24, gr0: 5.78, gd0: 38.79, faName: 'شطرنجی نقره‌ای',
-      score: BmScoreDisplay(1086, 55.5, 1031.0, 701.75, 763.0, 40.5, 41.5),
-      scoreLeft: Color(0xFF036DFF), scoreRight: Color(0xFFFEFDFF)),
-  BmField('nx_rings_green', 'Green Rings', 810, 1080, 73, 738, 68, 1015, 542, 0, 'none',
-      rc: 27.7, gh0: 109.0, gr0: 4.47, gd0: 52.22, faName: 'حلقه‌های سبز',
-      score: BmScoreDisplay(1086, 54.5, 1030.5, 700.5, 760.75, 33.0, 37.0),
-      scoreLeft: Color(0xFF2AFF15), scoreRight: Color(0xFF25FF13)),
-  BmField('nx_street', 'Street', 810, 1080, 82, 731, 60, 1017, 538, 0, 'none',
-      rc: 24.6, gh0: 111.91, gr0: 4.47, gd0: 47.0, faName: 'خیابانی',
-      score: BmScoreDisplay(1086, 55.25, 1033.5, 681.25, 743.0, 35.0, 40.0),
-      scoreLeft: Color(0xFF35FF06), scoreRight: Color(0xFF3BFF02)),
-  BmField('nx_neon_blue', 'Neon Blue', 810, 1080, 78, 734, 64, 1014, 539, 0, 'none',
-      rc: 35.8, gh0: 98.03, gr0: 5.22, gd0: 49.24, faName: 'نئون آبی',
-      score: BmScoreDisplay(1086, 54.5, 1033.5, 685.0, 756.25, 39.0, 52.5),
-      scoreLeft: Color(0xFF0012FF), scoreRight: Color(0xFFFF0505)),
-  BmField('nx_royal_purple', 'Royal Purple', 810, 1080, 78, 733, 67, 1006, 536, 0, 'none',
-      rc: 0.0, gh0: 104.4, gr0: 5.22, gd0: 55.21, faName: 'سلطنتی بنفش',
-      score: BmScoreDisplay(1086, 54.0, 1033.0, 677.0, 743.0, 36.0, 42.0),
-      scoreLeft: Color(0xFF18FF05), scoreRight: Color(0xFF17FF05)),
+  // Owner supplied 1992 x 3155 portrait pitches. The logical rows retain the same playable-width convention while
+  // the renderer uses the full-resolution art without downscaling the source files on disk.
+  BmField('nx_green_plain', 'Green Plain', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'سبز ساده'),
+  BmField('nx_rings_green_new', 'Green Rings', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'حلقه‌های سبز'),
+  BmField('nx_checker_green', 'Green Checker', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'شطرنجی سبز'),
+  BmField('nx_stripes_green', 'Green Stripes', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'راه‌راه سبز'),
+  BmField('nx_stripes_teal', 'Teal Stripes', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'راه‌راه فیروزه‌ای'),
+  BmField('nx_ember_street', 'Ember Street', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'خیابانی آتشین'),
+  BmField('nx_black_sockerbox', 'Black Sockerbox', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'ساکرباکس مشکی'),
 ];
 
 /// Ids of pitches removed from the game (v7, v9 and v11). Kept only so tests can check they never come back.
@@ -126,6 +104,7 @@ const List<List<Object>> kBmCats = <List<Object>>[
   <Object>['sport', 'Sport', 'ورزشی'],
   <Object>['elite', 'Elite', 'ویژه'],
   <Object>['legends', 'Legends', 'افسانه‌ای'],
+  <Object>['custom', 'Custom', 'اختصاصی'],
 ];
 
 /// One selectable piece set. [power] scales the shot impulse, [accuracy] narrows the aim spread (both 1..10).
@@ -265,6 +244,7 @@ const List<BmTeamDef> kBmTeamDefs = <BmTeamDef>[
   BmTeamDef('elite_dortmund', 'elite', 'Dortmund Amber', 'دورتموند کهربایی', 'discs/v10/dortmund_ii', 10, 9),
   BmTeamDef('nx_merciless', 'legends', 'Merciless', 'بی‌رحم', 'discs/v10/arena_golem', 10, 10),
   BmTeamDef('nx_capo', 'legends', 'Capo', 'کاپو', 'discs/v10/arena_dragon', 10, 10),
+  BmTeamDef('custom_team', 'custom', 'My Custom Team', 'تیم اختصاصی من', 'discs/v10/nx_core_green', 8, 8),
 ];
 
 class BmTrail {
@@ -317,9 +297,9 @@ const List<String> kBmTRN = <String>["Bolt", "Prism", "Wave", "Starlight", "Smok
 /// v9 (owner request 2026-11-22): the match balls are the owner's ball art only (18 balls from four sheets, trimmed to
 /// their circle by tool/build_fs_v9_assets.py into `assets/games/bermuda/balls/v9/<slug>.webp`). Every ball is a flat
 /// art that fills its square; the 3D ball renderer (BmBallRenderer) rolls it with the ball's real motion.
-const List<String> kBmBallN = <String>['NX Yellow', 'NX Green', 'NX Blue', 'NX Pink', 'NX Ice', 'Pro Lime', 'Pro Green', 'Pro Blue', 'Pro Magenta', 'Classic Noir', 'Classic Plum', 'Classic', 'Hex Lime', 'Hex Violet', 'Hex Teal', 'Frost', 'Pearl', 'Street'];
-const List<String> kBmBallFa = <String>['NX زرد', 'NX سبز', 'NX آبی', 'NX صورتی', 'NX یخی', 'پرو لیمویی', 'پرو سبز', 'پرو آبی', 'پرو سرخابی', 'کلاسیک مشکی', 'کلاسیک آلویی', 'کلاسیک', 'شش‌ضلعی لیمویی', 'شش‌ضلعی بنفش', 'شش‌ضلعی فیروزه‌ای', 'یخ‌زده', 'مروارید', 'خیابانی'];
-const List<String> kBmBallSlug = <String>['nx_yellow', 'nx_green', 'nx_blue', 'nx_pink', 'nx_ice', 'pro_lime', 'pro_green', 'pro_blue', 'pro_magenta', 'classic_noir', 'classic_plum', 'classic', 'hex_lime', 'hex_violet', 'hex_teal', 'frost', 'pearl', 'street'];
+const List<String> kBmBallN = <String>['NX Black 1', 'NX Black 2', 'NX Black 3', 'NX Black 4', 'NX Black 5', 'NX Black 6', 'NX Color 1', 'NX Color 2', 'NX Color 3', 'NX Color 4', 'NX Color 5', 'NX Color 6'];
+const List<String> kBmBallFa = <String>['NX مشکی ۱', 'NX مشکی ۲', 'NX مشکی ۳', 'NX مشکی ۴', 'NX مشکی ۵', 'NX مشکی ۶', 'NX رنگی ۱', 'NX رنگی ۲', 'NX رنگی ۳', 'NX رنگی ۴', 'NX رنگی ۵', 'NX رنگی ۶'];
+const List<String> kBmBallSlug = <String>['nx_ball_black_1', 'nx_ball_black_2', 'nx_ball_black_3', 'nx_ball_black_4', 'nx_ball_black_5', 'nx_ball_black_6', 'nx_ball_color_1', 'nx_ball_color_2', 'nx_ball_color_3', 'nx_ball_color_4', 'nx_ball_color_5', 'nx_ball_color_6'];
 const int kBmDefaultBall = 0;
 
 /// Preference key of the player's match ball. v9 uses a new key: every saved index named an old ball.

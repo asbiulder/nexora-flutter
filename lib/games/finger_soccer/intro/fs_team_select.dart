@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:nexora/core/economy/gem_shop.dart';
+import 'package:nexora/core/profile/profile_service.dart';
 
 import '../core/bm_data.dart';
 import '../core/bm_engine.dart';
@@ -195,6 +196,10 @@ class _FsTeamSelectState extends State<FsTeamSelect> {
 
   Future<void> _selectOrBuy() async {
     final BmTeam t = _t;
+    if (t.id == kCustomTeamId && (ProfileService.current?.customTeamUrl == null || ProfileService.current!.customTeamUrl!.isEmpty)) {
+      _say(widget.fa ? 'ابتدا عکس تیم اختصاصی را در فروشگاه اضافه کن' : 'Add a custom team image in the shop first');
+      return;
+    }
     if (_needsOwn && !GemShop.instance.ownsTeam(t.id)) {
       final bool ok = await fsBuyTeam(context, t, widget.fa);
       if (!ok || !mounted) return;
@@ -447,7 +452,8 @@ class _FsTeamSelectState extends State<FsTeamSelect> {
               key: ValueKey<String>(t.id),
               behavior: HitTestBehavior.opaque,
               onTap: _selectOrBuy,
-              child: FsDisc3D(asset: t.asset, r: 56),
+              child: FsDisc3D(asset: t.asset, r: 56,
+                  networkUrl: t.id == kCustomTeamId ? ProfileService.current?.customTeamUrl : null),
             ),
           ),
         ),

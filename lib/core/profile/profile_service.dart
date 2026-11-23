@@ -78,6 +78,9 @@ class ProfileService extends ChangeNotifier {
   String avatarCore = 'hero_front';
   String? avatarUrl;
   String? avatarPath;
+  /// Custom finger-soccer team crest unlocked with the 1000-gem custom-team item.
+  String? customTeamUrl;
+  String? customTeamPath;
 
   /// Portrait from the ANIX avatar base set (assets/ui/anix/avatars), shown in the rank frame.
   String portrait = '01-vanguard';
@@ -134,6 +137,8 @@ class ProfileService extends ChangeNotifier {
     avatarCore = j['avatar'] as String? ?? 'hero_front';
     avatarUrl = j['avatarUrl'] as String?;
     avatarPath = j['avatarPath'] as String?;
+    customTeamUrl = j['customTeamUrl'] as String?;
+    customTeamPath = j['customTeamPath'] as String?;
     portrait = j['portrait'] as String? ?? '01-vanguard';
     xp = (j['xp'] as num?)?.toInt() ?? 0;
     coins = (j['coins'] as num?)?.toInt() ?? 0;
@@ -166,6 +171,8 @@ class ProfileService extends ChangeNotifier {
         'avatar': avatarCore,
         'avatarUrl': avatarUrl,
         'avatarPath': avatarPath,
+        'customTeamUrl': customTeamUrl,
+        'customTeamPath': customTeamPath,
         'portrait': portrait,
         'xp': xp,
         'coins': coins,
@@ -215,6 +222,8 @@ class ProfileService extends ChangeNotifier {
   Map<String, dynamic> cloudBlob() => <String, dynamic>{
         'bio': bio,
         'portrait': portrait,
+        'customTeamUrl': customTeamUrl,
+        'customTeamPath': customTeamPath,
         'orbitTheme': orbitTheme,
         'claimedDaily': claimedDaily,
         'streak': streak,
@@ -240,6 +249,8 @@ class ProfileService extends ChangeNotifier {
       activity.clear();
       bio = j['bio'] as String? ?? '';
       portrait = j['portrait'] as String? ?? portrait;
+      customTeamUrl = j['customTeamUrl'] as String? ?? customTeamUrl;
+      customTeamPath = j['customTeamPath'] as String? ?? customTeamPath;
       orbitTheme = j['orbitTheme'] as String? ?? 'aurora';
       claimedDaily = j['claimedDaily'] as String? ?? '';
       streak = (j['streak'] as num?)?.toInt() ?? 0;
@@ -531,6 +542,11 @@ class ProfileService extends ChangeNotifier {
   void grantItem(String itemId) {
     inventory.add(itemId);
     _save();
+    notifyListeners();
+  }
+
+  Future<void> saveCustomTeam() async {
+    await _save();
     notifyListeners();
   }
 

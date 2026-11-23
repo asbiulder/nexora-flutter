@@ -23,6 +23,10 @@ const Set<String> kRetiredTeams = <String>{'club32', 'club33', 'club34', 'club35
 /// Inventory / catalog id of a finger-soccer team (`fs_team:club0`).
 String teamItemId(String teamId) => 'fs_team:$teamId';
 
+const String kCustomTeamId = 'custom_team';
+const String kCustomTeamItemId = 'fs_custom_team';
+const int kCustomTeamPrice = 1000;
+
 /// Built-in gem price of a team (the server catalog, editable by admins, wins when loaded). Free teams cost 0; every
 /// other team costs 150..500 gems by strength (power + accuracy 9..20, rounded to 10): weakest 150, luxury 10/10 500.
 /// supabase/migrations/20261120000000_nx_gems_shop.sql seeds nx_catalog with exactly these numbers.
@@ -69,20 +73,34 @@ class GemShop extends ChangeNotifier {
 
   bool get online => _c != null;
 
-  int teamPrice(String teamId) => kFreeTeams.contains(teamId) ? 0 : (_prices[teamItemId(teamId)] ?? defaultTeamPrice(teamId));
+  int teamPrice(String teamId) => teamId == kCustomTeamId
+      ? customTeamPrice
+      : (kFreeTeams.contains(teamId) ? 0 : (_prices[teamItemId(teamId)] ?? defaultTeamPrice(teamId)));
+
+  int get customTeamPrice => _prices[kCustomTeamItemId] ?? kCustomTeamPrice;
+
+  bool ownsCustomTeam() => _p?.owns(kCustomTeamItemId) ?? false;
+
+  Future<GemBuyResult> buyCustomTeam() => buy(kCustomTeamItemId);
 
   bool teamForSale(String teamId) => !_inactive.contains(teamItemId(teamId));
 
   bool ownsTeam(String teamId) {
+    if (teamId == kCustomTeamId) return ownsCustomTeam();
     if (kFreeTeams.contains(teamId) || teamPrice(teamId) == 0) return true;
     return _p?.owns(teamItemId(teamId)) ?? false;
   }
 
   /// A team the player may field: [teamId] when owned, otherwise the default free team. A retired v9 id (its art no
   /// longer ships) is never fielded, even if the server inventory still lists it.
-  String usableTeam(String teamId) =>
-      (kRetiredTeams.contains(teamId) || !kBmTeamDefs.any((BmTeamDef t) => t.id == teamId)) ? kDefaultTeam
-      : (ownsTeam(teamId) ? teamId : kDefaultTeam);
+  String usableTeam(String teamId) {
+    if (kRetiredTeams.contains(teamId) || !kBmTeamDefs.any((BmTeamDef t) => t.id == teamId)) return kDefaultTeam;
+    if (teamId == kCustomTeamId) {
+      final String? url = _p?.customTeamUrl;
+      return ownsCustomTeam() && url != null && url.isNotEmpty ? teamId : kDefaultTeam;
+    }
+    return ownsTeam(teamId) ? teamId : kDefaultTeam;
+  }
 
   void _applyWallet(dynamic r) {
     if (r is! Map) return;
@@ -116,7 +134,7 @@ class GemShop extends ChangeNotifier {
   }
 
   /// Buys a finger-soccer team with gems (server checks the price, the balance and ownership).
-  Future<GemBuyResult> buyTeam(String teamId) => buy(teamItemId(teamId));
+  Future<GemBuyResult> buyTeam(String teamId) => buy(teamId == kCustomTeamId ? kCustomTeamItemId : teamItemId(teamId));
 
   Future<GemBuyResult> buy(String itemId) async {
     final SupabaseClient? c = _c;

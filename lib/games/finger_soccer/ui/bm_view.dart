@@ -121,6 +121,8 @@ class _BermudaViewState extends State<BermudaView>
 
   /// v6 score table avatars per global seat (ANIX avatar id or photo url), exchanged on the live channel ('fs_av').
   final Map<int, String> _avatars = <int, String>{};
+  /// Uploaded custom-team crest per global online seat, exchanged with the avatar event.
+  final Map<int, String> _customTeamUrls = <int, String>{};
   StreamSubscription<NetLiveMessage>? _liveSub;
   bool _disposed = false;
   bool _paused = false;
@@ -227,7 +229,10 @@ class _BermudaViewState extends State<BermudaView>
 
   void _announceAvatar() {
     try {
-      launch.net?.sendLive('fs_av', <String, dynamic>{'av': _myAvatar});
+      launch.net?.sendLive('fs_av', <String, dynamic>{
+        'av': _myAvatar,
+        'team': ProfileService.current?.customTeamUrl ?? '',
+      });
     } catch (_) {}
   }
 
@@ -237,6 +242,11 @@ class _BermudaViewState extends State<BermudaView>
     if (av is! String || av.isEmpty || av.length > 512) return;
     final bool known = _avatars.containsKey(m.seat);
     _avatars[m.seat] = av;
+    final dynamic team = m.data['team'];
+    if (team is String && team.startsWith('http') && team.length <= 2048) {
+      _customTeamUrls[m.seat] = team;
+      if (stage == 'match' && cfg != null) unawaited(_loadMatchImages(cfg!));
+    }
     // a phone we had not heard from yet (joined late): tell it ours once
     if (!known) _announceAvatar();
   }
@@ -539,15 +549,34 @@ class _BermudaViewState extends State<BermudaView>
     }
   }
 
+  Future<ui.Image?> _imgNetwork(String? url, {int? w}) async {
+    if (url == null || !url.startsWith('http')) return null;
+    try {
+      final ByteData data = await NetworkAssetBundle(Uri.parse(url)).load(url);
+      final ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: w);
+      final ui.FrameInfo f = await codec.getNextFrame();
+      codec.dispose();
+      return f.image;
+    } catch (err) {
+      debugPrint('bermuda network image $url: $err');
+      return null;
+    }
+  }
+
   Future<void> _loadMatchImages(BmConfig c) async {
     final BmFieldS f = kBmFields[bmFieldIndex(c.field)];
+    final String? localCustom = ProfileService.current?.customTeamUrl;
+    final String? team0Custom = c.teams[e.ct(0)] == kCustomTeamId
+        ? (online ? _customTeamUrls[0] ?? (my.team == kCustomTeamId ? localCustom : null) : localCustom)
+        : null;
+    final String? team1Custom = c.teams[e.ct(1)] == kCustomTeamId ? (online ? _customTeamUrls[1] : null) : null;
     final List<ui.Image?> r = await Future.wait(<Future<ui.Image?>>[
       _img(f.asset),
       f.builtInGoals ? Future<ui.Image?>.value(null) : _img('${_a}goals/${f.gs}.webp'),
       // v9: every ball is a flat art the 3D roller rolls with the ball's motion (no sprite sheet)
       _img(bmBallArt(c.ball)),
-      _img(bmTeam(c.teams[e.ct(0)]).asset, w: 192),
-      _img(bmTeam(c.teams[e.ct(1)]).asset, w: 192),
+      _imgNetwork(team0Custom, w: 192).then((ui.Image? x) => x ?? _img(bmTeam(c.teams[e.ct(0)]).asset, w: 192)),
+      _imgNetwork(team1Custom, w: 192).then((ui.Image? x) => x ?? _img(bmTeam(c.teams[e.ct(1)]).asset, w: 192)),
     ]);
     if (!mounted || _disposed) {
       for (final ui.Image? i in r) {

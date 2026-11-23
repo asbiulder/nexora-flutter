@@ -470,9 +470,10 @@ class FsOutlined extends StatelessWidget {
 
 /// A team disc as the reference shows it on the team picker: the crest art on a thick silver cylinder.
 class FsDisc3D extends StatelessWidget {
-  const FsDisc3D({super.key, required this.asset, required this.r, this.depth = 9});
+  const FsDisc3D({super.key, required this.asset, required this.r, this.depth = 9, this.networkUrl});
   final String asset;
   final double r, depth;
+  final String? networkUrl;
   @override
   Widget build(BuildContext context) => SizedBox(
         width: r * 2 + 6,
@@ -508,7 +509,13 @@ class FsDisc3D extends StatelessWidget {
               width: r * 2,
               height: r * 2,
               decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFDADDE1)),
-              child: ClipOval(child: Image.asset(asset, fit: BoxFit.cover, gaplessPlayback: true, errorBuilder: (_, __, ___) => const SizedBox())),
+              child: ClipOval(
+                child: networkUrl != null && networkUrl!.isNotEmpty
+                    ? Image.network(networkUrl!, fit: BoxFit.cover, gaplessPlayback: true,
+                        errorBuilder: (_, __, ___) => Image.asset(asset, fit: BoxFit.cover, gaplessPlayback: true))
+                    : Image.asset(asset, fit: BoxFit.cover, gaplessPlayback: true,
+                        errorBuilder: (_, __, ___) => const SizedBox()),
+              ),
             ),
           ),
         ]),

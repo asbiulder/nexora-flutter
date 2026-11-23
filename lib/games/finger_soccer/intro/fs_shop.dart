@@ -1,9 +1,12 @@
 // Shop "انتخاب محصول ها" (reference recording 2): back / page-view buttons, category tabs with NEW badges, and a grey
 // panel with a two-column grid of product cards (name, disc art, power / time / aim bars, select or buy-with-gems).
 // Categories map to the engine's real data: national / club / luxury teams, pitches and match balls. "اختصاصی"
-// (custom team from a photo) and "بازیکن ها" (players) have no backend yet and show their reference cards disabled.
+// (custom team from a photo) is a real 1000-gem server-backed entitlement; player cards remain future content.
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nexora/core/economy/gem_shop.dart';
+import 'package:nexora/core/online/cloud_profile_sync.dart';
+import 'package:nexora/core/online/online_service.dart';
 import 'package:nexora/core/profile/profile_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -330,16 +333,65 @@ class _FsShopState extends State<FsShop> {
               height: 62,
               decoration: BoxDecoration(
                   shape: BoxShape.circle, color: const Color(0xFF555555), border: Border.all(color: const Color(0xFFBDBDBD), width: 3)),
-              child: const Icon(Icons.add_a_photo_rounded, color: Colors.white, size: 28),
+              child: ProfileService.current?.customTeamUrl != null
+                  ? ClipOval(child: Image.network(ProfileService.current!.customTeamUrl!, fit: BoxFit.cover))
+                  : const Icon(Icons.add_a_photo_rounded, color: Colors.white, size: 28),
             ),
             const SizedBox(height: 8),
             Text('با عکس دلخواهت تیم اختصاصی خودت رو بساز',
                 textAlign: TextAlign.center, style: fsText(11.5, weight: FontWeight.w700, height: 1.35)),
             const SizedBox(height: 8),
-            FsPress(enabled: false, onTap: () {}, child: fsLimeButton('ساخت تیم', 120, 27, size: 12)),
+            FsPress(onTap: _customTeam, child: fsLimeButton(
+                GemShop.instance.ownsCustomTeam() && ProfileService.current?.customTeamUrl != null ? 'تغییر عکس' : 'ساخت تیم',
+                120, 27, size: 12)),
           ]),
         ),
       );
+
+  Future<void> _customTeam() async {
+    final OnlineService? online = OnlineService.current;
+    if (online == null || !online.isOnline || online.isGuest || CloudProfileSync.current == null) {
+      if (mounted) luxeToast(context, 'برای ساخت تیم اختصاصی باید آنلاین وارد حساب باشی');
+      return;
+    }
+    final GemShop shop = GemShop.instance;
+    if (!shop.ownsCustomTeam()) {
+      final int price = shop.customTeamPrice;
+      final int balance = ProfileService.current?.gems ?? 0;
+      final bool? buy = await showDialog<bool>(context: context, builder: (BuildContext c) => AlertDialog(
+        backgroundColor: kFsNavy,
+        title: Text('تیم اختصاصی', style: fsText(18, weight: FontWeight.w900)),
+        content: Text('برای فعال‌سازی تیم اختصاصی ${fsFa(price)} جم پرداخت می‌شود. بعد از آن می‌توانی عکس را هر زمان عوض کنی.',
+            textAlign: TextAlign.center, style: fsText(13, color: const Color(0xFFC9CCE6))),
+        actions: <Widget>[
+          TextButton(onPressed: balance >= price ? () => Navigator.pop(c, true) : null, child: Text('خرید ${fsFa(price)} جم')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('انصراف')),
+        ],
+      ));
+      if (buy != true) return;
+      final GemBuyResult result = await shop.buyCustomTeam();
+      if (!mounted) return;
+      if (!result.ok) {
+        luxeToast(context, gemErrorText(result.error, widget.fa));
+        return;
+      }
+    }
+    final XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1024, maxHeight: 1024, imageQuality: 88);
+    if (file == null) return;
+    try {
+      final String n = file.name.toLowerCase();
+      final String ext = n.contains('.') ? n.split('.').last : 'jpg';
+      await CloudProfileSync.current!.uploadCustomTeam(await file.readAsBytes(), extension: ext);
+      if (mounted) {
+        setState(() => _team = kCustomTeamId);
+        widget.onTeam(kCustomTeamId);
+        luxeToast(context, 'تیم اختصاصی ذخیره شد ✓');
+        setState(() {});
+      }
+    } catch (_) {
+      if (mounted) luxeToast(context, 'آپلود عکس تیم ناموفق بود');
+    }
+  }
 
   Widget _emptyCard(String s) => _cardShell(child: Center(child: Text(s, style: fsText(12, color: const Color(0xFFBBBBBB)))));
 
