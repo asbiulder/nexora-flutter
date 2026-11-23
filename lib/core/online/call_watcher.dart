@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../backend/backend_gateway.dart';
+import '../backend/supabase_backend.dart';
 import '../settings/app_settings.dart';
 import '../ui2/luxe.dart';
 import 'online_service.dart';
@@ -48,12 +50,21 @@ class CallWatcher {
     if (caller == uid || !_seen.add(id)) return;
     final String chatId = '${r['chat_id']}';
     final bool video = r['video'] == true;
+    // Fetch the call grant while the phone rings, so "Answer" goes straight to the LiveKit handshake.
+    try {
+      final BackendGateway be = _ref.read(backendProvider);
+      if (be is SupabaseBackend) be.prefetchLiveKitGrant(chatId, video: video);
+    } catch (_) {}
     String who = 'Pilot';
     String title = who;
     try {
-      final Map<String, dynamic>? p = await c.from('profiles').select('username').eq('id', caller).maybeSingle();
+      final List<Map<String, dynamic>?> got = await Future.wait<Map<String, dynamic>?>(<Future<Map<String, dynamic>?>>[
+        c.from('profiles').select('username').eq('id', caller).maybeSingle(),
+        c.from('nx_chats').select('kind, name').eq('id', chatId).maybeSingle(),
+      ]);
+      final Map<String, dynamic>? p = got[0];
       who = '${p?['username'] ?? 'Pilot'}';
-      final Map<String, dynamic>? ch = await c.from('nx_chats').select('kind, name').eq('id', chatId).maybeSingle();
+      final Map<String, dynamic>? ch = got[1];
       title = ch == null || ch['kind'] == 'direct' ? who : '${ch['name']}';
     } catch (_) {}
     final bool fa = _ref.read(settingsProvider).isFa;

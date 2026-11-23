@@ -12,6 +12,7 @@ import '../../core/online/online_config.dart';
 import '../../core/online/online_service.dart';
 import '../../core/online/room_capacity.dart';
 import '../../core/online/room_voice.dart';
+import '../../core/online/voice_connect.dart';
 import '../../core/economy/gem_shop.dart';
 import '../../core/settings/app_settings.dart';
 import '../../core/ui2/anix_kit.dart';
@@ -106,6 +107,7 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
 
   // voice
   lk.Room? _voice;
+  lk.EventsListener<lk.RoomEvent>? _voiceEvents;
   bool _voiceBusy = false, _mic = false, _canPublish = false, _speaker = true;
   String? _voiceError;
 
@@ -132,8 +134,10 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
     final RealtimeChannel? ch = _channel;
     if (ch != null) unawaited(_c?.removeChannel(ch));
     final lk.Room? v = _voice;
+    final lk.EventsListener<lk.RoomEvent>? vev = _voiceEvents;
     _voice = null;
-    if (v != null) unawaited(v.disconnect().then((_) => v.dispose()));
+    _voiceEvents = null;
+    if (v != null) unawaited(disposeVoice(v, vev));
     _input.dispose();
     _scroll.dispose();
     super.dispose();
@@ -151,6 +155,9 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
       await o.gamesHello();
       await c.rpc('nx_room_join', params: <String, dynamic>{'p_room': widget.roomId, 'p_role': 'speaker'});
       _joined = true;
+      // Voice joins instantly later: fetch the 15 min stage grant now, in the background.
+      final BackendGateway be = ref.read(backendProvider);
+      if (be is SupabaseBackend) unawaited(be.liveKitRoomGrant(widget.roomId).then((_) {}, onError: (Object _) {}));
       await Future.wait(<Future<void>>[_refresh(), _loadMessages()]);
       _subscribe();
       _poll = Timer.periodic(const Duration(seconds: 6), (_) => unawaited(_refresh()));
@@ -420,39 +427,57 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
   // ------------------------------------------------------------------ voice
   Future<void> _joinVoice() async {
     final BackendGateway be = ref.read(backendProvider);
-    if (be is! SupabaseBackend || _voiceBusy) return;
+    if (be is! SupabaseBackend || _voiceBusy || _voice != null) return;
     setState(() {
       _voiceBusy = true;
       _voiceError = null;
     });
+    final lk.Room room = lk.Room(roomOptions: voiceRoomOptions());
+    warmVoice(room, OnlineConfig.liveKitUrl);
+    lk.EventsListener<lk.RoomEvent>? ev;
+    bool ok = false;
     try {
       final Map<String, dynamic>? g = await be.liveKitRoomGrant(widget.roomId);
       final String? token = g?['token'] as String?;
       if (token == null) throw StateError('${g?['error'] ?? 'no_token'}');
       _canPublish = g?['canPublish'] == true;
-      final lk.Room room = lk.Room(roomOptions: const lk.RoomOptions(adaptiveStream: true, dynacast: true));
       room.addListener(_onVoice);
-      await room.connect('${g?['url'] ?? OnlineConfig.liveKitUrl}', token);
+      ev = room.createListener();
+      ev
+        ..on<lk.TrackSubscribedEvent>((lk.TrackSubscribedEvent _) async {
+          if (!_speaker) await setRoomIncomingAudio(room, false);
+        })
+        ..on<lk.RoomDisconnectedEvent>((lk.RoomDisconnectedEvent e) {
+          // SDK reconnects already failed: drop the room (no auto-rejoin loop); the user can tap join again.
+          if (identical(_voice, room)) unawaited(_leaveVoice());
+        });
+      // Listeners join muted; speakers publish the mic only when they unmute (unchanged behaviour).
+      await connectVoice(room, '${g?['url'] ?? OnlineConfig.liveKitUrl}', token);
       _voice = room;
-      await setRoomIncomingAudio(room, _speaker);
-      room.createListener().on<lk.TrackSubscribedEvent>((lk.TrackSubscribedEvent _) async {
-        if (!_speaker) await setRoomIncomingAudio(room, false);
-      });
+      _voiceEvents = ev;
+      ok = true;
+      unawaited(setRoomIncomingAudio(room, _speaker));
     } catch (e) {
+      be.invalidateLiveKitGrant('room', widget.roomId);
       _voiceError = '$e';
     } finally {
+      if (!ok) {
+        room.removeListener(_onVoice);
+        unawaited(disposeVoice(room, ev));
+      }
       if (mounted) setState(() => _voiceBusy = false);
     }
   }
 
   Future<void> _leaveVoice() async {
     final lk.Room? v = _voice;
+    final lk.EventsListener<lk.RoomEvent>? ev = _voiceEvents;
     _voice = null;
+    _voiceEvents = null;
     _mic = false;
     if (v != null) {
       v.removeListener(_onVoice);
-      await v.disconnect();
-      await v.dispose();
+      await disposeVoice(v, ev);
     }
     if (mounted) setState(() {});
   }
@@ -487,13 +512,35 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
   /// When the manager changes my role (speaker/listener/muted) the voice grant changes: reconnect with the new one.
   Future<void> _syncVoiceRole() async {
     final RoomMember? me = _myMember;
-    if (_voice == null || me == null) return;
+    if (me != null) {
+      // A role / mute change makes any prefetched grant stale.
+      final String seen = '${me.role}:${me.muted}';
+      if (_seenRole != null && seen != _seenRole) {
+        final BackendGateway be = ref.read(backendProvider);
+        if (be is SupabaseBackend) be.invalidateLiveKitGrant('room', widget.roomId);
+      }
+      _seenRole = seen;
+    }
+    if (_voice == null || me == null || _roleSyncing) return;
     final bool should = me.onStage && !me.muted;
-    if (should != _canPublish) {
+    if (should == _canPublish) return;
+    // At most one re-grant per role change (the 6 s poll must not turn a server/client mismatch into a loop).
+    final String sig = '${me.role}:${me.muted}';
+    if (sig == _lastRoleSync) return;
+    _lastRoleSync = sig;
+    _roleSyncing = true;
+    try {
+      final BackendGateway be = ref.read(backendProvider);
+      if (be is SupabaseBackend) be.invalidateLiveKitGrant('room', widget.roomId);
       await _leaveVoice();
       await _joinVoice();
+    } finally {
+      _roleSyncing = false;
     }
   }
+
+  bool _roleSyncing = false;
+  String? _lastRoleSync, _seenRole;
 
   bool _speaking(String userId) {
     final lk.Room? v = _voice;
