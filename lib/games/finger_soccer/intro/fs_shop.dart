@@ -85,14 +85,23 @@ class FsShop extends StatefulWidget {
 }
 
 /// [label, isNew]
+const List<String> kFsTeamShopCategories = <String>[
+  'clubs', 'nations', 'nx', 'cars', 'sport', 'elite', 'legends',
+];
+
 const List<(String, bool)> kFsShopTabs = <(String, bool)>[
-  ('خودرو', true),
-  ('ورزشی', true),
-  ('انیکس', true),
+  ('باشگاهی', false),
+  ('ملی', false),
+  ('انیکس', false),
+  ('خودرو', false),
+  ('ورزشی', false),
+  ('ویژه', false),
+  ('افسانه', false),
   ('اختصاصی', true),
-  ('بازیکن ها', true),
+  ('بازیکن', false),
   ('زمین', false),
-  ('افکت‌ها', false),
+  ('توپ', false),
+  ('افکت', false),
 ];
 
 class _FsShopState extends State<FsShop> {
@@ -145,61 +154,47 @@ class _FsShopState extends State<FsShop> {
         ),
       );
 
-  Widget _tabBtn(int i, double left) {
+  Widget _tabBtn(int i) {
     final (String label, bool isNew) = kFsShopTabs[i];
     final bool on = _tab == i;
-    return Positioned(
-      left: left,
-      top: 115,
-      width: 44,
-      height: 56,
+    return SizedBox(
+      width: 66,
+      height: 50,
       child: FsPress(
         onTap: () => setState(() => _tab = i),
-        child: Stack(clipBehavior: Clip.none, alignment: Alignment.topCenter, children: <Widget>[
-          Positioned(
-            top: 16,
-            child: FsBevel(
-              w: 44,
-              h: 40,
-              radius: 5,
-              lipH: 4,
-              top: on ? const Color(0xFFC8F53A) : const Color(0xFFF4F4F0),
-              bottom: on ? const Color(0xFF7DCB12) : const Color(0xFFDCDCD6),
-              lip: on ? const Color(0xFF2E8DC9) : const Color(0xFFA77E9E),
-              child: Text(label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  style: fsText(on ? 11.5 : 9.5,
-                      color: on ? const Color(0xFF173A05) : const Color(0xFF505050), weight: FontWeight.w700, height: 1.05)),
-            ),
-          ),
-          if (isNew)
-            Positioned(
-              top: 0,
-              child: Container(
-                width: 31,
-                height: 22,
-                decoration: BoxDecoration(color: const Color(0xFF0E0E0E), borderRadius: BorderRadius.circular(3)),
-                child: Center(child: Text('NEW', style: fsText(10, family: 'ChakraPetch', weight: FontWeight.w700, height: 1))),
-              ),
-            ),
-        ]),
+        child: FsBevel(
+          w: 62,
+          h: 42,
+          radius: 7,
+          lipH: 4,
+          top: on ? const Color(0xFFC8F53A) : const Color(0xFFF4F4F0),
+          bottom: on ? const Color(0xFF7DCB12) : const Color(0xFFDCDCD6),
+          lip: on ? const Color(0xFF2E8DC9) : const Color(0xFFA77E9E),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+            Text(label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: fsText(10.5, color: on ? const Color(0xFF173A05) : const Color(0xFF505050), weight: FontWeight.w800, height: 1)),
+            if (isNew)
+              Text('NEW', style: fsText(8, family: 'ChakraPetch', color: const Color(0xFF25876B), weight: FontWeight.w900, height: 1)),
+          ]),
+        ),
       ),
     );
   }
 
   List<Widget> _cards() {
+    if (_tab < kFsTeamShopCategories.length) {
+      final String cat = kFsTeamShopCategories[_tab];
+      return <Widget>[for (final BmTeam t in kBmTeams.where((BmTeam t) => t.cat == cat)) _teamCard(t)];
+    }
     switch (_tab) {
-      case 0:
-      case 1:
-      case 2:
-        final String cat = <String>['car', 'sport', 'nx'][_tab];
-        return <Widget>[for (final BmTeam t in kBmTeams.where((BmTeam t) => t.cat == cat)) _teamCard(t)];
-      case 3:
+      case 7:
         return <Widget>[_customCard()];
-      case 4:
+      case 8:
         return <Widget>[_emptyCard('بازیکن ها به‌زودی')];
-      case 5:
+      case 9:
         return <Widget>[
           for (int i = 0; i < kBmFieldsRaw.length; i++)
             _artCard(kBmFieldsRaw[i].name, 'assets/games/bermuda/thumbs/${kBmFieldsRaw[i].id}.webp', i == _field, () {
@@ -207,7 +202,7 @@ class _FsShopState extends State<FsShop> {
               _savePref('bm.field', i);
             }, square: true),
         ];
-      default:
+      case 10:
         return <Widget>[
           for (int i = 0; i < NB; i++)
             _artCard(widget.fa ? kBmBallFa[i] : kBmBallN[i], bmBallThumb(i), i == _ball, () {
@@ -215,6 +210,8 @@ class _FsShopState extends State<FsShop> {
               _savePref(kBmBallPref, i);
             }),
         ];
+      default:
+        return <Widget>[_emptyCard('افکت‌ها به‌زودی')];
     }
   }
 
@@ -361,7 +358,19 @@ class _FsShopState extends State<FsShop> {
               style: fsText(22, weight: FontWeight.w700, shadows: const <Shadow>[Shadow(color: Color(0x88000000), blurRadius: 3)])),
         ),
       ),
-      for (int i = 0; i < kFsShopTabs.length; i++) _tabBtn(i, 312 - i * 50.8),
+      Positioned(
+        left: 0,
+        right: 0,
+        top: 112,
+        height: 56,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 7),
+          children: <Widget>[
+            for (int i = 0; i < kFsShopTabs.length; i++) _tabBtn(i),
+          ],
+        ),
+      ),
       Positioned(
         left: 0,
         right: 0,

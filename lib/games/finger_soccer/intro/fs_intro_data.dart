@@ -45,3 +45,11 @@ String fsFa(Object v) => '$v'.replaceAllMapped(RegExp('[0-9]'), (Match m) => _fa
 
 String fsTeamName(BmTeam t, bool fa) => fa ? t.faName : t.name;
 
+/// Localized label for the v10 team catalogue category shown in both the picker and shop.
+String fsTeamCategoryName(String category, bool fa) {
+  for (final List<Object> row in kBmCats) {
+    if (row[0] == category) return row[fa ? 2 : 1] as String;
+  }
+  return category;
+}
+

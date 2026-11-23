@@ -60,6 +60,41 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
+  testWidgets('team categories expose clubs and nations; arrows stay inside the selected category', (WidgetTester tester) async {
+    phone(tester);
+    final List<String> teams = <String>['nx_core', 'nx_cyan'];
+    await tester.pumpWidget(_app(FsTeamSelect(
+      fa: true,
+      teams: teams,
+      players: _players,
+      onReady: (_) {},
+      onShop: () {},
+      onBar: () {},
+      freeze: true,
+      side: 1,
+    )));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('انیکس  ▾'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ملی'));
+    await tester.pumpAndSettle();
+    expect(teams[1], 'argentina');
+    await tester.tap(find.byWidgetPredicate((Widget w) => w is FsArrow && !w.left));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(teams[1], 'brazil');
+
+    await tester.tap(find.text('ملی  ▾'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('باشگاهی'));
+    await tester.pumpAndSettle();
+    expect(teams[1], 'realmadrid');
+    await tester.tap(find.byWidgetPredicate((Widget w) => w is FsArrow && !w.left));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(teams[1], 'barcelona');
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('formation select: tapping the mini pitch picks the formation', (WidgetTester tester) async {
     phone(tester);
     int? done;
