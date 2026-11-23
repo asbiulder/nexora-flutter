@@ -1413,7 +1413,7 @@ class _TalkRoomPageState extends ConsumerState<TalkRoomPage> {
           Wrap(spacing: 6, runSpacing: 6, children: <Widget>[
             for (int i = 0; i < kBmFieldsRaw.length; i++)
               ChoiceChip(
-                label: Text(kBmFieldsRaw[i].name),
+                label: Text(bmFieldName(i, fa)),
                 selected: field == i,
                 onSelected: (_) => unawaited(save(<String, dynamic>{'field': i})),
               ),

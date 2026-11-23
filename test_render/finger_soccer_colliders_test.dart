@@ -70,6 +70,10 @@ void main() {
       c
         ..x = e.Fr - c.r
         ..y = e.Fb - math.max(e.RC, c.r) - 40;
+      // v11: a two-digit score on the art's side displays (left = bottom side 12, right = top side 07), so the
+      // render also shows the live digits sitting in the printed digit cells
+      e.score[0] = 12;
+      e.score[1] = 7;
       final BmImages im = BmImages();
       await tester.runAsync(() async {
         im.field = await _load(f.asset);

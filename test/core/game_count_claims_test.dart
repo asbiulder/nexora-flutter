@@ -101,7 +101,7 @@ void main() {
 
     test('the catalogue the README advertises is the one that ships', () {
       // v10: 122 teams (Clubs 47, Nations 19, NX 12, Cars 24, Sport 12, Elite 6, Legends 2) from the owner's crest
-      // archive, the owner's 3 pitches, 18 balls.
+      // archive, the owner's 5 pitches (v11), 18 balls.
       expect(kBmTeamDefs.length, 122);
       expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'clubs').length, 47);
       expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nations').length, 19);
@@ -110,11 +110,11 @@ void main() {
       expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'sport').length, 12);
       expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'elite').length, 6);
       expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'legends').length, 2);
-      expect(kBmFieldsRaw.length, 3);
+      expect(kBmFieldsRaw.length, 5);
       expect(kBmBallN.length, 18);
       final String readme = File('README.md').readAsStringSync();
       expect(readme, contains('122 teams'));
-      expect(readme, contains('3 pitches'));
+      expect(readme, contains('5 pitches'));
       expect(readme, contains('۱۲۲ تیم'));
     });
   });

@@ -138,6 +138,7 @@ class BmFieldS {
   BmFieldS(BmField f)
       : id = f.id,
         name = f.name,
+        faName = f.faName,
         gs = f.gs,
         W = _r(f.w0),
         H = _r(f.h0),
@@ -153,18 +154,19 @@ class BmFieldS {
         gr = f.gr0 * FS,
         gd = f.gd0 * FS,
         score = f.score,
+        scoreLeft = f.scoreLeft,
         scoreRight = f.scoreRight,
         asset = f.asset ?? 'assets/games/bermuda/fields/${f.id}.webp';
   static double _r(int v) => (v * FS).round().toDouble(); // Math.round on positive values
-  final String id, name, gs;
+  final String id, name, faName, gs;
   final double W, H, L, R, T, B, cs, g;
   /// Corner radius (world), built-in goal geometry (world): post-centre half width, post radius, net depth.
   final double rc, gh, gr, gd;
   final bool builtInGoals;
   final String asset;
-  /// v9: the score displays drawn into the art (null = none) and the right display's colour.
+  /// v9: the score displays drawn into the art (null = none) and their digit colours (v11: both per art).
   final BmScoreDisplay? score;
-  final Color scoreRight;
+  final Color scoreLeft, scoreRight;
   bool get fullArt => score != null;
 }
 

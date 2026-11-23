@@ -197,7 +197,7 @@ class _BermudaViewState extends State<BermudaView>
           // Only an owned (or free) team can be fielded; locked teams fall back to the default free team.
           GemShop.instance.usableTeam(kBmTeams.any((BmTeam x) => x.id == t) ? t : kDefaultTeam),
           (p.getInt('bm.form') ?? 0).clamp(0, kBmForms.length - 1).toInt(),
-          bmFieldIndex(p.getInt('bm.field')),
+          bmFieldIndex(p.getInt(kBmFieldPref)),
           bmBallIndex(p.getInt(kBmBallPref)));
       _cat = math.max(0,
           kBmCats.indexWhere((List<Object> c) => c[0] == bmTeam(my.team).cat));
@@ -212,7 +212,7 @@ class _BermudaViewState extends State<BermudaView>
       final SharedPreferences p = await SharedPreferences.getInstance();
       await p.setString('bm.team', my.team);
       await p.setInt('bm.form', my.form);
-      await p.setInt('bm.field', my.field);
+      await p.setInt(kBmFieldPref, my.field);
       await p.setInt(kBmBallPref, my.ball);
     } catch (_) {}
   }
@@ -1784,7 +1784,7 @@ class _BermudaViewState extends State<BermudaView>
                                                       .withValues(alpha: .88)
                                                 ]),
                                           ),
-                                          child: Text(kBmFields[i].name,
+                                          child: Text(bmFieldName(i, launch.isFa),
                                               textAlign: TextAlign.center,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
