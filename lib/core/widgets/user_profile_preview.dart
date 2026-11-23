@@ -48,8 +48,8 @@ class _UserProfilePreviewSheetState extends State<_UserProfilePreviewSheet> {
   final TextEditingController _msgCtrl = TextEditingController();
   bool _sending = false;
 
-  SupabaseClient? get _client => OnlineService.instance.client;
-  String? get _me => OnlineService.instance.uid;
+  SupabaseClient? get _client => OnlineService.current?.client;
+  String? get _me => OnlineService.current?.uid;
 
   @override
   void initState() {
