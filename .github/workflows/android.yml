@@ -285,6 +285,20 @@ jobs:
             echo '===== End failure details ====='
           fi
 
+      # Surface useful assertion details as check annotations as well as in the Actions log/artifact.
+      # This keeps test failures diagnosable even when the artifact download endpoint is unavailable.
+      - name: Report test failure details
+        if: failure() && env.KEEPALIVE != 'true'
+        run: |
+          if [ -f test.txt ]; then
+            echo '===== Flutter test failure details ====='
+            grep -E 'GOT \{|Expected:|Actual:|Which:|TestFailure|Exception|Some tests failed|\[E\]|Error:' test.txt | tail -n 80 | while IFS= read -r line; do
+              echo "::error title=Flutter test failure::$line"
+              echo "$line"
+            done
+            echo '===== End failure details ====='
+          fi
+
       - name: Build split-per-ABI release APKs
         if: env.KEEPALIVE != 'true'
         run: |

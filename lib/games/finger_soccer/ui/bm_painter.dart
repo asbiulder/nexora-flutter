@@ -411,10 +411,15 @@ class BmPainter extends CustomPainter {
       final int v = e.score[side].clamp(0, 99).toInt();
       final double cx = (side == 0 ? d.leftCx : d.rightCx) * k;
       final Color c = side == 0 ? e.field.scoreLeft : e.field.scoreRight;
-      bmPaintSevenSeg(canvas, Rect.fromCenter(center: Offset(cx, d.tensCy * k), width: d.digitW * k, height: d.digitH * k),
-          v ~/ 10, c);
-      bmPaintSevenSeg(canvas, Rect.fromCenter(center: Offset(cx, d.onesCy * k), width: d.digitW * k, height: d.digitH * k),
-          v % 10, c);
+      final Rect tens = Rect.fromCenter(center: Offset(cx, d.tensCy * k), width: d.digitW * k, height: d.digitH * k);
+      final Rect ones = Rect.fromCenter(center: Offset(cx, d.onesCy * k), width: d.digitW * k, height: d.digitH * k);
+      final Rect panel = tens.expandToInclude(ones).inflate(3.5 * k);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(panel, Radius.circular(3 * k)),
+        Paint()..color = const Color(0xDD07111C),
+      );
+      bmPaintSevenSeg(canvas, tens, v ~/ 10, c);
+      bmPaintSevenSeg(canvas, ones, v % 10, c);
     }
     canvas.restore();
   }

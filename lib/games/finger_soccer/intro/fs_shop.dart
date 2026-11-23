@@ -310,9 +310,18 @@ class _FsShopState extends State<FsShop> {
               child: Text(name, maxLines: 2, style: fsText(12.5, weight: FontWeight.w900, height: 1.2)),
             ),
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(square ? 6 : 60),
-                child: Image.asset(asset, fit: BoxFit.contain, cacheWidth: 240, errorBuilder: (_, __, ___) => const SizedBox()),
+              child: Center(
+                child: square
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.asset(asset, fit: BoxFit.contain, cacheWidth: 240, errorBuilder: (_, __, ___) => const SizedBox()),
+                      )
+                    : AspectRatio(
+                        aspectRatio: 1,
+                        child: ClipOval(
+                          child: Image.asset(asset, fit: BoxFit.contain, cacheWidth: 240, errorBuilder: (_, __, ___) => const SizedBox()),
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 6),

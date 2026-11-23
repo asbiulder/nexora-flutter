@@ -84,21 +84,30 @@ def bands(profile, thr, min_len):
 
 
 def cell_boxes(im, cols, rows):
-    """Tight (x0, y0, x1, y1) of the coin inside every equal cell of the sheet."""
-    a = np.asarray(im.convert('L')).astype(int)
-    m = a > 40
-    H, W = a.shape
+    """Tight coin boxes, segmented against each cell's own corner/background color (not a global luminance cutoff)."""
+    rgb = np.asarray(im.convert('RGB')).astype(np.int16)
+    H, W = rgb.shape[:2]
     boxes = []
     for r in range(rows):
         y0, y1 = r * H // rows, (r + 1) * H // rows
         for c in range(cols):
             x0, x1 = c * W // cols, (c + 1) * W // cols
-            sub = m[y0:y1, x0:x1]
-            ry = bands(sub.mean(axis=1), .18, 30)
-            rx = bands(sub.mean(axis=0), .18, 30)
-            if not ry or not rx:
-                raise SystemExit(f'empty cell r{r} c{c} in {im.filename}')
-            boxes.append((rx[0][0] + x0, ry[0][0] + y0, rx[-1][1] + x0, ry[-1][1] + y0))
+            tile = rgb[y0:y1, x0:x1]
+            h, w = tile.shape[:2]
+            # Four corner patches estimate the sheet background; per-cell contrast also works on white, grey or
+            # transparent-looking black atlases, unlike luminance thresholds which can select the whole cell.
+            patch = max(3, min(h, w) // 24)
+            corners = np.concatenate((tile[:patch, :patch].reshape(-1, 3), tile[:patch, -patch:].reshape(-1, 3),
+                                      tile[-patch:, :patch].reshape(-1, 3), tile[-patch:, -patch:].reshape(-1, 3)))
+            bg = np.median(corners, axis=0)
+            delta = np.max(np.abs(tile - bg), axis=2)
+            mask = delta > 26
+            # Ignore isolated sparkle/noise; require a small but definite fraction of a row/column to be foreground.
+            row = (mask.mean(axis=1) > .035).nonzero()[0]
+            col = (mask.mean(axis=0) > .035).nonzero()[0]
+            if len(row) < 2 or len(col) < 2:
+                raise SystemExit(f'cannot segment coin in cell r{r} c{c} of {im.filename}')
+            boxes.append((int(col[0]) + x0, int(row[0]) + y0, int(col[-1]) + x0, int(row[-1]) + y0))
     return boxes
 
 

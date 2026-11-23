@@ -184,12 +184,28 @@ def ball_from(img, box=None, size=192):
     if box: img = img.crop(box)
     rgba = img.convert('RGBA')
     a = np.asarray(rgba).astype(int)
-    lum = a[..., :3].max(axis=2)
-    m = (a[..., 3] > 40) & (lum > 30)
-    ry = bands(m.mean(axis=1), .25, 10)
-    rx = bands(m.mean(axis=0), .25, 10)
-    y0, y1 = ry[0][0], ry[-1][1]
-    x0, x1 = rx[0][0], rx[-1][1]
+    # Segment against the tile's actual corner background. A luminance-only mask includes the whole tile
+    # on light atlases, while a fixed threshold can shave dark panels off coloured balls.
+    rgb = a[..., :3]
+    h, w = rgb.shape[:2]
+    patch = max(2, min(h, w) // 20)
+    corners = np.concatenate((rgb[:patch, :patch].reshape(-1, 3), rgb[:patch, -patch:].reshape(-1, 3),
+                              rgb[-patch:, :patch].reshape(-1, 3), rgb[-patch:, -patch:].reshape(-1, 3)))
+    bg = np.median(corners, axis=0)
+    delta = np.max(np.abs(rgb.astype(int) - bg.astype(int)), axis=2)
+    m = (a[..., 3] > 40) & (delta > 24)
+    # Occupancy-based extents ignore isolated highlights but retain dark artwork connected to the ball body.
+    ry = np.flatnonzero(m.mean(axis=1) > .03)
+    rx = np.flatnonzero(m.mean(axis=0) > .03)
+    if len(ry) < 2 or len(rx) < 2:
+        lum = a[..., :3].max(axis=2)
+        m = (a[..., 3] > 40) & (lum > 30)
+        ry = np.flatnonzero(m.mean(axis=1) > .12)
+        rx = np.flatnonzero(m.mean(axis=0) > .12)
+    if len(ry) < 2 or len(rx) < 2:
+        raise ValueError('cannot detect ball bounds')
+    y0, y1 = int(ry[0]), int(ry[-1])
+    x0, x1 = int(rx[0]), int(rx[-1])
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     rad = min(x1 - x0, y1 - y0) / 2 * .985
     return circle_cut(rgba, cx, cy, rad, size, size / 2 - .5)
