@@ -4,8 +4,18 @@ import 'dart:ui' show Color;
 
 class BmField {
   const BmField(this.id, this.name, this.w0, this.h0, this.l0, this.r0, this.t0, this.b0, this.cs0, this.g0, this.gs,
-      {this.rc = 70, this.gh0 = 0, this.gr0 = 0, this.gd0 = 0, this.asset, this.score, this.scoreRight = const Color(0xFFFF3B30)});
+      {this.rc = 70,
+      this.gh0 = 0,
+      this.gr0 = 0,
+      this.gd0 = 0,
+      this.asset,
+      this.score,
+      this.faName = '',
+      this.scoreLeft = kBmScoreLeft,
+      this.scoreRight = const Color(0xFFFF3B30)});
   final String id, name, gs;
+  /// Persian name (shown when the UI is in Persian; empty = use [name]).
+  final String faName;
   /// Raw image-space values (before FS scale). l0/r0/t0/b0 = the drawn boundary the ball bounces on (measured on the
   /// art: the touch line, or the barrier's inner edge where the art has no line in front of it).
   final int w0, h0, l0, r0, t0, b0, cs0, g0;
@@ -19,53 +29,82 @@ class BmField {
   /// v9: the score displays drawn into the art (null = none). The whole art is then fitted to the screen and the live
   /// score is drawn on these displays instead of a HUD scoreboard.
   final BmScoreDisplay? score;
-  /// Colour of the right-hand display (the left one is always blue, the bottom / home side).
-  final Color scoreRight;
+  /// Colours of the live digits on the left-hand (bottom / home side) and right-hand displays, measured on the art's
+  /// printed digits.
+  final Color scoreLeft, scoreRight;
   bool get fullArt => score != null;
   bool get builtInGoals => gs == 'none';
 }
 
-/// v9: geometry of the two side score displays drawn into a pitch art (image px of the art, [artW] wide). Each display
-/// stacks two seven-segment digit cells: tens on top, ones below. The left (blue) display shows the bottom / home
-/// side, the right one the other side.
+/// Geometry of the two side score displays drawn into a pitch art (image px of the art, [artW] wide). Each display
+/// stacks two seven-segment digit cells: tens on top, ones below. The left display shows the bottom / home side, the
+/// right one the other side. v11: measured per art (the five owner arts place and size their displays differently).
 class BmScoreDisplay {
   const BmScoreDisplay(this.artW, this.leftCx, this.rightCx, this.tensCy, this.onesCy, this.digitW, this.digitH);
   final double artW, leftCx, rightCx, tensCy, onesCy, digitW, digitH;
 }
 
-/// The displays are at the same place on all three v9 arts (measured by tool/build_fs_v9_assets.py, DIGIT_BOXES).
-const BmScoreDisplay kBmV9Score = BmScoreDisplay(941, 42.5, 897.5, 725, 786, 30, 40);
+/// Default colour of the left (bottom / home side) display's digits.
 const Color kBmScoreLeft = Color(0xFF2F86FF);
-/// Image px -> raw field units for the v9 arts.
-const double kBmV9ArtScale = .85;
 
 const List<BmField> kBmFieldsRaw = <BmField>[
-  // v9 (owner request 2026-11-22): the ONLY pitches are the owner's three Sockerbox arts (941 x 1672, goals, nets and
-  // the two side score displays drawn in). Every value is measured on the art by tool/build_fs_v9_assets.py, in image
-  // px times kBmV9ArtScale (.85, so the playing width is ~880 world units like the reference proportions): the rails
-  // are the inner edge of the coloured frame line, the posts are the white tubes where they cross the goal line
-  // (centre 132.5 px either side of the centre line, tube radius 6.5 px) and the net depth is the shallower of the two
-  // drawn goals (the engine keeps both goals the same depth so mirrored online phones stay deterministic).
-  BmField('nx_neon_arena', 'Neon Arena', 800, 1421, 71, 727, 90, 1286, 688, 0, 'none',
-      rc: 22, gh0: 112.62, gr0: 5.52, gd0: 68.00, score: kBmV9Score, scoreRight: Color(0xFFFF3B30)),
-  BmField('nx_gold_checker', 'Gold Checker', 800, 1421, 70, 730, 88, 1329, 708, 0, 'none',
-      rc: 22, gh0: 112.62, gr0: 5.52, gd0: 83.30, score: kBmV9Score, scoreRight: Color(0xFFFFA21F)),
-  BmField('nx_gold_stripes', 'Gold Stripes', 800, 1421, 70, 730, 88, 1329, 708, 0, 'none',
-      rc: 22, gh0: 112.62, gr0: 5.52, gd0: 83.30, score: kBmV9Score, scoreRight: Color(0xFFFFA21F)),
+  // v11 (owner request 2026-11-23): the ONLY pitches are the owner's five arts (1086 x 1448 px each, goals, nets and
+  // the two side score displays drawn in), in the owner's order. Every value is measured on the art by
+  // tool/build_fs_v11_assets.py (run it to reprint these rows): one raw unit = 1086 / 810 art px (w0 810, so the
+  // playing width stays ~880 world units like v9: discs ~0.12 of it). The rails (l0 r0 t0 b0) are the inner edge of
+  // each art's frame rail, offset by the engine's 4 world units so BmEngine.geo()'s walls land exactly on the drawn
+  // line; cs0 is the halfway line (the builder remaps the field rows so the drawn line sits halfway between the goal
+  // lines); rc is the frame's corner radius (world units, median of the four drawn corners; royal's corners are
+  // square, the arcs inside are markings); gh0 / gr0 are the white post tubes (centre offset from the centre line,
+  // tube radius, averaged over the four posts because the engine keeps them symmetric); gd0 is the net depth to the
+  // back bar, the shallower of the two drawn goals (both goals keep the same depth so mirrored online phones stay
+  // deterministic). score = the two printed digit cells of each side display, scoreLeft / scoreRight their colours.
+  BmField('nx_checker_silver', 'Silver Checker', 810, 1080, 79, 731, 54, 1023, 538, 0, 'none',
+      rc: 30.9, gh0: 105.24, gr0: 5.78, gd0: 38.79, faName: 'شطرنجی نقره‌ای',
+      score: BmScoreDisplay(1086, 55.5, 1031.0, 701.75, 763.0, 40.5, 41.5),
+      scoreLeft: Color(0xFF036DFF), scoreRight: Color(0xFFFEFDFF)),
+  BmField('nx_rings_green', 'Green Rings', 810, 1080, 73, 738, 68, 1015, 542, 0, 'none',
+      rc: 27.7, gh0: 109.0, gr0: 4.47, gd0: 52.22, faName: 'حلقه‌های سبز',
+      score: BmScoreDisplay(1086, 54.5, 1030.5, 700.5, 760.75, 33.0, 37.0),
+      scoreLeft: Color(0xFF2AFF15), scoreRight: Color(0xFF25FF13)),
+  BmField('nx_street', 'Street', 810, 1080, 82, 731, 60, 1017, 538, 0, 'none',
+      rc: 24.6, gh0: 111.91, gr0: 4.47, gd0: 47.0, faName: 'خیابانی',
+      score: BmScoreDisplay(1086, 55.25, 1033.5, 681.25, 743.0, 35.0, 40.0),
+      scoreLeft: Color(0xFF35FF06), scoreRight: Color(0xFF3BFF02)),
+  BmField('nx_neon_blue', 'Neon Blue', 810, 1080, 78, 734, 64, 1014, 539, 0, 'none',
+      rc: 35.8, gh0: 98.03, gr0: 5.22, gd0: 49.24, faName: 'نئون آبی',
+      score: BmScoreDisplay(1086, 54.5, 1033.5, 685.0, 756.25, 39.0, 52.5),
+      scoreLeft: Color(0xFF0012FF), scoreRight: Color(0xFFFF0505)),
+  BmField('nx_royal_purple', 'Royal Purple', 810, 1080, 78, 733, 67, 1006, 536, 0, 'none',
+      rc: 0.0, gh0: 104.4, gr0: 5.22, gd0: 55.21, faName: 'سلطنتی بنفش',
+      score: BmScoreDisplay(1086, 54.0, 1033.0, 677.0, 743.0, 36.0, 42.0),
+      scoreLeft: Color(0xFF18FF05), scoreRight: Color(0xFF17FF05)),
 ];
 
-/// Ids of pitches removed from the game (v7 and v9). Kept only so tests can check they never come back.
+/// Ids of pitches removed from the game (v7, v9 and v11). Kept only so tests can check they never come back.
 const List<String> kBmRemovedFieldIds = <String>[
   'neon_cup', 'street_cage', 'sockerbox', 'gold_leather', 'neon_grass', 'royal_gold',
   // v9: every older pitch
   'nexora_green', 'forest', 'ice', 'ocean', 'street', 'streetarena', 'lava', 'stadium', 'checker', 'futsal', 'arena',
   'arena2', 'desert', 'grove', 'pool', 'neon', 'royal', 'mahogany', 'leather', 'aqua', 'asphalt', 'court', 'cyberbox',
   'realmadrid', 'psg', 'acmilan', 'barcelona', 'persepolis', 'esteghlal', 'mancity',
+  // v11: the three v9 Sockerbox arts
+  'nx_neon_arena', 'nx_gold_checker', 'nx_gold_stripes',
 ];
 
 /// A saved / synced pitch index -> a valid one: anything missing or out of range (e.g. a removed v6 pitch) is the
-/// default pitch 0 (v9: Neon Arena).
+/// default pitch 0 (v11: Silver Checker).
 int bmFieldIndex(int? i) => (i == null || i < 0 || i >= kBmFieldsRaw.length) ? 0 : i;
+
+/// Local preference key of the chosen pitch. v11: new key, so an index saved for the old v9 pitches (`bm.field`) is
+/// never read as one of the new pitches: every player starts on pitch 0 until they pick again.
+const String kBmFieldPref = 'bm.field.v11';
+
+/// Pitch [i]'s name in the UI language (Persian when [fa] and the pitch has one).
+String bmFieldName(int i, bool fa) {
+  final BmField f = kBmFieldsRaw[bmFieldIndex(i)];
+  return fa && f.faName.isNotEmpty ? f.faName : f.name;
+}
 
 /// Goal art measured on each sprite (alpha): [width, height, left post centre, right post centre, post half-width,
 /// inner edge of the back bar, bottom of the posts] - x values are fractions of the width, y values of the height.
@@ -323,10 +362,12 @@ class BmFa {
 }
 
 const Map<String, BmFa> kBmFA = <String, BmFa>{
-  // v9 pitches: goal firework colours taken from each art's frame / display colours.
-  'nx_neon_arena': BmFa(5, <int>[0xFFFF3B30, 0xFF2F86FF, 0xFFFFFFFF], 0),
-  'nx_gold_checker': BmFa(1, <int>[0xFFFFC21F, 0xFFFFFFFF, 0xFF2F86FF], 0),
-  'nx_gold_stripes': BmFa(1, <int>[0xFFFFC21F, 0xFFFFFFFF, 0xFFFF8A1F], 0),
+  // v11 pitches: firework colours taken from each art's frame / display colours.
+  'nx_checker_silver': BmFa(1, <int>[0xFFE8EEF6, 0xFF2F86FF, 0xFF5BD12A], 0),
+  'nx_rings_green': BmFa(5, <int>[0xFF2AFF15, 0xFFB6FFA0, 0xFFFFFFFF], 0),
+  'nx_street': BmFa(1, <int>[0xFFFFC21F, 0xFF35FF06, 0xFFFFFFFF], 0),
+  'nx_neon_blue': BmFa(5, <int>[0xFF2F86FF, 0xFFFF3B30, 0xFFFFC94A], 0),
+  'nx_royal_purple': BmFa(1, <int>[0xFFB04DFF, 0xFFFFC94A, 0xFFFFFFFF], 0),
   // fallback used by the engine for any id without its own entry
   'stadium': BmFa(1, <int>[0xFFFFD86B, 0xFFFFFFFF, 0xFFFFE9A8], 0),
 };

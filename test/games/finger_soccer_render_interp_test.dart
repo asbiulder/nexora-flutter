@@ -56,12 +56,16 @@ void main() {
   //   different shape and every trajectory moves. bm_engine.dart's physics did not change in v9 (its diff is only the
   //   score-display fields on BmFieldS, `NB` following the ball list and a Color import); the values below are what
   //   the unchanged engine produces on the new pitch 0. Any change here from now on means the simulation changed.
+  // - re-recorded for finger soccer v11 (2026-11-23): pitch 0 is now the owner's Silver Checker art (810x1080 raw,
+  //   rails 79/731/54/1023, its own corner radius, posts and net depth), a shorter pitch than Neon Arena, so every
+  //   trajectory moves again. bm_engine.dart's physics did not change in v11 (its diff is only the faName /
+  //   scoreLeft fields on BmFieldS).
   const Map<int, String> golden = <int, String>{
-    1: '3-0 t1 576.864,1025.178',
-    2: '2-1 t1 638.696,959.000',
-    3: '0-1 t0 149.377,882.273',
-    7: '1-1 t1 392.075,1507.124',
-    42: '3-0 t1 408.251,1652.715',
+    1: '1-0 t1 614.508,256.550',
+    2: '4-0 t0 530.915,173.812',
+    3: '0-1 t0 301.966,642.772',
+    7: '0-3 t0 551.500,732.000',
+    42: '0-2 t0 822.011,903.439',
   };
 
   test('bot vs bot simulation is bit-identical to the recorded goldens', () {

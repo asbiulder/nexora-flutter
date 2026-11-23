@@ -117,7 +117,7 @@ class _FsShopState extends State<FsShop> {
     SharedPreferences.getInstance().then((SharedPreferences p) {
       if (!mounted) return;
       setState(() {
-        _field = bmFieldIndex(p.getInt('bm.field'));
+        _field = bmFieldIndex(p.getInt(kBmFieldPref));
         _ball = bmBallIndex(p.getInt(kBmBallPref));
       });
     }, onError: (Object _) {});
@@ -197,9 +197,9 @@ class _FsShopState extends State<FsShop> {
       case 9:
         return <Widget>[
           for (int i = 0; i < kBmFieldsRaw.length; i++)
-            _artCard(kBmFieldsRaw[i].name, 'assets/games/bermuda/thumbs/${kBmFieldsRaw[i].id}.webp', i == _field, () {
+            _artCard(bmFieldName(i, widget.fa), 'assets/games/bermuda/thumbs/${kBmFieldsRaw[i].id}.webp', i == _field, () {
               setState(() => _field = i);
-              _savePref('bm.field', i);
+              _savePref(kBmFieldPref, i);
             }, square: true),
         ];
       case 10:

@@ -440,3 +440,20 @@ Server: `supabase/games/migrations/20261123100100_g_tournaments_launch.sql` (gam
 Client: join-by-code confirmation, waitlist check-in, disqualify button + match time/Bo editing + runner list in the
 manage page, stale device reminders cancelled (`domain/reminders.dart`), missing notification texts and error codes,
 `BestOf` range 1..15 like the server. Tests: `test/features/tournaments/tournament_launch_test.dart`.
+
+## Finger soccer v11 — the owner's five pitches replace the three v9 Sockerbox pitches (2026-11-23, branch `feat/pitches-v11`)
+- Pitches, in the owner's order: `nx_checker_silver` Silver Checker / شطرنجی نقره‌ای (pitch 0), `nx_rings_green` Green
+  Rings / حلقه‌های سبز, `nx_street` Street / خیابانی, `nx_neon_blue` Neon Blue / نئون آبی, `nx_royal_purple` Royal Purple /
+  سلطنتی بنفش. Built by `tool/build_fs_v11_assets.py` from the 1086 x 1448 uploads (webp q86 + 240 x 320 thumbs).
+- Measured per art (image px): the inner edge of the frame rail on all four sides, the corner radius (royal: square, its
+  arcs are markings), the four post tubes (centre + radius), both nets' back bars, the halfway line and the two printed
+  digit cells of each side display. The engine's walls land on the drawn rail (the +-4 world offset of geo() is folded
+  into l0/r0/t0/b0); goals use the shallower of the two drawn nets (same depth both ends, online mirroring stays
+  deterministic); the field rows between the rails are remapped so the drawn halfway line is the kickoff line.
+- Score displays are per art now (`BmScoreDisplay` per field, `scoreLeft` + `scoreRight` colours measured on the printed
+  digits); the printed "00" is erased from the art. Pitch names show in Persian in the Persian UI (`bmFieldName`).
+- Local pitch preference moved to `bm.field.v11` (an old `bm.field` index falls back to pitch 0). Pitches are not stored
+  in the games database (checked: `nx_physics_contracts` only), so no migration.
+- Tests: v11 pitch group in `test/games/finger_soccer_v9_test.dart` (ids, assets, measured rails / posts / nets / corners,
+  per-art displays, pref fallback); render_interp golden re-recorded for the new pitch 0; collider audit
+  (`test_render/finger_soccer_colliders_test.dart`) now also shows a 12 - 7 score on the displays.

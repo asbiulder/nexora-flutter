@@ -400,7 +400,7 @@ class BmPainter extends CustomPainter {
     canvas.restore();
   }
 
-  /// v9: the live score on the pitch art's two side displays (left / blue = the bottom side, right = the top side),
+  /// v9: the live score on the pitch art's two side displays (left = the bottom side, right = the top side),
   /// two seven-segment digits each, stacked tens over ones like the printed "00" they replace.
   void paintScore(Canvas canvas) {
     final BmScoreDisplay? d = e.field.score;
@@ -410,7 +410,7 @@ class BmPainter extends CustomPainter {
     for (int side = 0; side < 2; side++) {
       final int v = e.score[side].clamp(0, 99).toInt();
       final double cx = (side == 0 ? d.leftCx : d.rightCx) * k;
-      final Color c = side == 0 ? kBmScoreLeft : e.field.scoreRight;
+      final Color c = side == 0 ? e.field.scoreLeft : e.field.scoreRight;
       bmPaintSevenSeg(canvas, Rect.fromCenter(center: Offset(cx, d.tensCy * k), width: d.digitW * k, height: d.digitH * k),
           v ~/ 10, c);
       bmPaintSevenSeg(canvas, Rect.fromCenter(center: Offset(cx, d.onesCy * k), width: d.digitW * k, height: d.digitH * k),

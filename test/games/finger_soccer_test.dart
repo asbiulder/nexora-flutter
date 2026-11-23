@@ -53,13 +53,13 @@ void main() {
     expect(kBmLaunch, closeTo(1.97, 1e-9)); // v6: 10/10 recordings (docs/FS_V6_CALIBRATION.md)
     expect(BmEngine.strikeOf(2) / BmEngine.strikeOf(10), closeTo(.40, .01));
     expect(STEP, 1 / 240);
-    expect(kBmFields.length, 3); // v9: only the owner's three pitch arts
+    expect(kBmFields.length, 5); // v11: only the owner's five pitch arts
     expect(NB, 18); // v9: only the owner's 18 balls
     expect(kBmBallN.length, NB);
     expect(kBmBallFa.length, NB);
-    final BmFieldS f = kBmFields.firstWhere((BmFieldS x) => x.id == 'nx_neon_arena');
-    expect(f.W, (800 * FS).roundToDouble());
-    expect(f.L, (71 * FS).roundToDouble());
+    final BmFieldS f = kBmFields.firstWhere((BmFieldS x) => x.id == 'nx_checker_silver');
+    expect(f.W, (810 * FS).roundToDouble());
+    expect(f.L, (79 * FS).roundToDouble());
     final BmEngine e = BmEngine(_Hooks(), rng: math.Random(1));
     e.startMatch(_cfg());
     expect(e.bodies.length, 11);
@@ -115,7 +115,7 @@ void main() {
     expect(art.center.dx, closeTo(180, 0.01));
     expect(art.center.dy, closeTo((84 + 722) / 2, 0.5));
     // the art keeps its own aspect
-    expect(art.width / art.height, closeTo(941 / 1672, .003));
+    expect(art.width / art.height, closeTo(1086 / 1448, .003));
   });
 
   test('sprites are drawn so their rim is exactly the collider', () {
