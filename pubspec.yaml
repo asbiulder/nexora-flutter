@@ -66,6 +66,8 @@ flutter:
     - assets/games/backgammon/
     - assets/games/billiards/
     - assets/games/carrom/
+    - assets/games/snakes_ladders/
+    - assets/games/shared/
     - assets/games/bermuda/balls/v9/
     - assets/games/bermuda/discs/v9/
     - assets/games/bermuda/discs/v10/
