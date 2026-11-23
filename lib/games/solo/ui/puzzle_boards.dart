@@ -22,18 +22,18 @@ class World2048BoardState extends SoloBoardState<World2048Board> {
   int _moves = 0;
 
   static const List<Color> _tileColours = <Color>[
-    Color(0xFF1C1A14), // empty
-    Color(0xFF2A2620), // 2
-    Color(0xFF3A3428), // 4
-    Color(0xFF6E5626), // 8
-    Color(0xFF8A6A2C), // 16
-    Color(0xFFB08A3A), // 32
-    Color(0xFFCE9F45), // 64
-    Color(0xFFE3B955), // 128
-    Color(0xFFF0CB70), // 256
-    Color(0xFFF6DB92), // 512
-    Color(0xFFF9E7B4), // 1024
-    Color(0xFFFFF2D2), // 2048+
+    Color(0xFF111A2B), // empty
+    Color(0xFF172742), // 2
+    Color(0xFF1D3454), // 4
+    Color(0xFF1D526C), // 8
+    Color(0xFF267B91), // 16
+    Color(0xFF3499A4), // 32
+    Color(0xFF49B9AA), // 64
+    Color(0xFF67D2A0), // 128
+    Color(0xFF95E47D), // 256
+    Color(0xFFD2EA70), // 512
+    Color(0xFFF5D876), // 1024
+    Color(0xFFFFF0BA), // 2048+
   ];
 
   @override
@@ -76,13 +76,14 @@ class World2048BoardState extends SoloBoardState<World2048Board> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, LuxeBoardPainter.gold);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final double board = math.min(size.width - 32, size.height - 220);
     final Rect area = Rect.fromCenter(center: Offset(size.width / 2, size.height * 0.52), width: board, height: board);
     final double gap = board * 0.028;
     final double cell = (board - gap * 5) / 4;
 
-    LuxeBoardPainter.roundedRect(canvas, area.inflate(gap * 0.6), 22, const Color(0xE612110D), border: LuxeBoardPainter.gold.withValues(alpha: 0.35));
+    LuxeBoardPainter.roundedRect(canvas, area.inflate(gap * 0.6), 22, const Color(0xE612110D), border: accent.withValues(alpha: 0.35));
     for (int r = 0; r < 4; r++) {
       for (int c = 0; c < 4; c++) {
         final int v = world.board.cell(r, c);
@@ -187,13 +188,14 @@ class TetrisBoardState extends SoloBoardState<TetrisBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, LuxeBoardPainter.gold);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final double cell = math.min((size.width - 48) / TetrisWorld.cols, (size.height - 210) / TetrisWorld.rows);
     final double w = cell * TetrisWorld.cols;
     final double h = cell * TetrisWorld.rows;
     final Rect well = Rect.fromCenter(center: Offset(size.width / 2, size.height * 0.5 - 8), width: w, height: h);
     LuxeBoardPainter.roundedRect(canvas, well.inflate(6), 14, const Color(0xE612110D),
-        border: LuxeBoardPainter.gold.withValues(alpha: 0.4));
+        border: accent.withValues(alpha: 0.4));
 
     for (int r = 0; r < TetrisWorld.rows; r++) {
       for (int c = 0; c < TetrisWorld.cols; c++) {
@@ -293,7 +295,8 @@ class StackBoardState extends SoloBoardState<StackBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, LuxeBoardPainter.gold);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final double boardW = math.min(size.width * 0.82, 420);
     final double left = (size.width - boardW) / 2;
     final double bottom = size.height - 120;
@@ -303,7 +306,7 @@ class StackBoardState extends SoloBoardState<StackBoard> {
     for (int i = 0; i < world.blocks.length; i++) {
       final StackBlock b = world.blocks[i];
       final Rect r = Rect.fromLTWH(left + b.left * boardW, bottom - blockH * (i + 1), b.width * boardW - 2, blockH - 2);
-      final Color c = i == world.blocks.length - 1 ? LuxeBoardPainter.champagne : LuxeBoardPainter.gold;
+      final Color c = i == world.blocks.length - 1 ? LuxeBoardPainter.champagne : accent;
       LuxeBoardPainter.roundedRect(canvas, r, blockH * 0.22, c.withValues(alpha: 0.9),
           border: const Color(0xFF1A1408).withValues(alpha: 0.4));
     }
@@ -312,7 +315,7 @@ class StackBoardState extends SoloBoardState<StackBoard> {
       final Rect moving = Rect.fromLTWH(left + world.movingLeft * boardW, top - blockH, world.movingWidth * boardW - 2, blockH - 2);
       LuxeBoardPainter.glow(canvas, moving.center, moving.width * 0.6, LuxeBoardPainter.champagne, 0.12);
       LuxeBoardPainter.roundedRect(canvas, moving, blockH * 0.22, LuxeBoardPainter.champagne,
-          border: LuxeBoardPainter.gold.withValues(alpha: 0.7));
+          border: accent.withValues(alpha: 0.7));
     }
 
     LuxeBoardPainter.text(canvas, '${world.floors} FLOORS', Offset(size.width / 2, top - blockH * 2.6),
@@ -339,7 +342,7 @@ class StackBoardState extends SoloBoardState<StackBoard> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(40),
                   gradient: const LinearGradient(colors: <Color>[Color(0xFFF6E7BD), Color(0xFFD9B872)]),
-                  boxShadow: <BoxShadow>[BoxShadow(color: LuxeBoardPainter.gold.withValues(alpha: 0.45), blurRadius: 24)],
+                  boxShadow: <BoxShadow>[BoxShadow(color: accent.withValues(alpha: 0.45), blurRadius: 24)],
                 ),
                 child: const Text('DROP',
                     style: TextStyle(
@@ -401,14 +404,15 @@ class KnifeBoardState extends SoloBoardState<KnifeBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, LuxeBoardPainter.gold);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final Offset c = Offset(size.width / 2, size.height * 0.42);
     final double r = math.min(size.width * 0.36, 150);
 
-    LuxeBoardPainter.glow(canvas, c, r, LuxeBoardPainter.gold, 0.16);
+    LuxeBoardPainter.glow(canvas, c, r, accent, 0.16);
     canvas.drawCircle(c, r, LuxeBoardPainter.fill(const Color(0xFF17140F)));
-    canvas.drawCircle(c, r, LuxeBoardPainter.stroke(LuxeBoardPainter.gold.withValues(alpha: 0.55), 2));
-    canvas.drawCircle(c, r * 0.2, LuxeBoardPainter.fill(LuxeBoardPainter.gold.withValues(alpha: 0.18)));
+    canvas.drawCircle(c, r, LuxeBoardPainter.stroke(accent.withValues(alpha: 0.55), 2));
+    canvas.drawCircle(c, r * 0.2, LuxeBoardPainter.fill(accent.withValues(alpha: 0.18)));
 
     for (final double a in world.stuckAngles) {
       final double worldAngle = a + world.rotation;
@@ -427,7 +431,7 @@ class KnifeBoardState extends SoloBoardState<KnifeBoard> {
     final double y = LuxeBoardPainter.lerp(startY, endY, _fly);
     LuxeBoardPainter.glow(canvas, Offset(c.dx, y), 12, LuxeBoardPainter.champagne, 0.3);
     LuxeBoardPainter.roundedRect(canvas, Rect.fromCenter(center: Offset(c.dx, y - 20), width: 8, height: 62), 4,
-        LuxeBoardPainter.champagne, border: LuxeBoardPainter.gold.withValues(alpha: 0.7));
+        LuxeBoardPainter.champagne, border: accent.withValues(alpha: 0.7));
 
     LuxeBoardPainter.text(canvas, 'STAGE ${world.stage + 1}', Offset(size.width / 2, c.dy - r - 34),
         color: LuxeBoardPainter.champagne, size: 15);

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import '../../core/ui2/luxe.dart';
 import '../arcade_kit/arcade_shell.dart';
 
 // `SoloRun` is declared in arcade_shell.dart and is the shell's controller; re-exported so
@@ -13,7 +12,7 @@ import '../arcade_kit/arcade_skin.dart';
 import '../core/game_contract.dart';
 
 /// ===================== SOLO ARCADE KIT =====================
-/// Shared plumbing for the ten single-player arcade games, in the Station Luxe identity.
+/// Shared plumbing and premium electric-night visual system for the ten solo arcade games.
 ///
 ///  * `SoloDef` declares a game (title, hint, accent, board builder) and
 ///    [buildSoloGame] wraps it in [ArcadeSoloShell] — so the ready card, HUD, medals,
@@ -48,8 +47,8 @@ class SoloDef {
     required this.hintEn,
     required this.control,
     required this.board,
-    this.accent = Luxe.gold,
-    this.accent2 = Luxe.gold2,
+    this.accent = const Color(0xFF43D9FF),
+    this.accent2 = const Color(0xFFEAFBFF),
   });
 
   final String id;
@@ -70,8 +69,8 @@ class SoloDef {
 Widget buildSoloGame(SoloDef def, GameLaunch launch) {
   final ArcadeSkin skin = ArcadeSkin(
     gameId: def.id,
-    bgTop: const Color(0xFF12110D),
-    bgBottom: const Color(0xFF07080C),
+    bgTop: const Color(0xFF101B32),
+    bgBottom: const Color(0xFF050812),
     accent: def.accent,
     accent2: def.accent2,
     glow: def.accent2,
@@ -175,11 +174,11 @@ class _SoloPainter extends CustomPainter {
 class LuxeBoardPainter {
   LuxeBoardPainter._();
 
-  static const Color ink = Luxe.ink;
-  static const Color mute = Luxe.mute;
-  static const Color gold = Luxe.gold;
-  static const Color champagne = Luxe.gold2;
-  static const Color bronze = Luxe.gold3;
+  static const Color ink = Color(0xFFF4F8FF);
+  static const Color mute = Color(0xFFA7B5CC);
+  static const Color gold = Color(0xFF43D9FF); // electric cyan
+  static const Color champagne = Color(0xFFEAFBFF);
+  static const Color bronze = Color(0xFF806CFF); // ultraviolet
 
   static void background(Canvas canvas, Size size, Color accent) {
     final Rect rect = Offset.zero & size;
@@ -187,19 +186,39 @@ class LuxeBoardPainter {
       rect,
       Paint()
         ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[Color(0xFF12110D), Color(0xFF07080C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFF101B32), Color(0xFF080D1A), Color(0xFF050812)],
+          stops: <double>[0, 0.48, 1],
         ).createShader(rect),
     );
-    final Offset c = Offset(size.width * 0.5, size.height * 0.16);
-    final double r = math.max(size.width, size.height) * 0.8;
+    // Quiet technical grid gives every solo title a deliberate arcade-console stage.
+    final double spacing = (size.width / 15).clamp(22, 36).toDouble();
+    final Paint grid = stroke(const Color(0xFF8CB6FF).withValues(alpha: 0.055), 0.7);
+    for (double x = spacing; x < size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
+    }
+    for (double y = spacing; y < size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+    }
+    final Offset c = Offset(size.width * 0.5, size.height * 0.24);
+    final double r = math.max(size.width, size.height) * 0.82;
     canvas.drawCircle(
       c,
       r,
       Paint()
-        ..shader = RadialGradient(colors: <Color>[accent.withValues(alpha: 0.15), Colors.transparent])
+        ..shader = RadialGradient(colors: <Color>[accent.withValues(alpha: 0.18), Colors.transparent])
             .createShader(Rect.fromCircle(center: c, radius: r)),
+    );
+    final Rect vignette = rect;
+    canvas.drawRect(
+      vignette,
+      Paint()
+        ..shader = const RadialGradient(
+          radius: 0.9,
+          colors: <Color>[Colors.transparent, Color(0x99020712)],
+          stops: <double>[0.55, 1],
+        ).createShader(vignette),
     );
   }
 
@@ -254,20 +273,23 @@ class LuxeBoardPainter {
     if (border != null) canvas.drawRRect(rr, stroke(border, borderWidth));
   }
 
-  /// Corner ticks that frame a board the way the Luxe panels are framed.
+  /// Subtle inset frame with short illuminated corner ticks; never competes with gameplay.
   static void frame(Canvas canvas, Size size, Color accent) {
-    final Paint p = stroke(accent.withValues(alpha: 0.30), 1.2);
-    const double m = 12;
-    const double len = 24;
+    const double m = 10;
+    const double len = 20;
     final Rect r = Rect.fromLTWH(m, m, size.width - 2 * m, size.height - 2 * m);
-    canvas.drawLine(r.topLeft, r.topLeft + const Offset(len, 0), p);
-    canvas.drawLine(r.topLeft, r.topLeft + const Offset(0, len), p);
-    canvas.drawLine(r.topRight, r.topRight - const Offset(len, 0), p);
-    canvas.drawLine(r.topRight, r.topRight + const Offset(0, len), p);
-    canvas.drawLine(r.bottomLeft, r.bottomLeft + const Offset(len, 0), p);
-    canvas.drawLine(r.bottomLeft, r.bottomLeft - const Offset(0, len), p);
-    canvas.drawLine(r.bottomRight, r.bottomRight - const Offset(len, 0), p);
-    canvas.drawLine(r.bottomRight, r.bottomRight - const Offset(0, len), p);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(r, const Radius.circular(22)),
+      stroke(const Color(0xFFB8D4FF).withValues(alpha: 0.12), 0.8),
+    );
+    final Paint p = stroke(accent.withValues(alpha: 0.78), 1.6);
+    for (final Offset c in <Offset>[r.topLeft, r.topRight, r.bottomLeft, r.bottomRight]) {
+      final double sx = c.dx == r.left ? 1 : -1;
+      final double sy = c.dy == r.top ? 1 : -1;
+      canvas.drawLine(c, c + Offset(len * sx, 0), p);
+      canvas.drawLine(c, c + Offset(0, len * sy), p);
+      canvas.drawCircle(c + Offset(len * sx * .42, len * sy * .42), 2, fill(accent));
+    }
   }
 
   /// Soft edge vignette that keeps the HUD scrollable over busy playfields.
@@ -300,7 +322,7 @@ class LuxeBoardPainter {
 
 /// Square frame button used by solo boards for arrows / actions.
 class SoloPad extends StatefulWidget {
-  const SoloPad({super.key, required this.icon, required this.onTap, this.onHold, this.onRelease, this.size = 64, this.accent = Luxe.gold});
+  const SoloPad({super.key, required this.icon, required this.onTap, this.onHold, this.onRelease, this.size = 64, this.accent = const Color(0xFF43D9FF)});
   final IconData icon;
   final VoidCallback onTap;
   final VoidCallback? onHold;
@@ -340,18 +362,20 @@ class _SoloPadState extends State<SoloPad> {
               width: widget.size,
               height: widget.size,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[Color(0xD916140F), Color(0xEB07080C)],
+                borderRadius: BorderRadius.circular(widget.size * 0.28),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _down
+                      ? <Color>[widget.accent.withValues(alpha: 0.34), const Color(0xFF111A2D)]
+                      : const <Color>[Color(0xE91B2941), Color(0xF0091121)],
                 ),
-                border: Border.all(color: widget.accent.withValues(alpha: 0.5), width: 1.3),
+                border: Border.all(color: widget.accent.withValues(alpha: _down ? 0.9 : 0.48), width: 1.3),
                 boxShadow: <BoxShadow>[
-                  BoxShadow(color: widget.accent.withValues(alpha: _down ? 0.42 : 0.18), blurRadius: 20, spreadRadius: -4),
+                  BoxShadow(color: widget.accent.withValues(alpha: _down ? 0.38 : 0.12), blurRadius: 18, spreadRadius: -5),
                 ],
               ),
-              child: Icon(widget.icon, color: Luxe.gold2, size: widget.size * 0.46),
+              child: Icon(widget.icon, color: const Color(0xFFEAFBFF), size: widget.size * 0.46),
             ),
           ),
         ),

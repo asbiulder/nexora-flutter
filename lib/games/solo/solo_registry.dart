@@ -19,7 +19,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'با دکمه‌های چپ و راست بین سه مسیر جابه‌جا شو و از موانع رد شو. سرعت مدام بیشتر می‌شود.',
     hintEn: 'Hop between three lanes with the arrows and clear the barriers. The road keeps speeding up.',
     control: SoloControl.dpad,
-    accent: const Color(0xFFD9B872),
+    accent: const Color(0xFF42D9FF),
     board: (BuildContext c, SoloRun r) => RunnerBoard(run: r),
   ),
   SoloDef(
@@ -29,7 +29,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'لمس کن تا بپری و نگه دار تا بالاتر بمانی؛ از تیغه‌ها و بلوک‌های پرنده رد شو.',
     hintEn: 'Tap to jump, hold to fly higher, and thread the spikes and flying blocks.',
     control: SoloControl.tap,
-    accent: const Color(0xFFF6E7BD),
+    accent: const Color(0xFFB8F05A),
     board: (BuildContext c, SoloRun r) => DashBoard(run: r),
   ),
   SoloDef(
@@ -39,7 +39,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'با فلش‌ها یا کشیدن انگشت بین سه لاین جابه‌جا شو و از ترافیک جلو بزن.',
     hintEn: 'Swap lanes with the arrows or a swipe and weave through the traffic.',
     control: SoloControl.dpad,
-    accent: const Color(0xFFC97A6A),
+    accent: const Color(0xFFFF6B75),
     board: (BuildContext c, SoloRun r) => TrafficBoard(run: r),
   ),
   SoloDef(
@@ -49,7 +49,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'انگشتت را روی میوه‌ها بکش و آن‌ها را دو نیم کن. بمب‌ها بازی را تمام می‌کنند.',
     hintEn: 'Drag across the fruit to slice it. Bombs end the run instantly.',
     control: SoloControl.drag,
-    accent: const Color(0xFFB08A3A),
+    accent: const Color(0xFFFFB547),
     board: (BuildContext c, SoloRun r) => FruitBoard(run: r),
   ),
   SoloDef(
@@ -59,7 +59,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'چاقو را در کنده‌ی چرخان پرتاب کن؛ به چاقوهای قبلی نخور. هر ۵ پرتاب سریع‌تر می‌شود.',
     hintEn: 'Throw knives into the spinning log without hitting your own. Every 5 throws it speeds up.',
     control: SoloControl.tap,
-    accent: const Color(0xFFF6E7BD),
+    accent: const Color(0xFF9A82FF),
     board: (BuildContext c, SoloRun r) => KnifeBoard(run: r),
   ),
   SoloDef(
@@ -69,7 +69,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'با کشیدن افقی برج را بچرخان و از شکاف حلقه‌ها پایین بیا؛ حلقه‌های قرمز مرگبارند.',
     hintEn: 'Drag sideways to spin the tower, fall through the ring gaps and avoid the red ones.',
     control: SoloControl.drag,
-    accent: const Color(0xFFC97A6A),
+    accent: const Color(0xFFB282FF),
     board: (BuildContext c, SoloRun r) => HelixBoard(run: r),
   ),
   SoloDef(
@@ -79,7 +79,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'نشانه بگیر و شلیک کن؛ سه حباب هم‌رنگ یا بیشتر می‌ترکد. همه‌ی حباب‌ها را پاک کن.',
     hintEn: 'Aim and fire; three or more matching bubbles pop. Clear the whole wall.',
     control: SoloControl.drag,
-    accent: const Color(0xFFD9B872),
+    accent: const Color(0xFF53CFFF),
     board: (BuildContext c, SoloRun r) => BubbleBoard(run: r),
   ),
   SoloDef(
@@ -89,7 +89,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'بلوک را دقیقاً روی برج رها کن. خانه‌ی کامل جایزه‌ی کمبو دارد؛ خطا برج را باریک می‌کند.',
     hintEn: 'Drop each block precisely on the tower. Perfect drops build a combo; misses widen the gap.',
     control: SoloControl.tap,
-    accent: const Color(0xFFF6E7BD),
+    accent: const Color(0xFF84E1B1),
     board: (BuildContext c, SoloRun r) => StackBoard(run: r),
   ),
   SoloDef(
@@ -99,7 +99,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'قطعه‌ها را بچرخان و بچین؛ هر خط کامل پاک می‌شود. با هر ۱۰ خط سرعت بیشتر می‌شود.',
     hintEn: 'Rotate and place the pieces, clear full lines, and survive the accelerating fall.',
     control: SoloControl.dpad,
-    accent: const Color(0xFFD9B872),
+    accent: const Color(0xFF8D8CFF),
     board: (BuildContext c, SoloRun r) => TetrisBoard(run: r),
   ),
   SoloDef(
@@ -109,7 +109,7 @@ final List<SoloDef> kSoloDefs = <SoloDef>[
     hintFa: 'با فلش‌ها حرکت کن؛ دو خانه‌ی مساوی با هم جمع می‌شوند. عدد ۲۰۴۸ را بساز.',
     hintEn: 'Slide with the arrows; equal tiles merge. Reach 2048.',
     control: SoloControl.dpad,
-    accent: const Color(0xFFF6E7BD),
+    accent: const Color(0xFFFF8FD1),
     board: (BuildContext c, SoloRun r) => World2048Board(run: r),
   ),
 ];

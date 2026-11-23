@@ -6,7 +6,6 @@ import '../core/solo_rules_b.dart';
 import '../core/solo_rules_c.dart';
 import '../solo_kit.dart';
 
-const Color _sand = Color(0xFFD9B872);
 const Color _champagne = Color(0xFFF6E7BD);
 const Color _bronze = Color(0xFF8A6A2C);
 const Color _hazard = Color(0xFFC97A6A);
@@ -41,7 +40,8 @@ class RunnerBoardState extends SoloBoardState<RunnerBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, _sand);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final double horizon = size.height * 0.28;
     final double roadTopW = size.width * 0.28;
     final double roadBottomW = size.width * 1.1;
@@ -59,7 +59,7 @@ class RunnerBoardState extends SoloBoardState<RunnerBoard> {
     // Lane separators + dashes that scroll with the distance.
     for (int i = 1; i < 3; i++) {
       final double t = i / 3;
-      final Paint p = LuxeBoardPainter.stroke(_sand.withValues(alpha: 0.22), 1.4);
+      final Paint p = LuxeBoardPainter.stroke(accent.withValues(alpha: 0.22), 1.4);
       canvas.drawLine(
         Offset(size.width / 2 - roadTopW / 2 + roadTopW * t, horizon),
         Offset(size.width / 2 - roadBottomW / 2 + roadBottomW * t, bottom),
@@ -97,14 +97,14 @@ class RunnerBoardState extends SoloBoardState<RunnerBoard> {
     // Player.
     final double playerY = bottom - 96;
     final double laneX = size.width / 2 - roadBottomW / 2 + roadBottomW * ((_laneVisual + 0.5) / 3);
-    LuxeBoardPainter.glow(canvas, Offset(laneX, playerY), 22, _sand, 0.4);
+    LuxeBoardPainter.glow(canvas, Offset(laneX, playerY), 22, accent, 0.4);
     LuxeBoardPainter.roundedRect(canvas, Rect.fromCenter(center: Offset(laneX, playerY - 30), width: 26, height: 46), 10,
-        _champagne, border: _sand.withValues(alpha: 0.8));
+        _champagne, border: accent.withValues(alpha: 0.8));
     canvas.drawCircle(Offset(laneX, playerY - 62), 11, LuxeBoardPainter.fill(_champagne));
 
     LuxeBoardPainter.text(canvas, '${world.metres} m', Offset(size.width / 2, horizon - 28),
         color: _champagne, size: 26, weight: FontWeight.w900);
-    LuxeBoardPainter.frame(canvas, size, _sand);
+    LuxeBoardPainter.frame(canvas, size, accent);
   }
 
   @override
@@ -160,7 +160,8 @@ class FruitBoardState extends SoloBoardState<FruitBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, _sand);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     for (final FruitSlice f in world.items) {
       final Offset at = Offset(f.x * size.width, f.y * size.height);
       if (f.bomb) {
@@ -168,7 +169,7 @@ class FruitBoardState extends SoloBoardState<FruitBoard> {
             border: _hazard, borderWidth: 2);
         LuxeBoardPainter.text(canvas, '✕', at, color: _hazard, size: 20);
       } else {
-        LuxeBoardPainter.glow(canvas, at, 16, _sand, 0.18);
+        LuxeBoardPainter.glow(canvas, at, 16, accent, 0.18);
         canvas.save();
         canvas.translate(at.dx, at.dy);
         canvas.rotate(f.rotation);
@@ -190,7 +191,7 @@ class FruitBoardState extends SoloBoardState<FruitBoard> {
         color: _champagne, size: 20, weight: FontWeight.w900);
     if (world.combo >= 3) {
       LuxeBoardPainter.text(canvas, 'COMBO ×${world.combo}', Offset(size.width / 2, size.height * 0.24),
-          color: _sand, size: 14);
+          color: accent, size: 14);
     }
   }
 
@@ -236,7 +237,8 @@ class HelixBoardState extends SoloBoardState<HelixBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, _sand);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final Offset c = Offset(size.width / 2, size.height * 0.55);
     final int baseRing = world.ring;
     for (int i = 0; i < 9; i++) {
@@ -250,7 +252,7 @@ class HelixBoardState extends SoloBoardState<HelixBoard> {
       canvas.save();
       canvas.translate(c.dx, y);
       canvas.scale(1, 0.34);
-      final Paint p = LuxeBoardPainter.stroke(red ? _hazard : _sand.withValues(alpha: 0.8), 10 * (1 - u * 0.6));
+      final Paint p = LuxeBoardPainter.stroke(red ? _hazard : accent.withValues(alpha: 0.8), 10 * (1 - u * 0.6));
       canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: r), gap + 0.45, math.pi * 2 - 0.9, false, p);
       canvas.restore();
     }
@@ -258,7 +260,7 @@ class HelixBoardState extends SoloBoardState<HelixBoard> {
     final double ballY = c.dy + 6;
     LuxeBoardPainter.glow(canvas, Offset(c.dx, ballY), 20, _champagne, 0.35);
     canvas.drawCircle(Offset(c.dx, ballY), 15, LuxeBoardPainter.fill(_champagne));
-    canvas.drawCircle(Offset(c.dx, ballY), 15, LuxeBoardPainter.stroke(_sand, 1.6));
+    canvas.drawCircle(Offset(c.dx, ballY), 15, LuxeBoardPainter.stroke(accent, 1.6));
 
     LuxeBoardPainter.text(canvas, 'DEPTH ${world.ring}', Offset(size.width / 2, size.height * 0.2),
         color: _champagne, size: 16);
@@ -289,7 +291,7 @@ class BubbleBoardState extends SoloBoardState<BubbleBoard> {
   double _aim = 0;
   double _cool = 0;
 
-  static const List<Color> _colours = <Color>[_sand, _champagne, Color(0xFF8FB98A), Color(0xFF9A8FC9), _hazard];
+  static const List<Color> _colours = <Color>[Color(0xFF43D9FF), _champagne, Color(0xFF8FB98A), Color(0xFF9A8FC9), _hazard];
 
   @override
   void reset() {
@@ -315,7 +317,8 @@ class BubbleBoardState extends SoloBoardState<BubbleBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, _sand);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final int cols = world.cols;
     final double cell = math.min(size.width / (cols + 1.2), (size.height * 0.55) / 9);
     final double r = cell * 0.46;
@@ -401,14 +404,15 @@ class DashBoardState extends SoloBoardState<DashBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, _sand);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final double ground = size.height * 0.72;
     final double ceil = size.height * 0.24;
     final double h = ground - ceil;
 
     canvas.drawRect(Rect.fromLTRB(0, ground, size.width, size.height), LuxeBoardPainter.fill(const Color(0x0FFFFFFF)));
-    canvas.drawLine(Offset(0, ground), Offset(size.width, ground), LuxeBoardPainter.stroke(_sand.withValues(alpha: 0.6), 2));
-    canvas.drawLine(Offset(0, ceil), Offset(size.width, ceil), LuxeBoardPainter.stroke(_sand.withValues(alpha: 0.25), 1.4));
+    canvas.drawLine(Offset(0, ground), Offset(size.width, ground), LuxeBoardPainter.stroke(accent.withValues(alpha: 0.6), 2));
+    canvas.drawLine(Offset(0, ceil), Offset(size.width, ceil), LuxeBoardPainter.stroke(accent.withValues(alpha: 0.25), 1.4));
 
     for (final DashHazard z in world.hazards) {
       final double x = z.x * size.width;
@@ -428,9 +432,9 @@ class DashBoardState extends SoloBoardState<DashBoard> {
     }
 
     final Offset player = Offset(_playerX * size.width, ground - world.y * h - 14);
-    LuxeBoardPainter.glow(canvas, player, 20, _sand, 0.35);
+    LuxeBoardPainter.glow(canvas, player, 20, accent, 0.35);
     LuxeBoardPainter.roundedRect(canvas, Rect.fromCenter(center: player, width: 28, height: 28), 8, _champagne,
-        border: _sand, borderWidth: 1.6);
+        border: accent, borderWidth: 1.6);
     LuxeBoardPainter.text(canvas, '${world.metres} m', Offset(size.width / 2, ceil - 36),
         color: _champagne, size: 24, weight: FontWeight.w900);
   }
@@ -491,7 +495,8 @@ class TrafficBoardState extends SoloBoardState<TrafficBoard> {
 
   @override
   void paint(Canvas canvas, Size size) {
-    LuxeBoardPainter.background(canvas, size, _sand);
+    final Color accent = widget.run.skin.accent;
+    LuxeBoardPainter.background(canvas, size, accent);
     final double roadLeft = size.width * 0.08;
     final double roadRight = size.width * 0.92;
     final double laneW = (roadRight - roadLeft) / 3;
@@ -518,16 +523,16 @@ class TrafficBoardState extends SoloBoardState<TrafficBoard> {
     }
     final double px = roadLeft + laneW * (_laneX + 0.5);
     final Offset player = Offset(px, size.height * 0.80);
-    LuxeBoardPainter.glow(canvas, player, 30, _sand, 0.35);
+    LuxeBoardPainter.glow(canvas, player, 30, accent, 0.35);
     LuxeBoardPainter.roundedRect(canvas, Rect.fromCenter(center: player, width: laneW * 0.58, height: 86), 16, _champagne,
-        border: _sand, borderWidth: 2);
+        border: accent, borderWidth: 2);
     LuxeBoardPainter.roundedRect(canvas, Rect.fromCenter(center: player - const Offset(0, 18), width: laneW * 0.34, height: 28), 8,
         const Color(0x33000000));
 
     LuxeBoardPainter.text(canvas, '${world.metres} km', Offset(size.width / 2, 70), color: _champagne, size: 22, weight: FontWeight.w900);
     LuxeBoardPainter.text(canvas, '${(world.speed * 90).round()} km/h', Offset(size.width / 2, 96),
-        color: _sand, size: 12);
-    LuxeBoardPainter.frame(canvas, size, _sand);
+        color: accent, size: 12);
+    LuxeBoardPainter.frame(canvas, size, accent);
   }
 
   @override
