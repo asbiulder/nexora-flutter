@@ -38,7 +38,7 @@ const int kBmMatchSeconds = 300;
 /// controls online, the "one minute left" toast) above the gesture bar. The pitch art is fitted between them, so no
 /// control ever sits on the playfield.
 const double kFsTopBarHeight = 52;
-const double kFsBottomStripHeight = 58;
+const double kFsBottomStripHeight = 48;
 const double kBmOnlineTurnSeconds = 10;
 
 /// v6 reference: how long the "one minute left" toast stays up (about 3 s in the recordings).
@@ -464,7 +464,8 @@ class _BermudaViewState extends State<BermudaView>
     final dynamic mine = rp['$seat'];
     final Map<String, dynamic> m = mine is Map ? Map<String, dynamic>.from(mine) : <String, dynamic>{};
     final String t = '${m['team'] ?? ''}';
-    final String team = kBmTeams.any((BmTeam x) => x.id == t) ? t : (seat == 0 ? 'club0' : 'club1');
+    final String team =
+        kBmTeams.any((BmTeam x) => x.id == t) ? t : (seat == 0 ? kBmStarterTeamId : kBmStarterOpponentId);
     int i(dynamic v, int max) => ((v as num?)?.toInt() ?? 0).clamp(0, max - 1).toInt();
     return _Setup(team, i(m['form'], kBmForms.length), bmFieldIndex((st['field'] as num?)?.toInt()),
         bmBallIndex((st['ball'] as num?)?.toInt()));
@@ -573,10 +574,10 @@ class _BermudaViewState extends State<BermudaView>
     final List<ui.Image?> r = await Future.wait(<Future<ui.Image?>>[
       _img(f.asset),
       f.builtInGoals ? Future<ui.Image?>.value(null) : _img('${_a}goals/${f.gs}.webp'),
-      // v9: every ball is a flat art the 3D roller rolls with the ball's motion (no sprite sheet)
+      // v12: each of the four supplied ball textures is rolled with the ball's real motion (no sprite sheet).
       _img(bmBallArt(c.ball)),
-      _imgNetwork(team0Custom, w: 192).then((ui.Image? x) => x ?? _img(bmTeam(c.teams[e.ct(0)]).asset, w: 192)),
-      _imgNetwork(team1Custom, w: 192).then((ui.Image? x) => x ?? _img(bmTeam(c.teams[e.ct(1)]).asset, w: 192)),
+      _imgNetwork(team0Custom, w: 256).then((ui.Image? x) => x ?? _img(bmTeam(c.teams[e.ct(0)]).asset, w: 256)),
+      _imgNetwork(team1Custom, w: 256).then((ui.Image? x) => x ?? _img(bmTeam(c.teams[e.ct(1)]).asset, w: 256)),
     ]);
     if (!mounted || _disposed) {
       for (final ui.Image? i in r) {
@@ -885,7 +886,7 @@ class _BermudaViewState extends State<BermudaView>
       // our own side: our real pick is in flight (or about to be); only fill the OTHER sides
       if (side == mySeat) continue;
       final _Setup d = (_roomPrefs != null ? _prefSetup(side) : null) ??
-          _Setup(side == 0 ? 'club0' : 'club1', 0, my.field, my.ball);
+          _Setup(side == 0 ? kBmStarterTeamId : kBmStarterOpponentId, 0, my.field, my.ball);
       unawaited(net.send(<String, dynamic>{...d.toJson(), 'for': side, kNetFloat: true}).then((bool ok) {
         if (ok && !_disposed) {
           _inbox?.add(NetMove(seq: -2, seat: side, kind: 'ownSetup', data: d.toJson()));
@@ -920,7 +921,8 @@ class _BermudaViewState extends State<BermudaView>
       key: const ValueKey<String>('online-pick'),
       team: my.team,
       form: my.form,
-      opponentTeam: _setups[opp]?.team ?? _teamPicks[opp] ?? (opp == 0 ? 'club0' : 'club1'),
+      opponentTeam:
+          _setups[opp]?.team ?? _teamPicks[opp] ?? (opp == 0 ? kBmStarterTeamId : kBmStarterOpponentId),
       opponentTeamIn: _teamPicks.containsKey(opp) || _setups.containsKey(opp),
       onTeam: (String t) {
         final NetLink? n = launch.net;

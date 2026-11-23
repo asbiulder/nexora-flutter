@@ -218,7 +218,7 @@ void main() {
   testWidgets('room match (v4): the room pick is the starting pick on the online screens', (WidgetTester tester) async {
     final _FakeNet net = await open(tester, settings: <String, dynamic>{
       'room_prefs': <String, dynamic>{
-        '0': <String, dynamic>{'team': 'nx_core', 'form': 3},
+        '0': <String, dynamic>{'team': 'club32', 'form': 3},
         '1': <String, dynamic>{'team': 'club7', 'form': 5},
       },
     });

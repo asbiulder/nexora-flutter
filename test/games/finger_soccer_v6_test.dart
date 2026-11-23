@@ -29,7 +29,7 @@ class _H implements BmHooks {
 BmEngine _eng({String mode = 'local', bool mirror = false, int seed = 1}) => BmEngine(_H(), rng: math.Random(seed))
   ..startMatch(BmConfig(
       mode: mode,
-      teams: const <String>['nx_frost', 'club0'],
+      teams: const <String>['club0', 'club1'],
       form: const <int>[0, 0],
       names: const <String>['A', 'B'],
       field: 0,
@@ -39,7 +39,7 @@ BmEngine _eng({String mode = 'local', bool mirror = false, int seed = 1}) => BmE
 
 /// Power-10 disc fired at a resting ball (straight up the pitch, nothing else on it); returns the ball's ON-SCREEN
 /// speed averaged over its first 0.2 s, in playing widths per second (the unit of docs/FS_V6_CALIBRATION.md).
-double _ball02(double pull, {String team = 'nx_frost'}) {
+double _ball02(double pull, {String team = 'club0'}) {
   final BmEngine e = BmEngine(_H(), rng: math.Random(1))
     ..startMatch(BmConfig(
         mode: 'local', teams: <String>[team, 'club0'], form: const <int>[0, 0], names: const <String>['A', 'B'], field: 0, ball: 0));
@@ -105,15 +105,18 @@ void main() {
       return math.sqrt(b.vx * b.vx + b.vy * b.vy) / BmEngine.powerShare(b.power);
     }
 
-    expect(launch('nx_core'), closeTo(launch('nx_frost'), 1e-6));
-    expect(launch('nx_cyan'), closeTo(launch('nx_frost'), 1e-6));
+    expect(launch('club12'), closeTo(launch('club0'), 1e-6));
+    expect(launch('nat26'), closeTo(launch('club0'), 1e-6));
   });
 
-  test('v6 classic ball is gone (v9: the owner art is the only ball set); a Classic art ball exists', () {
-    expect(kBmBallN.contains('Classic'), isTrue);
+  test('v12 keeps only the four supplied NX balls and removes the classic catalogue', () {
+    expect(kBmBallN, <String>['NX Lime', 'NX Blue', 'NX Purple', 'NX Red']);
+    expect(kBmBallN.contains('Classic'), isFalse);
     expect(kBmBallFa.length, NB);
-    expect(File(bmBallArt(kBmBallN.indexOf('Classic'))).existsSync(), isTrue);
-    expect(kBmBallPref, 'bm.ball.v9');
+    for (int i = 0; i < NB; i++) {
+      expect(File(bmBallArt(i)).existsSync(), isTrue);
+    }
+    expect(kBmBallPref, 'bm.ball.v12');
   });
 
   test('v6 goal: banner hold, then the pieces glide home (render only) before the kickoff turn', () {
@@ -178,8 +181,8 @@ void main() {
         body: FsScoreTable(
           seconds: 16,
           rows: <FsScoreRow>[
-            FsScoreRow(name: 'ORGIFANS', score: 3, crest: 'assets/games/bermuda/discs/v9/nx_core.webp', winner: true),
-            FsScoreRow(name: 'Arefe', score: 1, crest: 'assets/games/bermuda/discs/v9/nx_core.webp'),
+            FsScoreRow(name: 'ORGIFANS', score: 3, crest: 'assets/games/bermuda/discs/v12/club32.webp', winner: true),
+            FsScoreRow(name: 'Arefe', score: 1, crest: 'assets/games/bermuda/discs/v12/club33.webp'),
           ],
         ),
       ),

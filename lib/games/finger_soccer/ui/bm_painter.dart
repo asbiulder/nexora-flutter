@@ -10,7 +10,7 @@ import '../core/bm_engine.dart';
 import 'bm_ball.dart';
 
 /// Every sprite is drawn so its measured rim lands exactly on the physics radius (see kBmDiscArtFill /
-/// kBmBallArtFill and tool/build_fs_v9_assets.py): what the player sees is what collides.
+/// kBmBallArtFill and tool/build_fs_v12_owner_assets.py): what the player sees is what collides.
 double bmDiscSpriteHalf(BmBody b) => b.r / kBmDiscArtFill;
 double bmBallSpriteHalf(BmBody b) => b.r / kBmBallArtFill;
 
@@ -65,7 +65,10 @@ class BmView {
   /// as one unit instead of moving only the goal artwork.
   static const double topHudClearance = 20;
   static const double matchWidthFraction = 0.94;
-  static const double matchHeightFraction = 0.98; // pitch fills the phone width like the reference
+  static const double matchHeightFraction = 0.98;
+  /// The supplied v12 art has a thick decorative outer frame. A tiny symmetric overscan keeps the playable field
+  /// larger on tall phones while preserving both side score displays and every inner rail.
+  static const double fullArtOverscan = 1.035;
   double s = 1, ox = 0, oy = 0;
   Size size = Size.zero;
 
@@ -83,7 +86,7 @@ class BmView {
       final double top = insetTop;
       final double H = fullH - top - insetBottom;
       if (W < 50 || H < 50) return;
-      s = math.min(W / f.W, H / f.H);
+      s = math.min(W * fullArtOverscan / f.W, H / f.H);
       ox = (W - f.W * s) / 2;
       oy = top + (H - f.H * s) / 2;
       return;

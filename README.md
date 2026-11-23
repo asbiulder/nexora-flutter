@@ -78,8 +78,8 @@ Rooms are built around conversation:
 
 The flagship game: flick discs, bend shots, score.
 
-- **122 teams in seven categories** — **Clubs** (47), **Nations** (19), **NX** (12), **Cars** (24), **Sport** (12), **Elite** (6) and **Legends** (2), cut one disc per coin from the owner's crest archive. Each team carries real **power** and **accuracy** stats that change how hard and how straight it shoots.
-- **5 pitches** (the owner's arts, goals and side score displays drawn in; the live score shows on those displays), 18 balls, 9 formations; colliders are measured on the artwork. The match scene runs on the **Flame** engine.
+- **174 supplied teams in five categories** — **Clubs** (65), **Nations** (40), **Cars** (20), **Luxury** (27) and **Sport** (22), with every unique uploaded coin cleanly cropped onto a transparent 256px canvas. Each team carries real **power** and **accuracy** stats that change how hard and how straight it shoots.
+- **1 pitch** (the owner's NX Sockerbox art with built-in goals and side score displays), **4 balls** (lime, blue, purple and red), 9 formations; colliders are measured on the artwork. The match scene runs on the **Flame** engine.
 - **1v1, 2v2 and 3v3** online: seats alternate sides and turns **rotate between teammates** each time your side gets the ball.
 - Golden goal, timed or first-to-N matches, 10 s online turns, goal announcer and crowd.
 
@@ -87,7 +87,7 @@ The flagship game: flick discs, bend shots, score.
 
 | | Game | Online | Highlights |
 |---|---|---|---|
-| ⚽ | **Finger Soccer** | 2–6 | Cars / Sport / NX teams, 3v3 rotation, 5 pitches, Flame scene |
+| ⚽ | **Finger Soccer** | 2–6 | Club / Nation / Car / Luxury / Sport teams, 3v3 rotation, one NX Sockerbox pitch, Flame scene |
 | 🎯 | **Carrom** | 2 | Queen + cover rule, fouls, deterministic replay |
 | 🎱 | **Billiards** | 2 | Groups, ball-in-hand, cue skins |
 | 🎲 | **Backgammon (تخته‌نرد)** | 2 | Bar, bearing off, gammons & backgammons |
@@ -193,7 +193,7 @@ test/         unit + widget tests (games, rooms, auth rules, assets, ORACLE, tou
 ### ✨ امکانات
 
 - **🎙️ اتاق‌ها:** صحنه‌ی صدا، گفتگوی متنی با پیام‌های زنده و کادر نوشتن پایین صفحه، فهرست اعضا با آواتار گرد. سخنران و شنونده **بی‌محدودیت**. مدیر اتاق بازی را انتخاب می‌کند، بازیکن‌ها را تیک می‌زند؛ هر بازیکن تیم و چیدمانش را می‌چیند و مدیر زمین و توپ را؛ بعد از بازی همه به اتاق برمی‌گردند. ظرفیت دست مدیر است و از قواعد واقعی هر بازی بیرون نمی‌زند: مافیا تا **۱۲ نفر**، جاسوس و مافیا تا **۸ نفر**، بازی‌های تیمی مثل فوتبال انگشتی تا **۶ نفر** (دو طرف برابر)، بازی‌های گروهی تا **۴ نفر** و دوئل‌ها **۲ نفر**.
-- **⚽ فوتبال انگشتی (گل‌کوچیک):** ۱۲۲ تیم در هفت دسته‌ی **باشگاهی** (۴۷)، **ملی** (۱۹)، **انیکس** (۱۲)، **خودرو** (۲۴)، **ورزشی** (۱۲)، **ویژه** (۶) و **افسانه‌ای** (۲) با آمار قدرت و دقت شوت؛ ۵ زمین (امتیاز زنده روی نمایشگرهای کنار زمین)، ۱۸ توپ و ۹ چیدمان؛ صحنه‌ی بازی روی موتور **Flame**؛ بازی **۱ به ۱، ۲ به ۲ و ۳ به ۳** با چرخش نوبت بین هم‌تیمی‌ها.
+- **⚽ فوتبال انگشتی (گل‌کوچیک):** ۱۷۴ تیم ارسالی در پنج دسته‌ی درستِ **باشگاهی** (۶۵)، **ملی** (۴۰)، **خودرو** (۲۰)، **لوکس** (۲۷) و **ورزشی** (۲۲)، با برش کامل و شفاف هر نشان و آمار قدرت و دقت شوت؛ فقط همان یک زمین ساکرباکس NX و چهار توپ لیمویی، آبی، بنفش و قرمزِ ارسالی، به‌همراه ۹ چیدمان؛ صحنه‌ی بازی روی موتور **Flame**؛ بازی **۱ به ۱، ۲ به ۲ و ۳ به ۳** با چرخش نوبت بین هم‌تیمی‌ها.
 - **🎮 ۲۶ بازی:** ۹ بازی اصلی (فوتبال انگشتی، کارم، بیلیارد، تخته‌نرد، لودو، مار و پله، NX Cards، کوییز و مافیا)، ۷ بازی چندنفره‌ی آرکید (مسابقه‌ی کارت، مسابقه‌ی موانع، میدان بمب، بیلیارد ۸ توپ، مینی گلف، نبرد بسکتبال و جاسوس و مافیا) و ۱۰ بازی تک‌نفره‌ی آرکید (دونده‌ی بی‌پایان، جئو دش، مسابقه‌ی ترافیک، میوه‌بُر، چاقو زدن، پرش مارپیچ، حباب‌زن، برج بلوک، تتریس راش و ۲۰۴۸) — آفلاین با ربات یا آنلاین با آدم‌های واقعی.
 - **⚡ بازی سریع:** پیدا کردن حریف با یک لمس؛ جفت‌شدن منصفانه، بدون صندلی‌های «روح»، اتصال دوباره‌ی امن.
 - **🏆 رده‌بندی و تورنمنت:** امتیاز ELO برای هر بازی، رتبه‌ی کلی، جام‌ها، تورنمنت تا ۶۴ نفر با جایزه‌ی سمت سرور.

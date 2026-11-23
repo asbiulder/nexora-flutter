@@ -32,7 +32,8 @@ Player counts below are the live server bounds (`nx_game_bounds`, verified 2026-
 - [ ] Intro: team screen shows the three categories (Cars 24, Sport 12, NX 12); locked teams show their gem price;
       NX Core / NX Pulse / NX Inferno are free.
 - [ ] Formation screen: 9 formations, the pick reaches the match.
-- [ ] Only 5 pitches in the shop / setup (Silver Checker, Green Rings, Street, Neon Blue, Royal Purple; Persian names in Persian UI); 18 balls. Walls, corners, posts and nets match each art; the live score sits in each art's side displays.
+- [ ] Only the supplied NX Sockerbox pitch appears in shop/setup; only the four supplied lime, blue, purple and red balls appear. Inner rails, corners, posts, nets and side score displays line up with the art.
+- [ ] The 174 supplied built-in teams appear once each in the correct Club (65), Nation (40), Car (20), Luxury (27) or Sport (22) category; every circular rim is complete with no neighbouring crop or black square.
 - [ ] Match screen (v9, Flame): top bar has only menu + clock + formation button; no score in the top bar.
 - [ ] The live score is drawn on the art's two side displays: left (blue) = bottom side, right = top side; both
       digits update on every goal, including 10+.

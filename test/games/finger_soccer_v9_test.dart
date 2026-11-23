@@ -1,6 +1,6 @@
-// Finger soccer v9 (owner request 2026-11-22; pitches replaced in v11, 2026-11-23, by the owner's five arts): the
-// owner's pitches are the only pitches (goals, nets and side score displays drawn in; colliders measured on the art), the owner's 18 balls are the only balls, the 48
-// badge-sheet teams replace the teams, the live score is shown on the art's side displays instead of a HUD, the top
+// Finger soccer asset contract (owner request; final v12 set on 2026-11-23): the supplied Sockerbox art is the only
+// pitch, the supplied lime/blue/purple/red balls are the only balls, the badge-sheet teams remain unchanged, the live
+// score is shown on the art's side displays instead of a HUD, the top
 // bar holds only the clock, the menu and the formation button, and the match scene runs on Flame.
 import 'dart:io';
 import 'dart:math' as math;
@@ -157,38 +157,32 @@ void main() {
     });
   });
 
-  group('v11 pitches: only the five owner arts, colliders measured on the art', () {
-    // Measured on the owner's PNGs by tool/build_fs_v11_assets.py (image px of the 1086 x 1448 arts):
-    // rails (inner edge of the frame rail) L / R / T / B, post tube centre offset from the centre line, tube radius,
-    // net depth (the shallower of the two drawn goals), corner radius.
+  group('v12 pitch: only the supplied owner art, colliders measured on that art', () {
+    // Image-pixel positions after mapping the supplied 1992 x 3155 art to the established logical collider geometry:
+    // rails L / R / T / B, post-centre half width, tube radius, net depth and corner radius.
     const Map<String, List<double>> measured = <String, List<double>>{
-      'nx_checker_silver': <double>[110, 977, 76, 1367, 141.14, 7.75, 52, 30.5],
-      'nx_rings_green': <double>[102, 986, 95, 1356, 146.18, 6.0, 70, 27.2],
-      'nx_street': <double>[114, 977, 84, 1359, 150.08, 6.0, 63, 24.2],
-      'nx_neon_blue': <double>[109, 980, 90, 1355, 131.46, 7.0, 66, 35.2],
-      'nx_royal_purple': <double>[108, 979, 94, 1344, 140.01, 7.0, 74, 0],
+      'nx_sockerbox_owner': <double>[188, 1804, 176, 2888, 285, 12.3, 177, 19.4],
     };
 
     test('catalog, ids, names and assets', () {
-      expect(kBmFieldsRaw.map((BmField f) => f.id).toList(),
-          <String>['nx_checker_silver', 'nx_rings_green', 'nx_street', 'nx_neon_blue', 'nx_royal_purple']);
-      expect(kBmFields.length, 5);
+      expect(kBmFieldsRaw.map((BmField f) => f.id).toList(), <String>['nx_sockerbox_owner']);
+      expect(kBmFields.length, 1);
       for (final BmField f in kBmFieldsRaw) {
         expect(f.builtInGoals, isTrue, reason: f.id);
         expect(f.fullArt, isTrue, reason: f.id);
         expect(f.faName, isNotEmpty, reason: f.id);
         expect(f.w0, 810, reason: f.id);
-        expect(f.h0, 1080, reason: f.id); // 1086 x 1448 art aspect
-        expect(File('assets/games/bermuda/fields/${f.id}.webp').existsSync(), isTrue, reason: f.id);
+        expect(f.h0, 1283, reason: f.id); // supplied 1992 x 3155 portrait aspect
+        expect(File(f.asset!).existsSync(), isTrue, reason: f.id);
         expect(File('assets/games/bermuda/thumbs/${f.id}.webp').existsSync(), isTrue, reason: f.id);
         expect(kBmFA.containsKey(f.id), isTrue, reason: f.id);
       }
-      expect(bmFieldName(0, false), 'Silver Checker');
-      expect(bmFieldName(0, true), 'شطرنجی نقره‌ای');
+      expect(bmFieldName(0, false), 'NX Sockerbox');
+      expect(bmFieldName(0, true), 'زمین ساکرباکس NX');
       // nothing else is left in the asset folders
       final List<String> art = Directory('assets/games/bermuda/fields').listSync().map((FileSystemEntity x) => x.path).toList();
-      expect(art.length, 5, reason: art.join(', '));
-      expect(Directory('assets/games/bermuda/thumbs').listSync().length, 5);
+      expect(art.length, 1, reason: art.join(', '));
+      expect(Directory('assets/games/bermuda/thumbs').listSync().length, 1);
       for (final String id in <String>['nx_neon_arena', 'nx_gold_checker', 'nx_gold_stripes']) {
         expect(kBmRemovedFieldIds, contains(id));
       }
@@ -199,16 +193,16 @@ void main() {
       }
     });
 
-    test('a removed (or any invalid) pitch index falls back to pitch 0; v11 preference key', () {
-      expect(kBmFieldPref, 'bm.field.v11');
-      for (final int i in <int>[5, 7, 29, 33, 99, -1]) {
+    test('every removed/invalid pitch index falls back to the sole pitch; v12 preference key', () {
+      expect(kBmFieldPref, 'bm.field.v12');
+      for (final int i in <int>[1, 4, 5, 7, 29, 33, 99, -1]) {
         expect(bmFieldIndex(i), 0, reason: '$i');
       }
       expect(bmFieldIndex(null), 0);
-      expect(bmFieldIndex(4), 4);
+      expect(bmFieldIndex(0), 0);
       final BmEngine e = BmEngine(_H(), rng: math.Random(1))..startMatch(_cfg(field: 17));
       expect(e.setFld, 0);
-      expect(e.field.id, 'nx_checker_silver');
+      expect(e.field.id, 'nx_sockerbox_owner');
     });
 
     test('geometry: walls on the drawn rail, posts on the drawn tubes, nets on the back bar', () {
@@ -217,10 +211,10 @@ void main() {
         final BmFieldS f = e.field;
         final List<double> m = measured[f.id]!;
         // art px -> world
-        final double k = f.W / 1086;
-        expect(f.H / 1448, closeTo(k, .002), reason: f.id);
-        // the playing width is the reference proportion (~880 world units, discs ~0.12 of it)
-        expect(e.Fw, inInclusiveRange(860, 910), reason: f.id);
+        final double k = f.W / 1992;
+        expect(f.H / 3155, closeTo(k, .002), reason: f.id);
+        // the playing width keeps the established finger-soccer proportions.
+        expect(e.Fw, inInclusiveRange(820, 850), reason: f.id);
         expect(2 * PR / e.Fw, closeTo(.12, .01), reason: f.id);
         // the engine's walls are exactly on the drawn rail (within the raw-unit rounding: < 1.5 art px)
         expect(e.Fl / k, closeTo(m[0], 1.5), reason: f.id);
@@ -252,75 +246,76 @@ void main() {
     test('score displays: per art, left shows the bottom side, right the top side, two digits each', () {
       for (final BmFieldS f in kBmFields) {
         final BmScoreDisplay d = f.score!;
-        expect(d.artW, 1086);
+        expect(d.artW, 1992);
         final List<double> m = measured[f.id]!;
         expect(d.leftCx + d.digitW / 2, lessThan(m[0]), reason: f.id); // on the left frame, outside the rails
         expect(d.rightCx - d.digitW / 2, greaterThan(m[1]), reason: f.id); // on the right frame
-        expect(d.leftCx + d.rightCx, closeTo(1086, 3), reason: f.id); // the two displays mirror each other
+        expect(d.leftCx + d.rightCx, closeTo(1992, 3), reason: f.id); // the two displays mirror each other
         expect(d.tensCy, lessThan(d.onesCy));
         expect(d.onesCy - d.tensCy, greaterThan(d.digitH), reason: f.id); // the two cells do not overlap
         expect(f.scoreLeft.toARGB32() >> 24, 0xFF, reason: f.id);
         expect(f.scoreRight.toARGB32() >> 24, 0xFF, reason: f.id);
       }
-      // the displays sit at different places on different arts
-      expect(kBmFields.map((BmFieldS f) => f.score!.tensCy).toSet().length, greaterThan(1));
+      expect(kBmFields.map((BmFieldS f) => f.score!.tensCy).toSet().length, 1);
       expect(kBmSegMasks.length, 10);
       expect(kBmSegMasks[8], 0x7F);
       expect(kBmSegMasks[1], 0x06);
     });
   });
 
-  group('v9 balls: the owner art only', () {
+  group('v12 balls: only the four supplied owner balls', () {
     test('catalog, default and assets', () {
-      expect(kBmBallN.length, 18);
-      expect(kBmBallFa.length, 18);
-      expect(kBmBallSlug.length, 18);
-      expect(NB, 18);
+      expect(kBmBallN, <String>['NX Lime', 'NX Blue', 'NX Purple', 'NX Red']);
+      expect(kBmBallFa.length, 4);
+      expect(kBmBallSlug.length, 4);
+      expect(NB, 4);
       expect(kBmDefaultBall, 0);
       expect(kBmAnimBalls, isEmpty);
       for (int i = 0; i < NB; i++) {
         expect(File(bmBallArt(i)).existsSync(), isTrue, reason: bmBallArt(i));
         expect(bmBallThumb(i), bmBallArt(i));
       }
-      expect(Directory('assets/games/bermuda/balls/v9').listSync().length, 18);
+      expect(Directory('assets/games/bermuda/balls/v12').listSync().length, 4);
       expect(Directory('assets/games/bermuda/balls').listSync().whereType<File>(), isEmpty);
     });
 
-    test('saved / synced ball index: missing or unknown = ball 0; v9 preference key', () {
-      expect(kBmBallPref, 'bm.ball.v9');
+    test('saved / synced ball index: missing or unknown = ball 0; v12 preference key', () {
+      expect(kBmBallPref, 'bm.ball.v12');
       expect(bmBallIndex(null), 0);
-      expect(bmBallIndex(18), 0);
+      expect(bmBallIndex(4), 0);
       expect(bmBallIndex(-1), 0);
-      expect(bmBallIndex(17), 17);
+      expect(bmBallIndex(3), 3);
       final BmEngine e = BmEngine(_H(), rng: math.Random(1))..startMatch(_cfg(ball: 42));
       expect(e.setBall, 0);
     });
   });
 
-  group('v9 teams: the 48 badge-sheet teams (v10 keeps the car and sport sets)', () {
-    test('catalog, categories, art and shop ids', () {
-      // v10 (owner art 2026-11-22) grew the catalogue; the v9 car/sport half is unchanged.
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'cars').length, 24);
-      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'sport').length, 12);
+  group('v12 teams: deduplicated owner sheets with correct categories', () {
+    test('catalog, categories, complete crops and starter teams', () {
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'clubs').length, 65);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'nations').length, 40);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'cars').length, 20);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'luxury').length, 27);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'sport').length, 22);
+      expect(kBmTeamDefs.where((BmTeamDef t) => t.cat == 'custom').length, 1);
       expect(kBmTeams.map((BmTeam t) => t.id).toSet().length, kBmTeamDefs.length);
-      // every car / sport badge is still the v9 art, byte for byte the same folder
-      for (final BmTeam t in kBmTeams.where((BmTeam t) => t.cat == 'cars' || t.cat == 'sport')) {
+      for (final BmTeam t in kBmTeams.where((BmTeam t) => t.cat != 'custom')) {
         expect(File(t.asset).existsSync(), isTrue, reason: t.asset);
-        expect(t.asset.startsWith('assets/games/bermuda/discs/v9/'), isTrue, reason: t.asset);
+        expect(t.asset.startsWith('assets/games/bermuda/discs/v12/'), isTrue, reason: t.asset);
         expect(t.faName.isNotEmpty, isTrue, reason: t.id);
         expect(t.power, inInclusiveRange(1, 10));
         expect(t.accuracy, inInclusiveRange(1, 10));
       }
-      expect(Directory('assets/games/bermuda/discs/v9').listSync().length, 48);
+      expect(Directory('assets/games/bermuda/discs/v12').listSync().length, 174);
       expect(Directory('assets/games/bermuda/discs').listSync().whereType<File>(), isEmpty);
-      // the shop's free teams are the starter NX coins and exist
+      expect(bmTeam('club32').name, 'Persepolis');
+      expect(bmTeam('club33').name, 'Esteghlal');
+      expect(bmTeam('nat26').name, 'Iran');
       for (final String id in kFreeTeams) {
         expect(bmTeam(id).id, id);
-        expect(bmTeam(id).cat, 'nx');
       }
-      expect(bmTeam(kDefaultTeam).name, 'NX Core');
-      // an unknown (removed) team id falls back to the first team
-      expect(bmTeam('spt4').id, kBmTeams.first.id);
+      expect(bmTeam(kDefaultTeam).name, 'Persepolis');
+      expect(bmTeam('removed_team').id, kDefaultTeam);
     });
   });
 
@@ -359,7 +354,7 @@ void main() {
                 body: BermudaView(
                     launch: launch(),
                     autoStart: true,
-                    pick: const FsMatchPick(teams: <String>['nx_core', 'realmadrid'], forms: <int>[0, 0])))));
+                    pick: const FsMatchPick(teams: <String>['club32', 'club0'], forms: <int>[0, 0])))));
 
     Future<BmEngine> start(WidgetTester tester, Map<String, Object> prefs) async {
       // ignore: invalid_use_of_visible_for_testing_member
@@ -395,8 +390,9 @@ void main() {
       final Rect art = g.view.artRect(e);
       expect(bar.bottom, lessThanOrEqualTo(art.top + .5));
       expect(art.bottom, lessThanOrEqualTo(800 - kFsBottomStripHeight + .5));
-      expect(art.left, greaterThanOrEqualTo(-.5));
-      expect(art.right, lessThanOrEqualTo(360.5));
+      expect(art.left, greaterThanOrEqualTo(-7));
+      expect(art.right, lessThanOrEqualTo(367));
+      expect(art.width, greaterThan(360));
       // formation button still opens the picker
       await tester.tap(find.byType(BmChangeFormButton));
       await tester.pump(const Duration(milliseconds: 400));
@@ -413,10 +409,10 @@ void main() {
       await close(tester);
     });
 
-    testWidgets('a pitch picked under the v11 key and a ball under the v9 key are kept', (WidgetTester tester) async {
-      final BmEngine e = await start(tester, <String, Object>{kBmFieldPref: 2, kBmBallPref: 11});
-      expect(e.setFld, 2);
-      expect(e.setBall, 11);
+    testWidgets('the sole v12 pitch and a valid v12 ball preference are kept', (WidgetTester tester) async {
+      final BmEngine e = await start(tester, <String, Object>{kBmFieldPref: 0, kBmBallPref: 3});
+      expect(e.setFld, 0);
+      expect(e.setBall, 3);
       await close(tester);
     });
   });
