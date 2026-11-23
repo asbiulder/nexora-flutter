@@ -94,7 +94,9 @@ class CloudProfileSync {
         }
         _applyAvatarFromProfile(prof);
         if (otherAccount) {
-          _profile.applyCloudBlob(const <String, dynamic>{}, replace: true, serverName: prof?['username'] as String?);
+          final String? metaName = c.auth.currentUser?.userMetadata?['username'] as String?;
+          _profile.applyCloudBlob(const <String, dynamic>{},
+              replace: true, serverName: (prof?['username'] as String?) ?? metaName);
         }
         await _upload();
         if (_profile.username.isNotEmpty && !otherAccount) await _pushName(_profile.username);

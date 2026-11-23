@@ -237,6 +237,9 @@ class ProfileService extends ChangeNotifier {
       if (cd.compareTo(claimedDaily) > 0) claimedDaily = cd;
     }
     if (serverName != null && serverName.isNotEmpty && (replace || username.isEmpty)) username = serverName;
+    if (username.isEmpty && j['username'] is String && (j['username'] as String).isNotEmpty) {
+      username = j['username'] as String;
+    }
     if (avatar != null && avatar.isNotEmpty && replace) avatarCore = avatar;
     (j['equipped'] as Map?)?.forEach((k, v) => equipped.putIfAbsent('$k', () => '$v'));
     inventory.addAll(((j['inv'] as List?) ?? const []).map((e) => '$e'));
