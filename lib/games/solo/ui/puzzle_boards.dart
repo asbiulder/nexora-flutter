@@ -341,8 +341,8 @@ class StackBoardState extends SoloBoardState<StackBoard> {
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(40),
-                  gradient: const LinearGradient(colors: <Color>[Color(0xFFF6E7BD), Color(0xFFD9B872)]),
-                  boxShadow: <BoxShadow>[BoxShadow(color: accent.withValues(alpha: 0.45), blurRadius: 24)],
+                  gradient: LinearGradient(colors: <Color>[widget.run.skin.accent, const Color(0xFFEAFBFF)]),
+                  boxShadow: <BoxShadow>[BoxShadow(color: widget.run.skin.accent.withValues(alpha: 0.42), blurRadius: 24)],
                 ),
                 child: const Text('DROP',
                     style: TextStyle(
