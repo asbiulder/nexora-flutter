@@ -128,19 +128,26 @@ void main() {
     expect(pitchWidth, inInclusiveRange(360 * 0.75, 360 * 0.92));
   });
 
-  test('teams: cars / sport / NX, plausible varied stats, art present', () {
-    expect(kBmCats.map((List<Object> c) => c[0]).toList(), <String>['car', 'sport', 'nx']);
+  test('teams: v10 categories, plausible varied stats, art present', () {
+    const List<String> categories = <String>[
+      'clubs', 'nations', 'nx', 'cars', 'sport', 'elite', 'legends',
+    ];
+    expect(kBmCats.map((List<Object> c) => c[0]).toList(), categories);
     expect(kBmTeams.map((BmTeam t) => t.id).toSet().length, kBmTeams.length);
     for (final BmTeam t in kBmTeams) {
-      expect(<String>['car', 'sport', 'nx'], contains(t.cat));
+      expect(categories, contains(t.cat));
       expect(t.power, inInclusiveRange(1, 10));
       expect(t.accuracy, inInclusiveRange(1, 10));
       expect(File(t.asset).existsSync(), isTrue, reason: t.asset);
     }
-    for (final String c in <String>['car', 'sport', 'nx']) {
-      final Iterable<BmTeam> l = kBmTeams.where((BmTeam t) => t.cat == c);
-      expect(l.length, greaterThanOrEqualTo(12));
-      expect(l.map((BmTeam t) => t.power).toSet().length, greaterThanOrEqualTo(3));
+    for (final String c in categories) {
+      final Iterable<BmTeam> teams = kBmTeams.where((BmTeam t) => t.cat == c);
+      expect(teams, isNotEmpty, reason: c);
+    }
+    for (final String c in <String>['clubs', 'nations', 'nx', 'cars', 'sport']) {
+      final Iterable<BmTeam> teams = kBmTeams.where((BmTeam t) => t.cat == c);
+      expect(teams.length, greaterThanOrEqualTo(12), reason: c);
+      expect(teams.map((BmTeam t) => t.power).toSet().length, greaterThanOrEqualTo(3), reason: c);
     }
     expect(bmTeam('club0').name, 'BMW');
     for (final BmFieldS f in kBmFields) {

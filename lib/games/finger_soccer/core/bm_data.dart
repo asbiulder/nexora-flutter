@@ -47,7 +47,7 @@ const List<BmField> kBmFieldsRaw = <BmField>[
   // (centre 132.5 px either side of the centre line, tube radius 6.5 px) and the net depth is the shallower of the two
   // drawn goals (the engine keeps both goals the same depth so mirrored online phones stay deterministic).
   BmField('nx_neon_arena', 'Neon Arena', 800, 1421, 71, 727, 90, 1286, 688, 0, 'none',
-      rc: 22, gh0: 112.62, gr0: 5.52, gd0: 68.00, score: kBmV9Score, scoreRight: Color(0xFFFF3B30)),
+      rc: 22, gh0: 112.62, gr0: 5.52, gd0: 83.30, score: kBmV9Score, scoreRight: Color(0xFFFF3B30)),
   BmField('nx_gold_checker', 'Gold Checker', 800, 1421, 70, 730, 88, 1329, 708, 0, 'none',
       rc: 22, gh0: 112.62, gr0: 5.52, gd0: 83.30, score: kBmV9Score, scoreRight: Color(0xFFFFA21F)),
   BmField('nx_gold_stripes', 'Gold Stripes', 800, 1421, 70, 730, 88, 1329, 708, 0, 'none',
