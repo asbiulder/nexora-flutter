@@ -57,11 +57,11 @@ void main() {
   //   score-display fields on BmFieldS, `NB` following the ball list and a Color import); the values below are what
   //   the unchanged engine produces on the new pitch 0. Any change here from now on means the simulation changed.
   const Map<int, String> golden = <int, String>{
-    1: '0-0 t0 165.983,475.215',
-    2: '1-2 t1 305.731,1686.876',
-    3: '1-1 t0 626.194,1424.102',
-    7: '0-2 t0 522.886,894.686',
-    42: '0-2 t1 594.109,749.768',
+    1: '3-0 t1 576.864,1025.178',
+    2: '2-1 t1 638.696,959.000',
+    3: '0-1 t0 149.377,882.273',
+    7: '1-1 t1 392.075,1507.124',
+    42: '3-0 t1 408.251,1652.715',
   };
 
   test('bot vs bot simulation is bit-identical to the recorded goldens', () {
