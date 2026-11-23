@@ -15,6 +15,15 @@ void main() {
     return g!;
   }
 
+  test('all 16 multiplayer engines are registered for the full-stack online host', () {
+    const Set<String> expected = <String>{
+      'finger_soccer', 'carrom', 'billiards', 'backgammon', 'ludo', 'snakes_ladders', 'uno', 'quiz', 'mafia',
+      'kart_racing', 'obstacle_race', 'bomb_arena', 'pool8', 'mini_golf', 'basketball_battle', 'spy_mafia',
+    };
+    final Set<String> actual = kGames.where((GameInfo g) => g.supportsOnline).map((GameInfo g) => g.id).toSet();
+    expect(actual, expected);
+  });
+
   test('ludo: every offered seat count builds a board with exactly that many players', () {
     final GameInfo g = info('ludo');
     for (int n = g.onlineMinPlayers; n <= g.onlineMaxPlayers; n++) {

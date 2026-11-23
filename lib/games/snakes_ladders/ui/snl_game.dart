@@ -386,6 +386,7 @@ class _SnlGameState extends State<SnlGame> with TickerProviderStateMixin {
     if (res.extraTurn) {
       await _wait(res.climbed || res.bitten ? 650 : 380);
       if (!mounted || _finished) return;
+      _l.net?.turnSeat = seat;
       setState(() {
         _uiTurn = _engine.turn;
         _status('شش! ${_nameFa(seat)} دوباره می‌ریزد',

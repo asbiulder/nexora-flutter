@@ -20,9 +20,12 @@ class ArcadeRt {
   final Map<int, Map<String, dynamic>> states = <int, Map<String, dynamic>>{};
   final Map<int, DateTime> seen = <int, DateTime>{};
 
-  /// Latest snapshot from the authority (host pattern).
+  /// Latest snapshot from the authority (host pattern). Sequence numbers are scoped to an authority seat: after host
+  /// failover the new authority starts at 1 and must be accepted immediately instead of waiting to catch the old
+  /// host's potentially huge sequence number.
   Map<String, dynamic>? snapshot;
   int snapshotSeq = 0;
+  int snapshotAuthority = -1;
 
   /// Custom live events (emotes, hits, item throws …).
   void Function(int seat, String event, Map<String, dynamic> data)? onEvent;
@@ -46,8 +49,15 @@ class ArcadeRt {
         states[m.seat] = m.data;
         seen[m.seat] = DateTime.now();
       } else if (m.event == 'snap') {
+        // Ignore snapshots from non-authority seats. On authority change reset the sequence epoch so q=1 from the
+        // replacement host is newer than q=900 from the disconnected host.
+        if (m.seat != net.authoritySeat) return;
+        if (snapshotAuthority != m.seat) {
+          snapshotAuthority = m.seat;
+          snapshotSeq = 0;
+        }
         final int q = (m.data['q'] as num?)?.toInt() ?? 0;
-        if (q >= snapshotSeq) {
+        if (q > snapshotSeq) {
           snapshotSeq = q;
           snapshot = m.data;
         }
@@ -81,8 +91,9 @@ class ArcadeRt {
 
   void event(String e, Map<String, dynamic> data) => net.sendLive(e, data);
 
-  /// Logged, ordered message (results). Applied locally by the caller as well.
-  Future<bool> log(Map<String, dynamic> data) => net.send(data);
+  /// Logged result message. Arcade finish/elimination rows are self-contained and may be posted by several phones
+  /// on the same frame, so they use the floating queue: a lost seq is re-posted instead of rebuilding a live race.
+  Future<bool> log(Map<String, dynamic> data) => net.send(<String, dynamic>{...data, kNetFloat: true});
 
   /// Seats still in the match (connected or not, but not forfeited).
   List<int> get activeSeats => <int>[

@@ -432,7 +432,9 @@ class ObstacleRace {
   /// Forfeit / disconnect.
   void eliminate(int seat, double at) {
     final Runner r = runners[seat];
-    if (r.done) return;
+    // A locally simulated runner can already be DNF/falling when its durable `out` row is written. It still has to
+    // become `out` so every phone records the same elimination order; only a real finisher is immutable.
+    if (r.finished || r.phase == RunPhase.out) return;
     r.phase = RunPhase.out;
     r.outAt = at;
     outOrder.add(seat);

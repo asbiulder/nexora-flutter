@@ -46,7 +46,9 @@ class _FakeNet implements NetLink {
   @override
   Set<int> get forfeitedSeats => forfeited;
   @override
-  bool get isAuthority => seat == 0;
+  int get authoritySeat => 0;
+  @override
+  bool get isAuthority => seat == authoritySeat;
   @override
   Listenable get changes => ValueNotifier<int>(0);
   @override

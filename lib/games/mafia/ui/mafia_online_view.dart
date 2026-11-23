@@ -29,6 +29,7 @@ class _MafiaOnlineViewState extends State<MafiaOnlineView> {
   late final NetLink _net;
   NetInbox? _inbox;
   StreamSubscription<NetLiveMessage>? _liveSub;
+  Timer? _idleTimer;
   bool _ready = false; // replay finished
 
   _Stage _stage = _Stage.intro;
@@ -61,12 +62,25 @@ class _MafiaOnlineViewState extends State<MafiaOnlineView> {
     _net.listen(inbox.add,
         onReplayDone: () => inbox.add(const NetMove(seq: -1, seat: -1, kind: 'replayDone', data: <String, dynamic>{})));
     _liveSub = _net.live.listen(_onLive);
+    // A static screen otherwise never rebuilds when the idle deadline is reached. The authority automatically files
+    // neutral choices after 90 s so one connected-but-away phone cannot freeze a 6–12 player match forever.
+    _idleTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || !_ready || _finished) return;
+      if (_net.isAuthority &&
+          _waitingOn().isNotEmpty &&
+          DateTime.now().difference(_stageSince).inSeconds >= 90) {
+        _skipIdle(includeSelf: true);
+      } else {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
     _inbox?.close();
     _liveSub?.cancel();
+    _idleTimer?.cancel();
     _msg.dispose();
     super.dispose();
   }
@@ -202,7 +216,9 @@ class _MafiaOnlineViewState extends State<MafiaOnlineView> {
   }
 
   void _send(String a, {int? t}) {
-    final Map<String, dynamic> d = <String, dynamic>{'a': a, 'd': _e.day, 't': t};
+    // Ready/actions/votes are keyed by (day, seat) and independent of log position; simultaneous players must retry
+    // at the next sequence instead of forcing every Mafia phone through a full replay.
+    final Map<String, dynamic> d = <String, dynamic>{'a': a, 'd': _e.day, 't': t, kNetFloat: true};
     _net.send(d);
     _apply(NetMove(seq: 0, seat: _me, kind: 'move', data: d));
     setState(() {});
@@ -250,16 +266,27 @@ class _MafiaOnlineViewState extends State<MafiaOnlineView> {
     });
   }
 
-  /// Authority: players who are present but idle for too long are skipped (counted as "no choice").
-  void _skipIdle() {
+  /// Authority: players who are present but idle for too long are skipped (counted as "no choice"). Intro uses a
+  /// synthetic ready action; the previous code sent "final" there, which was ignored and left every Mafia lobby
+  /// permanently stuck when one player did not tap Ready.
+  void _skipIdle({bool includeSelf = false}) {
+    if (!_net.isAuthority) return;
     final List<int> waiting = _waitingOn();
+    final String a = switch (_stage) {
+      _Stage.intro => 'ready',
+      _Stage.night => 'night',
+      _Stage.nominate => 'nom',
+      _Stage.finalVote => 'final',
+      _Stage.over => '',
+    };
+    if (a.isEmpty) return;
     for (final int s in waiting) {
-      if (s == _me) continue;
-      final String a = _stage == _Stage.night ? 'night' : (_stage == _Stage.nominate ? 'nom' : 'final');
-      final Map<String, dynamic> d = <String, dynamic>{'a': a, 'd': _e.day, 't': null};
-      _net.send(d, kind: 'timeout', asSeat: s);
+      if (!includeSelf && s == _me) continue;
+      final Map<String, dynamic> d = <String, dynamic>{'a': a, 'd': _e.day, 't': null, kNetFloat: true};
+      unawaited(_net.send(d, kind: 'timeout', asSeat: s));
       _apply(NetMove(seq: 0, seat: s, kind: 'timeout', data: d));
     }
+    _stageSince = DateTime.now();
     setState(() {});
     _checkOver();
   }
@@ -378,7 +405,7 @@ class _MafiaOnlineViewState extends State<MafiaOnlineView> {
     );
     final Widget skip = _net.isAuthority && idleLong && waiting.any((int s) => s != _me)
         ? TextButton.icon(
-            onPressed: _skipIdle,
+            onPressed: () => _skipIdle(),
             icon: const Icon(Icons.fast_forward_rounded),
             label: Text(_t('رد کردن بازیکنان غایب', 'Skip idle players')),
           )

@@ -74,6 +74,7 @@ class _BasketGameState extends ArcadeLoopState<BasketGame> {
   double _endWait = -1;
   bool _done = false;
   bool _sentFin = false;
+  bool _sentEnd = false;
   String _banner = '';
   double _bannerT = 0;
   double _netSway = 0;
@@ -103,12 +104,7 @@ class _BasketGameState extends ArcadeLoopState<BasketGame> {
     final NetLink? n = l.net;
     if (n != null) {
       rt = ArcadeRt(n, hz: 6)
-        ..onMove = (NetMove m) {
-          if (m.data['t'] == 'fin') {
-            _fin[(m.data['s'] as num).toInt()] = BasketLine(
-                (m.data['sc'] as num?)?.toInt() ?? 0, (m.data['m'] as num?)?.toInt() ?? 0, (m.data['sh'] as num?)?.toInt() ?? 0);
-          }
-        }
+        ..onMove = _onMove
         ..start();
     }
   }
@@ -117,6 +113,29 @@ class _BasketGameState extends ArcadeLoopState<BasketGame> {
   void dispose() {
     rt?.dispose();
     super.dispose();
+  }
+
+  void _onMove(NetMove m) {
+    final String type = '${m.data['t']}';
+    if (type == 'fin') {
+      _fin[(m.data['s'] as num).toInt()] = BasketLine(
+          (m.data['sc'] as num?)?.toInt() ?? 0,
+          (m.data['m'] as num?)?.toInt() ?? 0,
+          (m.data['sh'] as num?)?.toInt() ?? 0);
+      return;
+    }
+    if (type != 'end') return;
+    final List<dynamic> lines = m.data['l'] as List<dynamic>? ?? const <dynamic>[];
+    for (int s = 0; s < lines.length && s < seats; s++) {
+      final dynamic raw = lines[s];
+      if (raw is! List || raw.length < 3) continue;
+      _fin[s] = BasketLine(
+        (raw[0] as num?)?.toInt() ?? 0,
+        (raw[1] as num?)?.toInt() ?? 0,
+        (raw[2] as num?)?.toInt() ?? 0,
+      );
+    }
+    _finish();
   }
 
   void _say(String s, [double t = 1.1]) {
@@ -217,8 +236,22 @@ class _BasketGameState extends ArcadeLoopState<BasketGame> {
         _endWait = 0;
       }
       _endWait += dt;
-      final bool all = r == null || r.activeSeats.every((int s) => _fin.containsKey(s));
-      if (all || _endWait > 5) _finish();
+      if (r == null) {
+        _finish();
+      } else {
+        final bool all = r.activeSeats.every((int s) => _fin.containsKey(s));
+        if (r.isHost && !_sentEnd && (all || _endWait > 10)) {
+          _sentEnd = true;
+          // A phone that missed a finish row used to decide from a stale broadcast after five seconds, making the
+          // two result reports disagree. One authority row now freezes every score before anyone reports.
+          final List<List<int>> lines = <List<int>>[
+            for (int s = 0; s < seats; s++)
+              <int>[lineOf(s).score, lineOf(s).made, lineOf(s).shots],
+          ];
+          unawaited(r.log(<String, dynamic>{'t': 'end', 'l': lines}));
+          _finish();
+        }
+      }
     }
     fx.update(dt);
   }
