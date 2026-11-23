@@ -197,36 +197,22 @@ class _Brand extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
         height: 92,
-        child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0x66D9B872), width: 1.2),
-                boxShadow: const <BoxShadow>[
-                  BoxShadow(color: Color(0x40D9B872), blurRadius: 24, spreadRadius: -6),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Image.asset(
-                'assets/games/shared/nx_arena_hero.png',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/branding/anix_logo.webp',
-                  cacheWidth: 300,
-                  errorBuilder: (_, __, ___) => const Text('ANIX',
-                      style: TextStyle(fontSize: 36, color: Luxe.gold, letterSpacing: 8)),
-                ),
-              ),
-            ),
+        child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+          const Text(
+            'YOUR UNIVERSE',
+            style: TextStyle(color: Color(0xFFD9B872), fontSize: 10, letterSpacing: 3.0, fontWeight: FontWeight.w600),
           ),
+          const SizedBox(height: 4),
           ShaderMask(
             shaderCallback: (Rect r) => Luxe.goldGrad.createShader(r),
-            child: const Text('P R O',
-                style: TextStyle(
-                    fontFamily: 'ChakraPetch', fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 4)),
+            child: const Text(
+              'NEXORA.',
+              style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 2.0),
+            ),
+          ),
+          const Text(
+            'A universe beyond play.',
+            style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 1.0),
           ),
         ]),
       );
