@@ -12,6 +12,9 @@ class MatchEnd {
   final String reason;
   final List<int>? scores;
   bool get isForfeit => reason.startsWith('forfeit');
+
+  /// Called off before it began (nx_quick_cancel): no result, no rewards.
+  bool get isAbandoned => reason == 'abandoned';
   int? get forfeitSeat => isForfeit ? int.tryParse(reason.split(':').last) : null;
 }
 
@@ -65,6 +68,31 @@ class _SupabaseBackend implements MatchBackend {
 /// "waiting for the other players" and quick matches drifted apart). The real kind rides in the move as '_k' and is
 /// restored on read, so games see exactly what was sent. Works on both the old and the fixed server function.
 const Set<String> kWireWrapped = <String>{'move', 'timeout'};
+
+/// The seat that acts as the match authority (posts snapshots, files timeouts, forfeits absent players).
+///
+/// It is the lowest non-forfeited seat that is connected. Until Realtime presence has synced at least once
+/// ([presenceKnown] false) every seat is assumed connected: otherwise every phone sees only itself during the first
+/// seconds of a match, each one thinks it is the authority, and they all post snapshots / defaults / timeouts at once.
+@visibleForTesting
+int authoritySeat({
+  required int seatCount,
+  required int mySeat,
+  required Set<int> connected,
+  required Set<int> forfeited,
+  required bool presenceKnown,
+}) {
+  for (int s = 0; s < seatCount; s++) {
+    if (forfeited.contains(s)) continue;
+    if (!presenceKnown || s == mySeat || connected.contains(s)) return s;
+  }
+  return mySeat >= 0 ? mySeat : 0;
+}
+
+/// Seconds a seat may stay disconnected before the authority forfeits it. Tournament games carry
+/// settings.grace_sec; lobby games give the player on turn 40 s and a waiting player 90 s.
+@visibleForTesting
+int absenceLimitSec({required bool onTurn, int? graceSec}) => graceSec ?? (onTurn ? 40 : 90);
 
 /// Supabase implementation of [NetLink].
 ///
@@ -130,6 +158,7 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
   RealtimeChannel? _ch;
   Timer? _poll;
   Timer? _watch;
+  Timer? _heartbeat;
   bool _disposed = false;
 
   final Map<int, NetMove> _rows = <int, NetMove>{};
@@ -169,15 +198,18 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
   @override
   set turnSeat(int? seat) => _turnSeat = seat;
 
+  bool _presenceKnown = false;
+
   @override
-  bool get isAuthority {
-    final List<int> alive = <int>[
-      for (int s = 0; s < seatCount; s++)
-        if (!_forfeited.contains(s) && (_connected.contains(s) || s == mySeat)) s,
-    ];
-    if (alive.isEmpty) return mySeat == 0;
-    return alive.first == mySeat;
-  }
+  bool get isAuthority =>
+      authoritySeat(
+        seatCount: seatCount,
+        mySeat: mySeat,
+        connected: _connected,
+        forfeited: _forfeited,
+        presenceKnown: _presenceKnown || _c == null,
+      ) ==
+      mySeat;
 
   MatchEnd _endFrom(Map<String, dynamic> m) => MatchEnd(
         winners: ((m['winner_seats'] as List<dynamic>?) ?? const <dynamic>[]).map((dynamic e) => (e as num).toInt()).toList(),
@@ -225,6 +257,23 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
     _ch = ch;
     _poll = Timer.periodic(const Duration(seconds: 4), (_) => unawaited(_catchUp()));
     _watch = Timer.periodic(const Duration(seconds: 5), (_) => _watchAbsent());
+    unawaited(_ping());
+    _heartbeat = Timer.periodic(const Duration(seconds: 10), (_) => unawaited(_ping()));
+  }
+
+  bool _pingSupported = true;
+
+  /// Match heartbeat (nx_match_ping, 20261123100000_g_online_multiplayer_v7): the server forfeits another seat or
+  /// treats a player as gone only when this heartbeat has stopped. Silently off on a server without the function.
+  Future<void> _ping() async {
+    final SupabaseClient? c = _c;
+    if (c == null || !_pingSupported || _disposed || isOver) return;
+    try {
+      final dynamic r = await c.rpc('nx_match_ping', params: <String, dynamic>{'p_match': matchId});
+      if (r is Map && r['status'] is String && r['status'] != 'playing' && !_disposed) unawaited(_catchUp());
+    } on PostgrestException catch (e) {
+      if (e.code == 'PGRST202' || e.message.contains('nx_match_ping')) _pingSupported = false;
+    } catch (_) {}
   }
 
   void _syncPresence() {
@@ -238,7 +287,9 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
       }
     }
     now.add(mySeat);
-    if (!setEquals(now, _connected)) {
+    final bool first = !_presenceKnown;
+    _presenceKnown = true;
+    if (first || !setEquals(now, _connected)) {
       _connected
         ..clear()
         ..addAll(now);
@@ -250,14 +301,13 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
   }
 
   void _watchAbsent() {
-    if (isOver || !isAuthority) return;
+    if (isOver || !_presenceKnown || !isAuthority) return;
     final DateTime now = DateTime.now();
     for (int s = 0; s < seatCount; s++) {
       if (s == mySeat || _forfeited.contains(s) || _connected.contains(s)) continue;
       final DateTime since = _absentSince.putIfAbsent(s, () => now);
-      // Tournament games carry settings.grace_sec (60 s reconnect grace); lobby games keep 40 s / 90 s.
-      final int? grace = (settings['grace_sec'] as num?)?.toInt();
-      final int limit = grace ?? (s == _turnSeat ? 40 : 90);
+      final int limit =
+          absenceLimitSec(onTurn: s == _turnSeat, graceSec: (settings['grace_sec'] as num?)?.toInt());
       if (now.difference(since).inSeconds >= limit) {
         _absentSince.remove(s);
         unawaited(_forfeitSeat(s));
@@ -267,7 +317,9 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
 
   Future<void> _forfeitSeat(int seat) async {
     try {
-      await _c?.rpc('nx_forfeit', params: <String, dynamic>{'p_match': matchId, 'p_seat': seat});
+      final dynamic r = await _c?.rpc('nx_forfeit', params: <String, dynamic>{'p_match': matchId, 'p_seat': seat});
+      // The server refuses when it still sees the seat (heartbeat / recent move): restart its absence clock.
+      if (r is Map && r['ok'] == false && r['reason'] == 'active') _absentSince.remove(seat);
       await _catchUp();
     } catch (e) {
       debugPrint('forfeit seat $seat failed: $e');
@@ -361,6 +413,16 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
 
   void _requestResync() {
     _ownSeqs.clear();
+    _floating.clear();
+    // Optimistic rows that never reached the server log must not be replayed into the rebuilt game.
+    _rows.removeWhere((int seq, _) => !_server.contains(seq));
+    _rowUser.removeWhere((int seq, _) => !_server.contains(seq));
+    // ...and the next post must take the seq after the real log, even before the game has rebuilt.
+    int head = 0;
+    while (_server.contains(head + 1)) {
+      head++;
+    }
+    if (_delivered > head) _delivered = head;
     resyncRequests.value = resyncRequests.value + 1;
   }
 
@@ -404,13 +466,10 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
           final dynamic r = await _push(seq, kind, data, hash, seat);
           if (r is Map && r['ok'] == true) {
             ok = true;
-          } else if (r is Map && r['reason'] == 'seq') {
-            // Someone else's move landed first (e.g. a timeout): replay from the log.
-            await _catchUp();
-            if (_rowUser[seq] != _uid) _requestResync();
-            break;
+            _server.add(seq);
           } else {
-            debugPrint('push move $seq refused: $r');
+            // 'seq': someone else's move landed first (e.g. a timeout); 'seat' / 'forfeited' / ...: refused.
+            if (r is! Map || r['reason'] != 'seq') debugPrint('push move $seq refused: $r');
             break;
           }
         } catch (e) {
@@ -418,10 +477,15 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
           await Future<void>.delayed(Duration(milliseconds: 600 * (attempt + 1)));
         }
       }
-      if (!ok && !isOver) {
+      if (!ok && !isOver && !_disposed) {
         await _catchUp();
-        final String? owner = _rowUser[seq];
-        if (owner != _uid) _requestResync();
+        if (_server.contains(seq) && _rowUser[seq] == _uid) {
+          ok = true; // an earlier attempt landed, only its answer was lost
+        } else {
+          // Our optimistic move is not in the log (refused, lost, or its seq went to another phone): every later
+          // seq this phone would post is off by one, so rebuild from the server log.
+          _requestResync();
+        }
       }
       done.complete(ok);
     });
@@ -588,6 +652,7 @@ class SupabaseMatchLink extends ChangeNotifier implements NetLink {
     _listener = null;
     _poll?.cancel();
     _watch?.cancel();
+    _heartbeat?.cancel();
     final RealtimeChannel? ch = _ch;
     if (ch != null) unawaited(_c?.removeChannel(ch));
     unawaited(_live.close());
