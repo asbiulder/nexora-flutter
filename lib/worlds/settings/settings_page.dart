@@ -242,7 +242,7 @@ class SettingsPage extends ConsumerWidget {
               ),
             ]),
           ),
-          _section(context, context.tx('درباره‌ی ANIX', 'About ANIX')),
+          _section(context, context.tx('درباره‌ی ANIX PRO 2', 'About ANIX PRO 2')),
           GlassPanel(
             key: const ValueKey<String>('about_anix'),
             child: Column(children: <Widget>[
