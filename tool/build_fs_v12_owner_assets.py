@@ -132,7 +132,9 @@ def finish(src: Path, crop: str, out: Path, fuzz: str = '0%') -> None:
     subprocess.run([
         'convert', str(src), '-crop', crop, '+repage', '-alpha', 'set', '-bordercolor', 'black', '-border', '1',
         '-fuzz', fuzz, '-fill', 'none', '-draw', 'matte 0,0 floodfill', '-shave', '1x1', '-trim', '+repage',
-        '-resize', '246x246', '-gravity', 'center', '-background', 'none', '-extent', '256x256', '-quality', '94', str(out),
+        '-resize', '246x246', '-gravity', 'center', '-background', 'none', '-extent', '256x256',
+        '(', '-size', '256x256', 'xc:none', '-fill', 'white', '-draw', 'circle 128,128 128,5', ')',
+        '-compose', 'DstIn', '-composite', '-quality', '94', str(out),
     ], check=True)
 
 # Pixel centres measured from the dark-background gaps. They keep every rim complete even where a sheet's content is
