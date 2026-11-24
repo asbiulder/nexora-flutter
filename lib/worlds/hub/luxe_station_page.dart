@@ -64,6 +64,8 @@ class _LuxeStationPageState extends ConsumerState<LuxeStationPage> {
       extendBody: true,
       bottomNavigationBar: Nx2Dock(current: _dockTab(w.k)),
       body: LuxeScene(
+        // Live orbital-station ambient behind each world station (subtle, tinted to the world).
+        stationScene: true,
         artOpacity: 0.3,
         tint: w.color,
         child: SafeArea(

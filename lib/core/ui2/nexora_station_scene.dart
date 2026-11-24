@@ -63,7 +63,7 @@ class _NexoraStationSceneState extends ConsumerState<NexoraStationScene>
   }
 
   List<_Star> _makeStars() {
-    final Random r = Random(20261124);
+    final math.Random r = math.Random(20261124);
     final List<_Star> out = <_Star>[];
     // A fixed seed keeps the field identical on every build (no flicker between frames/rebuilds).
     for (int i = 0; i < 240; i++) {
@@ -111,7 +111,7 @@ class _Star {
 }
 
 class _Ship {
-  _Ship() : angle = Random(7).nextDouble() * math.pi * 2;
+  _Ship() : angle = math.Random(7).nextDouble() * math.pi * 2;
   double angle;
 }
 
