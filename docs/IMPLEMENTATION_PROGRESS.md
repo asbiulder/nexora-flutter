@@ -18,12 +18,12 @@ _Phase tracking for the master execution prompt §20 (Phases 0–7) and §22 del
 
 ## Phase 2 — Entry & global shell ✅
 - [x] Boot/loading (intro takes over, no blank screen); update state via `AppUpdater`.
-- [x] Intro cinematic (`/intro` video + orbital 3-step), skip, replay from Settings (Oracle tour reset), reduced-motion/low-mem fallbacks.
+- [x] Intro cinematic (`/intro` video + orbital 3-step), skip, **completion persisted (`settings.intro_seen`) so it is not replayed on every launch**, replay from Settings, reduced-motion/low-mem fallbacks.
 - [x] Auth & recovery (`/auth`, `/account` email flow, username/email + password, guest offline-only with accurate explanation).
 - [x] Sign-in-required route for guests.
 - [x] Onboarding/identity (language, username, avatar, identity explanation).
 - [x] Global navigation: `Nx2Dock` (Home / Social / Play / Rooms / Profile) + Universe/More menu with all secondary destinations.
-- [x] Hub (Station Luxe orbital station, ring of world cards, real profile/rooms data) + Station directory (`/station/:k`).
+- [x] Hub (Station Luxe, **live native orbital-station scene** — star field/planet/rotating rings/gold-glow core/spacecraft, `NexoraStationScene` with quality+reduced-motion fallbacks — ring of world cards, real profile/rooms data) + Station directory (`/station/:k`, live ambient scene).
 
 ## Phase 3 — Seven worlds ✅
 - [x] Nova Gallery: feed/explore/reels/alerts/profile tabs, composer, story viewer, post detail, follow/report sheets, empty/offline states.
@@ -44,7 +44,7 @@ _Phase tracking for the master execution prompt §20 (Phases 0–7) and §22 del
 ## Phase 5 — Settings & account lifecycle ✅
 - [x] Full settings center (sound/music, graphics/motion, haptics, Oracle, language, account/data, about/build).
 - [x] Account status/switching/recovery; sign-out (≠ delete, confirmation, server data preserved).
-- [x] Delete flow (separate, truthful pending/success/failure, server coverage documented in `docs/BACKEND_GAPS.md`).
+- [x] Delete flow (separate, truthful dialog that distinguishes device-clear vs server-not-enabled, server coverage documented in `docs/BACKEND_GAPS.md`).
 - [x] Android exit/background: back behavior per layer, no sign-out on exit, realtime lifecycle preserved.
 
 ## Phase 6 — Admin & system surfaces ✅
