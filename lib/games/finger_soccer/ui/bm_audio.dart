@@ -70,12 +70,42 @@ bool get _android => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 /// Mix with every other player of the game instead of taking audio focus from it.
 AudioContext _mixCtx() => AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers).build();
 
+/// Voices are released on real completion ([onPlayerComplete]) or, for platforms whose SoundPool does not
+/// report completion, after this generous cap. Pooled effects are short, so the cap only ever fires on a
+/// sound that has long finished — it never cuts a still-playing clip, but it does guarantee a stuck voice is
+/// reused eventually instead of starving the pool.
+const Duration kBmPoolFreeCap = Duration(milliseconds: 3000);
+
 class _Pool {
   _Pool(this.low);
   final bool low;
   final List<AudioPlayer> players = <AudioPlayer>[];
   final List<bool> busy = <bool>[];
+  final List<StreamSubscription<void>> _doneSubs = <StreamSubscription<void>>[];
+  final List<Timer?> _caps = <Timer?>[];
   int next = 0;
+
+  /// Starts [i]'s completion listener: the voice is released only when its sound actually finishes,
+  /// not when [resume] returns. Clearing `busy` right after `resume()` made the next rapid hit take the
+  /// same voice and `stop()` the still-playing sound — the garbled / cut-off audio the player reported.
+  void _armDone(int i, AudioPlayer p) {
+    final StreamSubscription<void> sub =
+        p.onPlayerComplete.listen((_) {
+      if (i < busy.length) busy[i] = false;
+      _freeCap(i);
+    }, onError: (Object _) {});
+    _doneSubs.add(sub);
+  }
+
+  void _freeCap(int i) {
+    if (i < _caps.length) {
+      final Timer? t = _caps[i];
+      if (t != null) {
+        t.cancel();
+        _caps[i] = null;
+      }
+    }
+  }
 
   Future<void> play(double vol, double rate) async {
     if (players.isEmpty) return;
@@ -87,7 +117,7 @@ class _Pool {
         break;
       }
     }
-    if (i < 0) return; // every voice is still being (re)started; drop like a saturated mixer would
+    if (i < 0) return; // every voice is still playing; drop like a saturated mixer would
     next = (i + 1) % players.length;
     busy[i] = true;
     final AudioPlayer p = players[i];
@@ -96,14 +126,31 @@ class _Pool {
       await p.setVolume(vol);
       if (low && _android) await p.setPlaybackRate(rate);
       await p.resume();
+      // Safety net for SoundPool voices that never emit onPlayerComplete: free after the cap so the pool
+      // keeps rotating. onPlayerComplete (armed at init) frees the voice promptly on platforms that do.
+      if (i < _caps.length) {
+        _freeCap(i);
+        _caps[i] = Timer(kBmPoolFreeCap, () {
+          if (busy[i]) {
+            busy[i] = false;
+            _freeCap(i);
+          }
+        });
+      }
     } catch (e) {
       debugPrint('bermuda sfx play: $e');
-    } finally {
-      busy[i] = false;
+      busy[i] = false; // a failed start frees the voice immediately
+      _freeCap(i);
     }
   }
 
   void dispose() {
+    for (final StreamSubscription<void> s in _doneSubs) s.cancel();
+    _doneSubs.clear();
+    for (final Timer? t in _caps) {
+      t?.cancel();
+    }
+    _caps.clear();
     for (final AudioPlayer p in players) {
       unawaited(p.dispose().then((_) {}, onError: (Object _) {}));
     }
@@ -158,6 +205,8 @@ class BmAudio {
           }
           pool.players.add(p);
           pool.busy.add(false);
+          pool._caps.add(null);
+          pool._armDone(pool.players.length - 1, p);
         } catch (err) {
           debugPrint('bermuda sfx ${e.key}: $err');
           unawaited(p.dispose().then((_) {}, onError: (Object _) {}));

@@ -556,15 +556,18 @@ class BmPainter extends CustomPainter {
     // light, then the small white notch that turns with the disc's spin.
     final Paint dark = Paint()
       ..filterQuality = FilterQuality.medium
-      ..colorFilter = const ColorFilter.mode(Color.fromRGBO(6, 8, 18, .72), BlendMode.srcATop);
+      ..colorFilter = const ColorFilter.mode(Color.fromRGBO(18, 20, 30, .55), BlendMode.multiply);
     final double wall = renderRadius * kBmPuckWall;
-    for (int k = 5; k >= 1; k--) {
-      canvas.save();
-      canvas.translate(0, wall * k / 5);
-      canvas.rotate(ang);
-      canvas.drawImageRect(sp, src, dst, dark);
-      canvas.restore();
-    }
+    // The side wall is the crescent under the top face (see _puckWallPath): clip the disc art to that
+    // crescent so the wall reads as a clean cylinder edge, not a stack of five full discs (the old
+    // per-layer full-disc draw smeared the crest into a blurry blob — the "broken skin" the player saw).
+    final Path wallPath = _puckWallPath(renderRadius, wall);
+    canvas.save();
+    canvas.clipPath(wallPath);
+    canvas.translate(0, wall);
+    canvas.rotate(ang);
+    canvas.drawImageRect(sp, src, dst, dark);
+    canvas.restore();
     bmPaintPuckWallLight(canvas, renderRadius, wall);
     canvas.save();
     canvas.rotate(ang);
