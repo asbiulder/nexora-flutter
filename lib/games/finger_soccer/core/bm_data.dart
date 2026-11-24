@@ -48,30 +48,39 @@ class BmScoreDisplay {
 const Color kBmScoreLeft = Color(0xFF2F86FF);
 
 const List<BmField> kBmFieldsRaw = <BmField>[
-  // Owner supplied 1992 x 3155 portrait pitches. The logical rows retain the same playable-width convention while
-  // the renderer uses the full-resolution art without downscaling the source files on disk.
-  BmField('nx_green_plain', 'Green Plain', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'سبز ساده'),
-  BmField('nx_rings_green_new', 'Green Rings', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'حلقه‌های سبز'),
-  BmField('nx_checker_green', 'Green Checker', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'شطرنجی سبز'),
-  BmField('nx_stripes_green', 'Green Stripes', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'راه‌راه سبز'),
-  BmField('nx_stripes_teal', 'Teal Stripes', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'راه‌راه فیروزه‌ای'),
-  BmField('nx_ember_street', 'Ember Street', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'خیابانی آتشین'),
-  BmField('nx_black_sockerbox', 'Black Sockerbox', 810, 1283, 78, 732, 48, 1235, 641, 0, 'none', rc: 28, gh0: 105, gr0: 5, gd0: 40, faName: 'ساکرباکس مشکی'),
+  // v12 (owner upload 2026-11-24): the owner's eleven pitch arts replace the seven v11 arts. Raw values are measured on
+  // each art's own touch lines (in the art's measuring frame: 1086 x 1448, 1216 x 1622 or 837 x 1536, the same aspect
+  // as the file); the goals are the separate owner goal sprite ('white', kBmGS). Built by tool/build_fs_v12_assets.py.
+  BmField('tropical', 'Tropical', 1086, 1448, 214, 874, 116, 1304, 698, 115, 'white', faName: 'استوایی'),
+  BmField('psg', 'Paris SG', 1216, 1622, 228, 987, 129, 1452, 746, 135, 'white', faName: 'پاری سن ژرمن'),
+  BmField('campnou', 'Camp Nou Night', 1086, 1448, 194, 892, 104, 1332, 715, 121, 'white', faName: 'شب نیوکمپ'),
+  BmField('pitch', 'NEXORA Pitch', 837, 1536, 30, 805, 101, 1432, 768, 128, 'white', faName: 'زمین نکسورا'),
+  BmField('checker', 'Checker', 1216, 1622, 216, 997, 114, 1515, 788, 135, 'white', faName: 'شطرنجی'),
+  BmField('futsal', 'Futsal', 1216, 1622, 213, 1002, 116, 1476, 781, 137, 'white', faName: 'فوتسال'),
+  BmField('arena', 'Arena', 1216, 1622, 223, 990, 132, 1471, 777, 133, 'white', faName: 'آرنا'),
+  BmField('blackice', 'Black Ice', 1086, 1448, 206, 880, 114, 1304, 697, 117, 'white', faName: 'یخ سیاه'),
+  BmField('autumn', 'Autumn', 1086, 1448, 210, 878, 116, 1304, 695, 116, 'white', faName: 'پاییز'),
+  BmField('frost', 'Frost Arena', 1086, 1448, 198, 888, 100, 1336, 700, 120, 'white', faName: 'آرنای یخبندان'),
+  BmField('glacier', 'Glacier', 1086, 1448, 208, 888, 116, 1304, 698, 118, 'white', faName: 'یخچال'),
 ];
 
-/// Ids of pitches removed from the game (v7, v9 and v11). Kept only so tests can check they never come back.
+/// Ids of pitches removed from the game (v7, v9, v11 and v12). Kept only so tests can check they never come back.
+/// v12: 'checker', 'futsal', 'arena' and 'psg' are back (the owner picked them again).
 const List<String> kBmRemovedFieldIds = <String>[
   'neon_cup', 'street_cage', 'sockerbox', 'gold_leather', 'neon_grass', 'royal_gold',
   // v9: every older pitch
-  'nexora_green', 'forest', 'ice', 'ocean', 'street', 'streetarena', 'lava', 'stadium', 'checker', 'futsal', 'arena',
+  'nexora_green', 'forest', 'ice', 'ocean', 'street', 'streetarena', 'lava', 'stadium',
   'arena2', 'desert', 'grove', 'pool', 'neon', 'royal', 'mahogany', 'leather', 'aqua', 'asphalt', 'court', 'cyberbox',
-  'realmadrid', 'psg', 'acmilan', 'barcelona', 'persepolis', 'esteghlal', 'mancity',
+  'realmadrid', 'acmilan', 'barcelona', 'persepolis', 'esteghlal', 'mancity',
   // v11: the three v9 Sockerbox arts
   'nx_neon_arena', 'nx_gold_checker', 'nx_gold_stripes',
+  // v12: the seven v11 arts
+  'nx_green_plain', 'nx_rings_green_new', 'nx_checker_green', 'nx_stripes_green', 'nx_stripes_teal', 'nx_ember_street',
+  'nx_black_sockerbox',
 ];
 
 /// A saved / synced pitch index -> a valid one: anything missing or out of range (e.g. a removed v6 pitch) is the
-/// default pitch 0 (v11: Silver Checker).
+/// default pitch 0 (v12: Tropical).
 int bmFieldIndex(int? i) => (i == null || i < 0 || i >= kBmFieldsRaw.length) ? 0 : i;
 
 /// Local preference key of the chosen pitch. v11: new key, so an index saved for the old v9 pitches (`bm.field`) is
@@ -88,8 +97,9 @@ String bmFieldName(int i, bool fa) {
 /// inner edge of the back bar, bottom of the posts] - x values are fractions of the width, y values of the height.
 /// The engine builds the posts, the side nets and the back net from these numbers, so the drawn goal is the collider.
 const Map<String, List<double>> kBmGS = <String, List<double>>{
-  // The only goal art (owner asset goalpost_139462.png: white tubular frame, hexagonal net, front view).
-  'white': <double>[840, 307, 0.0470, 0.9548, 0.0167, 0.0945, 0.9967],
+  // The only goal art. v12: the owner's new white.webp (1024 x 374, white tubular frame, hexagonal net), measured on
+  // its alpha: post centres at the leg feet, leg half-width, inner edge of the back bar, foot of the legs.
+  'white': <double>[1024, 374, 0.0488, 0.9517, 0.0151, 0.0936, 0.9973],
 };
 
 /// v10 (owner art 2026-11-22): the catalogue is the owner's full crest archive — 47 club badges,
@@ -294,12 +304,13 @@ const List<BmTrail> kBmTR = <BmTrail>[
 
 const List<String> kBmTRN = <String>["Bolt", "Prism", "Wave", "Starlight", "Smoke", "Rainbow", "Neon", "Yin", "Fire", "Blade", "Ghost", "Ember", "Plasma", "Copper Ghost", "Stardust", "Twilight", "Gold Flame", "Thunder", "Cobalt Neon", "Aurora", "Crimson Blade", "Teal Storm", "Royal Ember", "Gold Yin", "Red Smoke", "Gilded Star", "Noir Chrome", "Violet Strike", "Emerald Edge", "Royal Blue Gold", "Crimson Noir", "Blaze Orange", "Aqua Wave", "Sunset Pro", "Elite Cobalt", "Crown Luxury"];
 
-/// v9 (owner request 2026-11-22): the match balls are the owner's ball art only (18 balls from four sheets, trimmed to
-/// their circle by tool/build_fs_v9_assets.py into `assets/games/bermuda/balls/v9/<slug>.webp`). Every ball is a flat
-/// art that fills its square; the 3D ball renderer (BmBallRenderer) rolls it with the ball's real motion.
-const List<String> kBmBallN = <String>['NX Black 1', 'NX Black 2', 'NX Black 3', 'NX Black 4', 'NX Black 5', 'NX Black 6', 'NX Color 1', 'NX Color 2', 'NX Color 3', 'NX Color 4', 'NX Color 5', 'NX Color 6'];
-const List<String> kBmBallFa = <String>['NX مشکی ۱', 'NX مشکی ۲', 'NX مشکی ۳', 'NX مشکی ۴', 'NX مشکی ۵', 'NX مشکی ۶', 'NX رنگی ۱', 'NX رنگی ۲', 'NX رنگی ۳', 'NX رنگی ۴', 'NX رنگی ۵', 'NX رنگی ۶'];
-const List<String> kBmBallSlug = <String>['nx_ball_black_1', 'nx_ball_black_2', 'nx_ball_black_3', 'nx_ball_black_4', 'nx_ball_black_5', 'nx_ball_black_6', 'nx_ball_color_1', 'nx_ball_color_2', 'nx_ball_color_3', 'nx_ball_color_4', 'nx_ball_color_5', 'nx_ball_color_6'];
+/// v12 (owner upload 2026-11-24): the match balls are the owner's 18 new balls (six single arts and two sheets), each
+/// cut on its own detected circle, fully transparent outside it, by tool/build_fs_v12_assets.py into
+/// `assets/games/bermuda/balls/v9/<slug>.webp` (256 x 256, the ball fills its square; the folder name is kept). The
+/// 3D ball renderer (BmBallRenderer) rolls each flat art with the ball's real motion.
+const List<String> kBmBallN = <String>['NX Red Classic', 'NX Blue Wave', 'NX Blue Stripe', 'NX Cobalt', 'NX Red Hex', 'NX Carbon', 'NX White Strike', 'NX Black Strike', 'NX Red Strike', 'NX Blue Strike', 'NX Red Flash', 'NX Blue Flash', 'Pro Sky', 'Pro Red', 'Pro Lime', 'Pro Violet', 'Pro Orange', 'Pro Teal'];
+const List<String> kBmBallFa = <String>['NX قرمز کلاسیک', 'NX موج آبی', 'NX راه‌راه آبی', 'NX کبالت', 'NX شش‌ضلعی قرمز', 'NX کربن', 'NX سفید', 'NX مشکی', 'NX قرمز', 'NX آبی', 'NX فلش قرمز', 'NX فلش آبی', 'پرو آسمانی', 'پرو قرمز', 'پرو لیمویی', 'پرو بنفش', 'پرو نارنجی', 'پرو فیروزه‌ای'];
+const List<String> kBmBallSlug = <String>['nx_red_classic', 'nx_blue_wave', 'nx_blue_stripe', 'nx_cobalt', 'nx_red_hex', 'nx_carbon', 'nx_white_strike', 'nx_black_strike', 'nx_red_strike', 'nx_blue_strike', 'nx_red_flash', 'nx_blue_flash', 'pro_sky', 'pro_red', 'pro_lime', 'pro_violet', 'pro_orange', 'pro_teal'];
 const int kBmDefaultBall = 0;
 
 /// Preference key of the player's match ball. v9 uses a new key: every saved index named an old ball.
@@ -348,6 +359,16 @@ const Map<String, BmFa> kBmFA = <String, BmFa>{
   'nx_street': BmFa(1, <int>[0xFFFFC21F, 0xFF35FF06, 0xFFFFFFFF], 0),
   'nx_neon_blue': BmFa(5, <int>[0xFF2F86FF, 0xFFFF3B30, 0xFFFFC94A], 0),
   'nx_royal_purple': BmFa(1, <int>[0xFFB04DFF, 0xFFFFC94A, 0xFFFFFFFF], 0),
+  // v12 pitches: firework colours taken from each art's rails and lights.
+  'tropical': BmFa(1, <int>[0xFF3BE0FF, 0xFFFFD27A, 0xFF7CFF4A], 0),
+  'psg': BmFa(1, <int>[0xFF2F5BFF, 0xFFFF3B4A, 0xFFFFFFFF], 0),
+  'campnou': BmFa(1, <int>[0xFFB0153A, 0xFF2F5BFF, 0xFFFFD86B], 0),
+  'pitch': BmFa(1, <int>[0xFFFFFFFF, 0xFF7CFF4A, 0xFFFF4A4A], 0),
+  'blackice': BmFa(5, <int>[0xFFBFE6FF, 0xFFFFFFFF, 0xFF6FA8FF], 0),
+  'frost': BmFa(5, <int>[0xFFBFE6FF, 0xFFFFFFFF, 0xFF6FA8FF], 0),
+  'glacier': BmFa(5, <int>[0xFF8FE8FF, 0xFFFFFFFF, 0xFF3B9BFF], 0),
+  'autumn': BmFa(1, <int>[0xFFFF8A1F, 0xFFFFD24A, 0xFFFF4A2A], 0),
+  'futsal': BmFa(1, <int>[0xFFFF3B4A, 0xFF2F86FF, 0xFFFFFFFF], 0),
   // fallback used by the engine for any id without its own entry
   'stadium': BmFa(1, <int>[0xFFFFD86B, 0xFFFFFFFF, 0xFFFFE9A8], 0),
 };

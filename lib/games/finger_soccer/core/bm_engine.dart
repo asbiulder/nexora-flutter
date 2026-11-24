@@ -126,8 +126,10 @@ const double kBmCornerR = 128;
 /// with the rail restitution [kBmRailE].
 const double kBmCornerHug2 = .49;
 /// v12 (owner request 2026-11-24: "a bigger, longer pitch"): the world is stretched along the length of the pitch
-/// (the art is drawn stretched to match, see BmFieldS.H). The same constant on every phone keeps online lock-step.
-const double kBmFieldStretchY = 1.12;
+/// (the art is drawn stretched to match, see BmFieldS.H), so there is more room between the goals. The same constant
+/// on every phone keeps online lock-step. 1.06 keeps the pitch's full width on a 20:9 phone (more would only make it
+/// narrower on screen) while the art's circles stay round to the eye.
+const double kBmFieldStretchY = 1.06;
 /// Speed caps (world/s / K): the reference ball leaves a hard strike at up to ~1725 px/s (4970 world/s).
 /// v2: the disc cap is above the strongest launch (power 10 full pull ~4250 world/s / K), so it never limits a
 /// shot or a disc that is struck by another body (was 4200, just under the v2 launch).

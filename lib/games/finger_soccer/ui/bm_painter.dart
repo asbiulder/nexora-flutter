@@ -64,8 +64,11 @@ class BmView {
   /// the field, so the complete world (including the top goal) must move down
   /// as one unit instead of moving only the goal artwork.
   static const double topHudClearance = 20;
-  static const double matchWidthFraction = 0.94;
-  static const double matchHeightFraction = 0.98; // pitch fills the phone width like the reference
+  /// v12 (bigger pitch): the pitch fills 98% of the width (was .94) and the rail margin beside it is [sideMargin]
+  /// world units (was 56 * FS), so the playfield is as large as the phone allows.
+  static const double matchWidthFraction = 0.98;
+  static const double matchHeightFraction = 0.99;
+  static const double sideMargin = 24 * FS;
   double s = 1, ox = 0, oy = 0;
   Size size = Size.zero;
 
@@ -91,7 +94,7 @@ class BmView {
     final double top = math.max(insetTop, topHudClearance);
     final double H = fullH - top - insetBottom;
     if (W < 50 || H < 50) return;
-    final double worldWidth = f.R - f.L + 56 * FS;
+    final double worldWidth = f.R - f.L + sideMargin;
     final double worldHeight = (f.B - f.T) + 2 * e.goalVisualDepth + 20;
     s = math.min(W * matchWidthFraction / worldWidth, H * matchHeightFraction / worldHeight);
     ox = W / 2 - e.CX * s;
@@ -138,7 +141,7 @@ Path bmCornerCushionPath(BmEngine e, {bool arcsOnly = false}) {
 /// v12: draws the corner cushions: a dark rail fill with a soft champagne bevel along the arc the bodies roll on.
 void bmPaintCornerCushions(Canvas c, BmEngine e) {
   if (e.RC <= 0) return;
-  c.drawPath(bmCornerCushionPath(e), Paint()..color = const Color(0xF20A0B12));
+  c.drawPath(bmCornerCushionPath(e), Paint()..color = const Color(0xB30A0B12));
   final Path arcs = bmCornerCushionPath(e, arcsOnly: true);
   c.drawPath(
       arcs,
