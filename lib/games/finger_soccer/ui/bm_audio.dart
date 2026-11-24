@@ -145,7 +145,9 @@ class _Pool {
   }
 
   void dispose() {
-    for (final StreamSubscription<void> s in _doneSubs) s.cancel();
+    for (final StreamSubscription<void> s in _doneSubs) {
+      s.cancel();
+    }
     _doneSubs.clear();
     for (final Timer? t in _caps) {
       t?.cancel();
