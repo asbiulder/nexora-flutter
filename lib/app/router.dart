@@ -67,8 +67,11 @@ GoRouter buildRouter(WidgetRef ref) {
   } else {
     next = '/hub';
   }
-  // Every launch opens with the owner's intro video, then continues to [next].
-  final String initial = Uri(path: '/intro', queryParameters: <String, String>{'next': next}).toString();
+  // First launch (or a replay from Settings) opens the cinematic intro, then continues to [next]. Returning users who
+  // already watched it go straight to their destination (§5.2 / §5.6: the full journey is never forced on every launch).
+  final String initial = settings.introSeen
+      ? next
+      : Uri(path: '/intro', queryParameters: <String, String>{'next': next}).toString();
 
   return GoRouter(
     initialLocation: initial,

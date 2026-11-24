@@ -102,6 +102,9 @@ class _HubPageState extends ConsumerState<HubPage> with SingleTickerProviderStat
       extendBody: true,
       bottomNavigationBar: const Nx2Dock(current: Nx2Tab.home),
       body: LuxeScene(
+        // Live native orbital-station scene (stars, planet, rings, core, spacecraft) instead of the
+        // static art — the §6.2 signature visual, with reduced-motion/quality fallbacks built in.
+        stationScene: true,
         child: SafeArea(
           bottom: false,
           child: LayoutBuilder(builder: (BuildContext ctx, BoxConstraints box) {

@@ -36,12 +36,15 @@ class AppSettings extends ChangeNotifier {
     _authMode = _store.getString(_kAuthMode) ?? '';
     _oracleBuddy = _store.getBool(_kOracleBuddy) ?? true;
     _oracleTalk = _store.getBool(_kOracleTalk) ?? true;
+    _introSeen = _store.getBool(_kIntroSeen) ?? false;
   }
 
   static const _kOracleBuddy = 'settings.oracle_buddy';
   static const _kOracleTalk = 'settings.oracle_talk';
+  static const _kIntroSeen = 'settings.intro_seen';
   late bool _oracleBuddy;
   late bool _oracleTalk;
+  late bool _introSeen;
 
   /// The mischievous corner ORACLE outside games (off = hidden everywhere).
   bool get oracleBuddy => _oracleBuddy;
@@ -58,6 +61,16 @@ class AppSettings extends ChangeNotifier {
   set oracleTalk(bool v) {
     _oracleTalk = v;
     _store.setBool(_kOracleTalk, v);
+    notifyListeners();
+  }
+
+  /// True once the full cinematic intro has been watched (or skipped) at least once, so returning users are not
+  /// forced through it on every launch. Replayable from Settings.
+  bool get introSeen => _introSeen;
+
+  set introSeen(bool v) {
+    _introSeen = v;
+    _store.setBool(_kIntroSeen, v);
     notifyListeners();
   }
 

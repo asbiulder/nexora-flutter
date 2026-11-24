@@ -259,6 +259,19 @@ class SettingsPage extends ConsumerWidget {
                       'Online games, chat & calls, posts & stories, tournaments and ORACLE — all in NEXORA.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: visual.text, fontSize: 12.5, height: 1.4)),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.movie_creation_rounded, color: Color(0xFFF6E7BD)),
+                title: Text(context.tx('دیدن دوباره‌ی فیلم افتتاحیه', 'Replay intro cinematic')),
+                subtitle: Text(context.tx(
+                    'رسیدن به ایستگاه و هفت دنیا را دوباره تماشا کن',
+                    'Watch the arrival at the station and the seven worlds again')),
+                onTap: () {
+                  ref.read(settingsProvider).introSeen = false;
+                  context.push('/intro?next=/hub');
+                },
+              ),
             ]),
           ),
           const SizedBox(height: NxSpace.xl),

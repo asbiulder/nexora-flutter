@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'nexora_station_scene.dart';
+
 /// ANIX PRO "Station Luxe" design tokens and primitives (black / gold, glass, 3D cards).
 /// Native Flutter rebuild of the NEXORA Station Luxe HTML reference — no WebView.
 class Luxe {
@@ -121,11 +123,15 @@ class _LuxePressState extends State<LuxePress> {
 }
 
 /// The ambient hub scene: warm radial light, the station art and the dark vignette.
+/// When [stationScene] is true the static hub art is replaced by the live native orbital-station
+/// painter ([NexoraStationScene]) — the §6.2 signature visual, with reduced-motion/quality fallbacks.
 class LuxeScene extends StatelessWidget {
-  const LuxeScene({super.key, required this.child, this.artOpacity = 0.6, this.tint});
+  const LuxeScene(
+      {super.key, required this.child, this.artOpacity = 0.6, this.tint, this.stationScene = false});
   final Widget child;
   final double artOpacity;
   final Color? tint;
+  final bool stationScene;
 
   @override
   Widget build(BuildContext context) {
@@ -140,11 +146,17 @@ class LuxeScene extends StatelessWidget {
           ),
         ),
       ),
-      Opacity(
-        opacity: artOpacity,
-        child: Image.asset(Luxe.hubBg,
-            fit: BoxFit.cover, cacheWidth: 900, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-      ),
+      if (stationScene)
+        Opacity(
+          opacity: artOpacity,
+          child: const NexoraStationScene(),
+        )
+      else
+        Opacity(
+          opacity: artOpacity,
+          child: Image.asset(Luxe.hubBg,
+              fit: BoxFit.cover, cacheWidth: 900, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+        ),
       DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
