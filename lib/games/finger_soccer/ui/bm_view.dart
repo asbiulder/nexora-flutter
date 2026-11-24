@@ -2065,21 +2065,21 @@ class FsHudData {
   final ui.Image? crest0, crest1;
 
   @override
-  bool operator ==(Object o) =>
-      o is FsHudData &&
-      o.clock == clock &&
-      o.red == red &&
-      o.turn == turn &&
-      o.turnMine == turnMine &&
-      o.score0 == score0 &&
-      o.score1 == score1 &&
-      o.name0 == name0 &&
-      o.name1 == name1 &&
-      identical(o.crest0, crest0) &&
-      identical(o.crest1, crest1) &&
-      o.pulse0 == pulse0 &&
-      o.pulse1 == pulse1 &&
-      o.formation == formation;
+  bool operator ==(Object other) =>
+      other is FsHudData &&
+      other.clock == clock &&
+      other.red == red &&
+      other.turn == turn &&
+      other.turnMine == turnMine &&
+      other.score0 == score0 &&
+      other.score1 == score1 &&
+      other.name0 == name0 &&
+      other.name1 == name1 &&
+      identical(other.crest0, crest0) &&
+      identical(other.crest1, crest1) &&
+      other.pulse0 == pulse0 &&
+      other.pulse1 == pulse1 &&
+      other.formation == formation;
 
   @override
   int get hashCode => Object.hash(clock, red, turn, turnMine, score0, score1, name0, name1, crest0, crest1, pulse0,
