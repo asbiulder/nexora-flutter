@@ -52,7 +52,7 @@ class _NexoraStationSceneState extends ConsumerState<NexoraStationScene>
     if (s.reducedMotion || MediaQuery.maybeDisableAnimationsOf(context) == true) {
       _spin.stop();
     } else if (!_spin.isAnimating) {
-      _spin.start();
+      _spin.forward();
     }
   }
 
@@ -79,7 +79,7 @@ class _NexoraStationSceneState extends ConsumerState<NexoraStationScene>
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final AppSettings settings = ref.watch(settingsProvider);
     final bool motion = settings.fancyEffects && !settings.reducedMotion;
     final int count = settings.starCount;
@@ -124,7 +124,11 @@ class _StationPainter extends CustomPainter {
   final bool motion;
 
   @override
-  bool get isRepaintBoundary => false;
+  bool shouldRepaint(covariant _StationPainter old) =>
+      old.phase != phase ||
+      old.motion != motion ||
+      old.ship.angle != ship.angle ||
+      old.stars.length != stars.length;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -176,24 +180,24 @@ class _StationPainter extends CustomPainter {
     for (int i = 0; i < ringRadii.length; i++) {
       final double r = ringRadii[i];
       final double tilt = 0.34 - i * 0.05; // ellipse flattening for a 3/4 view
+      final double rot = motion ? phase * (i % 2 == 0 ? 1 : -1) * 0.25 : 0;
       canvas.save();
       canvas.translate(cx, cy);
-      canvas.rotate(motion ? phase * (i % 2 == 0 ? 1 : -1) * 0.25 : 0);
+      canvas.rotate(rot);
       final Paint ring = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = math.max(1.0, unit * 0.004)
         ..color = i == 1
             ? const Color(0xFFD9B872).withValues(alpha: 0.55)
             : const Color(0x99F6E7BD).withValues(alpha: 0.35);
-      canvas.drawEllipse(
-        Offset.zero,
-        Size(r * 2, r * 2 * tilt),
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 2 * tilt),
         ring,
       );
       // a few bright nodes on the rings (orbital stations / debris)
       final int nodes = 4 + i;
       for (int n = 0; n < nodes; n++) {
-        final double a = (n / nodes) * math.pi * 2 + (motion ? phase * (i % 2 == 0 ? 1 : -1) * 0.25 : 0);
+        final double a = (n / nodes) * math.pi * 2 + rot;
         final double nx = math.cos(a) * r;
         final double ny = math.sin(a) * r * tilt;
         canvas.drawCircle(
