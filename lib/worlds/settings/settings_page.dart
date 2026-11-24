@@ -210,13 +210,18 @@ class SettingsPage extends ConsumerWidget {
                 label: Text(context.tx('حذف هویت و همه‌ی داده‌ها',
                     'Delete identity and all data')),
                 onPressed: () async {
+                  final bool online = ref.read(onlineProvider).isOnline;
                   final ok = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AnixDialog(
                       title: Text(ctx.tx('مطمئنی؟', 'Are you sure?')),
-                      content: Text(ctx.tx(
-                          'همه‌ی پیشرفت، آیتم‌ها و پست‌ها پاک می‌شوند. قابل بازگشت نیست.',
-                          'All progress, items and posts will be erased. This cannot be undone.')),
+                      content: Text(online
+                          ? ctx.tx(
+                              'تمام داده‌های این دستگاه پاک می‌شوند. حذف کامل از سرور هنوز فعال نشده، پس داده‌های همگانی‌شده ممکن است همچنان در سرور بمانی. این کار قابل بازگشت نیست.',
+                              'All data on this device will be erased. Full deletion from the server is not enabled yet, so data you synced may remain on the server. This cannot be undone.')
+                          : ctx.tx(
+                              'همه‌ی پیشرفت، آیتم‌ها و پست‌ها روی همین دستگاه پاک می‌شوند. قابل بازگشت نیست.',
+                              'All progress, items and posts on this device will be erased. This cannot be undone.')),
                       actions: [
                         TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
