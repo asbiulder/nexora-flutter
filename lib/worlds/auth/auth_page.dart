@@ -172,7 +172,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                     children: <Widget>[
                       const AnixLogo(height: 118),
                       const SizedBox(height: 14),
-                      Text(_signUp ? context.tx('ساخت حساب ANIX', 'Create your ANIX account') : context.tx('ورود به ANIX', 'Log in to ANIX'),
+                      Text(_signUp ? context.tx('ساخت حساب نیکسورا', 'Create your NEXORA account') : context.tx('ورود به نیکسورا', 'Log in to NEXORA'),
                           textAlign: TextAlign.center,
                           style: TextStyle(color: visual.text, fontSize: 26, fontWeight: FontWeight.w900)),
                       const SizedBox(height: 14),

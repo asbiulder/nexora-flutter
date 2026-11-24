@@ -66,7 +66,7 @@ void main() {
     expect(fsTeamCategoryName('clubs', false), 'Clubs');
     expect(fsTeamCategoryName('nations', true), 'ملی');
     expect(fsTeamCategoryName('nations', false), 'Nations');
-    expect(fsTeamCategoryName('nx', true), 'انیکس');
+    expect(fsTeamCategoryName('nx', true), 'نیکسورا');
     expect(fsTeamCategoryName('unknown', false), 'unknown');
   });
 

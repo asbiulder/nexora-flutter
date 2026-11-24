@@ -238,7 +238,7 @@ class TournamentWatcher with WidgetsBindingObserver {
         await TLocalNotifier.cancel(id);
       }
       for (final TReminder r in plan) {
-        final String title = all.where((Tournament t) => t.id == r.tournamentId).firstOrNull?.title ?? 'ANIX';
+        final String title = all.where((Tournament t) => t.id == r.tournamentId).firstOrNull?.title ?? 'NEXORA';
         final String body = switch (r.kind) {
           'checkin' => fa ? '۱۰ دقیقه تا شروع — همین الان اعلام حضور کن' : '10 minutes to the start — check in now',
           'match' => fa ? 'بازی‌ات ۱۰ دقیقه‌ی دیگر شروع می‌شود' : 'Your match starts in 10 minutes',

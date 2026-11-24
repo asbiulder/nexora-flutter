@@ -120,7 +120,7 @@ class _OrbitChatPageState extends ConsumerState<OrbitChatPage> {
           ListTile(
             leading: const Icon(Icons.collections_rounded,
                 color: NxColors.champagne),
-            title: Text(c.tx('اثر هنری ANIX', 'ANIX art')),
+            title: Text(c.tx('اثر هنری نیکسورا', 'NEXORA art')),
             subtitle: Text(
                 c.tx('از کتابخانه‌ی هنری اپ', "From the app's art library")),
             onTap: () => Navigator.of(c).pop('art'),

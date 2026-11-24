@@ -148,8 +148,8 @@ final List<GameInfo> kGames = <GameInfo>[
   ),
   GameInfo(
     id: 'quiz',
-    nameFa: 'کوییز انیکس',
-    nameEn: 'ANIX Quiz',
+    nameFa: 'کوییز نیکسورا',
+    nameEn: 'NEXORA Quiz',
     taglineFa: 'دوئل دانش در ۱۰ راند',
     taglineEn: '10-round knowledge duel',
     rulesFa: '۱۰ سؤال، هر کدام ۱۵ ثانیه. پاسخ درست امتیاز دارد و سرعت جایزه‌ی اضافه. دسته را انتخاب کن و حریف را شکست بده.',

@@ -170,8 +170,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 color: visual.text)),
         const SizedBox(height: 6),
         Text(
-          context.tx('این هویت در همه‌ی دنیاهای ANIX با تو است.',
-              'This identity follows you across every ANIX world.'),
+          context.tx('این هویت در همه‌ی دنیاهای نیکسورا با تو است.',
+              'This identity follows you across every NEXORA world.'),
           style: TextStyle(color: visual.muted, height: 1.45),
         ),
         const SizedBox(height: NxSpace.lg),
@@ -248,10 +248,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 context.tx(
                     ref.read(settingsProvider).authMode == 'guest'
                         ? 'حالت مهمان فقط آفلاین است؛ پیشرفت و هویت روی همین دستگاه می‌ماند و به سرور وصل نمی‌شود.'
-                        : 'ایمیل تو تأیید شده و هویتت به حساب آنلاین ANIX متصل می‌شود.',
+                        : 'ایمیل تو تأیید شده و هویتت به حساب آنلاین نیکسورا متصل می‌شود.',
                     ref.read(settingsProvider).authMode == 'guest'
                         ? 'Guest mode is offline-only. Your identity and progress stay on this device and never connect to the server.'
-                        : 'Your email is verified and your identity will be connected to your ANIX account.'),
+                        : 'Your email is verified and your identity will be connected to your NEXORA account.'),
                 style: const TextStyle(fontSize: 13),
               ),
             ),
@@ -261,7 +261,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         FilledButton.icon(
           onPressed: _finish,
           icon: const Icon(Icons.rocket_launch_rounded),
-          label: Text(context.tx('ورود به ANIX', 'Enter ANIX')),
+          label: Text(context.tx('ورود به نیکسورا', 'Enter NEXORA')),
         ),
       ],
     );

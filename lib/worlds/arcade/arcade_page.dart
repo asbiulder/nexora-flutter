@@ -25,7 +25,7 @@ class ArcadePage extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: NxWorldScaffold(
-        title: context.tx('آرکید ANIX', 'ANIX ARCADE'),
+        title: context.tx('آرکید نیکسورا', 'NEXORA ARCADE'),
         palette: WorldPalette.arcade,
         dock: Nx2Tab.games,
         body: Column(children: [

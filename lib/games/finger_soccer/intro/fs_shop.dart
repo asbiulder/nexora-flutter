@@ -95,7 +95,7 @@ const List<String> kFsTeamShopCategories = <String>[
 const List<(String, bool)> kFsShopTabs = <(String, bool)>[
   ('باشگاهی', false),
   ('ملی', false),
-  ('انیکس', false),
+  ('نیکسورا', false),
   ('خودرو', false),
   ('ورزشی', false),
   ('ویژه', false),

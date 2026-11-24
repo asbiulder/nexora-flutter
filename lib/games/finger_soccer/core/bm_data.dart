@@ -99,7 +99,7 @@ const Map<String, List<double>> kBmGS = <String, List<double>>{
 const List<List<Object>> kBmCats = <List<Object>>[
   <Object>['clubs', 'Clubs', 'باشگاهی'],
   <Object>['nations', 'Nations', 'ملی'],
-  <Object>['nx', 'NX', 'انیکس'],
+  <Object>['nx', 'NX', 'نیکسورا'],
   <Object>['cars', 'Cars', 'خودرو'],
   <Object>['sport', 'Sport', 'ورزشی'],
   <Object>['elite', 'Elite', 'ویژه'],

@@ -333,7 +333,7 @@ class _QuizViewState extends State<QuizView> with TickerProviderStateMixin {
       ? (_l.netName(_other) ?? 'Pilot')
       : (_local
           ? _l.tx('بازیکن ۲', 'Player 2')
-          : _l.tx('ربات انیکس', 'NX Bot'));
+          : _l.tx('ربات نیکسورا', 'NX Bot'));
 
   String _roundLabel() => _l.tx(
       'سؤال ${_engine.roundIndex + 1} از ${_engine.totalRounds}',
@@ -400,7 +400,7 @@ class _QuizViewState extends State<QuizView> with TickerProviderStateMixin {
           AnimatedBuilder(
             animation: _pulse,
             builder: (BuildContext context, Widget? child) => Text(
-              _l.tx('کوییز انیکس', 'ANIX Quiz'),
+              _l.tx('کوییز نیکسورا', 'NEXORA Quiz'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: NxColors.ink,

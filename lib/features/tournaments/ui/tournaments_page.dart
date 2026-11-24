@@ -337,7 +337,7 @@ class _TournamentsPageState extends ConsumerState<TournamentsPage>
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(context.tx('جام‌های انیکس', 'ANIX CUPS'),
+                              Text(context.tx('جام‌های نیکسورا', 'NEXORA CUPS'),
                                   style: Nx2.title.copyWith(
                                       fontSize: 15, color: Nx2.gold)),
                               Text(

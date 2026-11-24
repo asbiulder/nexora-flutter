@@ -50,8 +50,8 @@ const kWorlds = <NexoraWorld>[
   ),
   NexoraWorld(
     id: 'nexora_arcade',
-    name: 'ANIX ARCADE',
-    nameFa: 'آرکید انیکس',
+    name: 'NEXORA ARCADE',
+    nameFa: 'آرکید نیکسورا',
     taglineFa: '۲۶ بازی، بات هوشمند و بازی دونفره',
     taglineEn: '26 games, smart bots & local multiplayer',
     icon: Icons.sports_esports_rounded,
@@ -90,8 +90,8 @@ const kWorlds = <NexoraWorld>[
   ),
   NexoraWorld(
     id: 'nexora_exchange',
-    name: 'ANIX EXCHANGE',
-    nameFa: 'بازار انیکس',
+    name: 'NEXORA EXCHANGE',
+    nameFa: 'بازار نیکسورا',
     taglineFa: 'آیتم‌های آواتار، تزئین و پوسته',
     taglineEn: 'Avatar items, decor & skins',
     icon: Icons.storefront_rounded,

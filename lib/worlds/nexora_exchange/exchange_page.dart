@@ -137,7 +137,7 @@ class _ExchangePageState extends ConsumerState<ExchangePage> {
     final NxThemeColors visual = NxThemeColors.of(context);
     final int tabCount = _kTabs.length + 2;
     return NxWorldScaffold(
-      title: 'ANIX EXCHANGE',
+      title: 'NEXORA EXCHANGE',
       palette: WorldPalette.exchange,
       body: DefaultTabController(
         length: tabCount,

@@ -211,12 +211,12 @@ class _BilliardsGameState extends State<BilliardsGame>
     }
     if (_l.vsBot) {
       if (_l.difficulty == BotDifficulty.easy) {
-        return _l.tx('ربات انیکس · آسان', 'ANIX Bot · Easy');
+        return _l.tx('ربات نیکسورا · آسان', 'NEXORA Bot · Easy');
       }
       if (_l.difficulty == BotDifficulty.hard) {
-        return _l.tx('ربات انیکس · سخت', 'ANIX Bot · Hard');
+        return _l.tx('ربات نیکسورا · سخت', 'NEXORA Bot · Hard');
       }
-      return _l.tx('ربات انیکس · معمولی', 'ANIX Bot · Normal');
+      return _l.tx('ربات نیکسورا · معمولی', 'NEXORA Bot · Normal');
     }
     return _l.tx('بازیکن ۲', 'Player 2');
   }

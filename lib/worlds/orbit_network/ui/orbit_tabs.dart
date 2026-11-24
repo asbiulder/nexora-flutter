@@ -295,8 +295,8 @@ class _OfflineContactsTab extends ConsumerWidget {
     final ProfileService p = ref.watch(profileProvider);
     final String name = orbitMyName(context, p);
     final String shareText = context.tx(
-      'در ANIX پیدایم کن! شناسه‌ی کاوشگر من: ${p.explorerId} ($name)',
-      'Find me in ANIX! My Explorer ID: ${p.explorerId} ($name)',
+      'در نیکسورا پیدایم کن! شناسه‌ی کاوشگر من: ${p.explorerId} ($name)',
+      'Find me in NEXORA! My Explorer ID: ${p.explorerId} ($name)',
     );
     return ListView(
       padding: const EdgeInsets.fromLTRB(NxSpace.md, NxSpace.sm, NxSpace.md, 100),
@@ -368,7 +368,7 @@ class _OfflineContactsTab extends ConsumerWidget {
             Text(
               context.tx(
                 'دوستانت بعد از اتصال آنلاین اینجا ظاهر می‌شوند. شناسه‌ات را به اشتراک بگذار تا پیدایت کنند.',
-                'Your friends appear here once ANIX is online. Share your ID so they can find you.',
+                'Your friends appear here once NEXORA is online. Share your ID so they can find you.',
               ),
               textAlign: TextAlign.center,
               style: const TextStyle(color: NxColors.textDim, height: 1.5),

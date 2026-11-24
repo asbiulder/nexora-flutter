@@ -78,8 +78,8 @@ final List<NexoraMenuSection> kNexoraMenuSections = <NexoraMenuSection>[
     destinations: <NexoraMenuDestination>[
       const NexoraMenuDestination(
         path: '/hub',
-        titleFa: 'هاب انیکس',
-        titleEn: 'ANIX HUB',
+        titleFa: 'هاب نیکسورا',
+        titleEn: 'NEXORA HUB',
         descriptionFa: 'بازگشت به مرکز جهان‌ها',
         descriptionEn: 'Return to the worlds hub',
         icon: Icons.home_rounded,
@@ -202,7 +202,7 @@ class _NexoraMenuSheet extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text('ANIX',
+                      Text('NEXORA',
                           style: TextStyle(
                             color: visual.text,
                             fontWeight: FontWeight.w900,

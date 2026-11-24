@@ -152,7 +152,7 @@ class _RoomsPageState extends ConsumerState<RoomsPage> {
         unawaited(_load(silent: true));
       },
       leading: Image.asset(AnixAssets.icon('headset'), width: 38, height: 38, errorBuilder: (_, __, ___) => const Icon(Icons.headset_mic_rounded, color: Luxe.gold)),
-      title: '${r['title'] ?? r['host_name'] ?? 'ANIX'}',
+      title: '${r['title'] ?? r['host_name'] ?? 'NEXORA'}',
       subtitle: '${r['status'] == 'playing' ? context.tx('در حال بازی', 'Playing') : context.tx('گفتگو', 'Talking')}'
           '${g == null ? '' : ' · ${context.tx(g.nameFa, g.nameEn)}'}'
           ' · ${r['host_name'] ?? ''}',

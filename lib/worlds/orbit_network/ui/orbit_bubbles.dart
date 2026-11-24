@@ -30,8 +30,8 @@ Future<void> showOrbitOnlineOnly(BuildContext context,
         OnlineOnlyNotice(featureFa: fa, featureEn: en),
         const SizedBox(height: 10),
         Text(
-          c.tx('تماس‌ها از طریق LiveKit و سرور ANIX برقرار می‌شوند؛ تا آن زمان هیچ تماسی شبیه‌سازی نمی‌شود.',
-              'Calls run through LiveKit and the ANIX server; until then no call is simulated.'),
+          c.tx('تماس‌ها از طریق LiveKit و سرور نیکسورا برقرار می‌شوند؛ تا آن زمان هیچ تماسی شبیه‌سازی نمی‌شود.',
+              'Calls run through LiveKit and the NEXORA server; until then no call is simulated.'),
           textAlign: TextAlign.center,
           style: const TextStyle(color: NxColors.textDim, fontSize: 12),
         ),
@@ -365,7 +365,7 @@ class OrbitSharedCard extends StatelessWidget {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                nova ? 'NOVA GALLERY' : (community ? 'SOCIAL STATION' : 'ANIX'),
+                nova ? 'NOVA GALLERY' : (community ? 'SOCIAL STATION' : 'NEXORA'),
                 style: TextStyle(color: accent, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.2),
               ),
             ),
@@ -418,7 +418,7 @@ class OrbitInviteCard extends StatelessWidget {
         Row(children: <Widget>[
           Icon(Icons.sports_esports_rounded, color: accent, size: 18),
           const SizedBox(width: 6),
-          Text('ANIX ARCADE', style: TextStyle(color: accent, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.2)),
+          Text('NEXORA ARCADE', style: TextStyle(color: accent, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.2)),
         ]),
         const SizedBox(height: 6),
         if (g != null)

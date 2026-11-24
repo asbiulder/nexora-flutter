@@ -1541,7 +1541,7 @@ class _BermudaViewState extends State<BermudaView>
                           Icon(Icons.sports_soccer_rounded,
                               size: 15, color: visual.accent),
                           const SizedBox(width: 6),
-                          Text('ANIX  /  MATCH LOBBY',
+                          Text('NEXORA  /  MATCH LOBBY',
                               style: TextStyle(
                                   color: visual.accent,
                                   fontSize: 9,

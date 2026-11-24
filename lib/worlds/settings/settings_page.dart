@@ -242,7 +242,7 @@ class SettingsPage extends ConsumerWidget {
               ),
             ]),
           ),
-          _section(context, context.tx('درباره‌ی ANIX PRO 2', 'About ANIX PRO 2')),
+          _section(context, context.tx('درباره‌ی نیکسورا ۲', 'About NEXORA 2')),
           GlassPanel(
             key: const ValueKey<String>('about_anix'),
             child: Column(children: <Widget>[
@@ -255,8 +255,8 @@ class SettingsPage extends ConsumerWidget {
                   style: TextStyle(color: visual.muted, fontSize: 12, fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
               Text(
-                  context.tx('بازی‌های آنلاین، چت و تماس، پست و استوری، تورنمنت‌ها و ORACLE — همه در ANIX.',
-                      'Online games, chat & calls, posts & stories, tournaments and ORACLE — all in ANIX.'),
+                  context.tx('بازی‌های آنلاین، چت و تماس، پست و استوری، تورنمنت‌ها و ORACLE — همه در نیکسورا.',
+                      'Online games, chat & calls, posts & stories, tournaments and ORACLE — all in NEXORA.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: visual.text, fontSize: 12.5, height: 1.4)),
             ]),
@@ -264,7 +264,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: NxSpace.xl),
           Center(
             child: Text(
-                'ANIX · YOUR UNIVERSE. YOUR IDENTITY. YOUR EXPERIENCE.',
+                'NEXORA · YOUR UNIVERSE. YOUR IDENTITY. YOUR EXPERIENCE.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: NxColors.textDim.withValues(alpha: 0.6),

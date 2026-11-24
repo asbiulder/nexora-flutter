@@ -199,7 +199,7 @@ class _ComposerSheetState extends ConsumerState<_ComposerSheet> {
             ),
             ChoiceChip(
               avatar: const Icon(Icons.collections_rounded, size: 16),
-              label: Text(context.tx('هنر ANIX', 'ANIX art')),
+              label: Text(context.tx('هنر نیکسورا', 'NEXORA art')),
               selected: _kind == NovaVisualKind.asset,
               onSelected: (_) => _pickAsset(),
             ),
@@ -296,7 +296,7 @@ Future<ArtAsset?> showArtAssetPicker(BuildContext context) {
       child: DefaultTabController(
         length: ArtCategory.values.length,
         child: Column(children: <Widget>[
-          Text(c.tx('کتابخانه‌ی هنری ANIX', 'ANIX art library'),
+          Text(c.tx('کتابخانه‌ی هنری نیکسورا', 'NEXORA art library'),
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
           TabBar(
             isScrollable: true,
