@@ -111,7 +111,23 @@ const double kBmMaxAimError = 0.11;
 /// (strikeOf / powerShare).
 const double kBmLaunch = 1.97;
 /// Ball rolling friction: constant part (world/s^2 / K) and linear drag (1/s), see sim().
-const double kBmBallF0 = 23, kBmBallDrag = 1.08;
+/// v12 (owner request 2026-11-24: "the ball rolls far too long, halve it"): the roll time is halved. A pure x2 drag
+/// would also halve every pass, so the cut comes mostly from a much stronger constant (rolling) part that kills the
+/// slow creeping tail: from a hard strike the ball now settles in ~2.0-2.6 s instead of ~4.2-5.1 s, while still
+/// covering ~60-70% of the old distance. The constant part ramps in over [kBmBallF0Ramp] (was 300).
+/// Before: kBmBallF0 23, kBmBallDrag 1.08, ramp 300.
+const double kBmBallF0 = 150, kBmBallDrag = 1.4, kBmBallF0Ramp = 40;
+/// v12 (owner request 2026-11-24: "the ball must roll round the corners"): every corner of the pitch is a round
+/// cushion of this radius (world units, > the disc radius [PR]) instead of the near-square art corner, so the ball and
+/// the discs are never wedged in a corner: a glancing body rolls round the cushion onto the next rail.
+const double kBmCornerR = 128;
+/// A body meeting a corner cushion within this angle of its tangent (tan^2 of ~35 deg) rolls round it: its normal
+/// speed is absorbed (no bounce) and its tangential speed is kept, so it follows the curve. A steeper hit bounces off
+/// with the rail restitution [kBmRailE].
+const double kBmCornerHug2 = .49;
+/// v12 (owner request 2026-11-24: "a bigger, longer pitch"): the world is stretched along the length of the pitch
+/// (the art is drawn stretched to match, see BmFieldS.H). The same constant on every phone keeps online lock-step.
+const double kBmFieldStretchY = 1.12;
 /// Speed caps (world/s / K): the reference ball leaves a hard strike at up to ~1725 px/s (4970 world/s).
 /// v2: the disc cap is above the strongest launch (power 10 full pull ~4250 world/s / K), so it never limits a
 /// shot or a disc that is struck by another body (was 4200, just under the v2 launch).
@@ -141,23 +157,27 @@ class BmFieldS {
         faName = f.faName,
         gs = f.gs,
         W = _r(f.w0),
-        H = _r(f.h0),
+        H = _ry(f.h0),
         L = _r(f.l0),
         R = _r(f.r0),
-        T = _r(f.t0),
-        B = _r(f.b0),
-        cs = _r(f.cs0),
+        T = _ry(f.t0),
+        B = _ry(f.b0),
+        cs = _ry(f.cs0),
         g = 169,
-        rc = f.rc,
+        rc = math.max(f.rc, kBmCornerR),
         builtInGoals = f.builtInGoals,
         gh = f.gh0 * FS,
         gr = f.gr0 * FS,
-        gd = f.gd0 * FS,
+        gd = f.gd0 * FS * kBmFieldStretchY,
         score = f.score,
         scoreLeft = f.scoreLeft,
         scoreRight = f.scoreRight,
         asset = f.asset ?? 'assets/games/bermuda/fields/${f.id}.webp';
   static double _r(int v) => (v * FS).round().toDouble(); // Math.round on positive values
+  /// Lengthwise values (v12): also stretched by [kBmFieldStretchY].
+  static double _ry(int v) => (v * FS * kBmFieldStretchY).round().toDouble();
+  /// Art px -> world along the length of the pitch (the art is drawn stretched by [kBmFieldStretchY]).
+  static const double stretchY = kBmFieldStretchY;
   final String id, name, faName, gs;
   final double W, H, L, R, T, B, cs, g;
   /// Corner radius (world), built-in goal geometry (world): post-centre half width, post radius, net depth.
@@ -706,9 +726,20 @@ class BmEngine {
           b.x = cx + nx * lim;
           b.y = cy + ny * lim;
           if (vn > 0) {
-            const double ec = kBmRailE;
+            // v12: tangential speed along the cushion; a glancing body rolls round it (normal speed absorbed),
+            // a steep hit bounces off like a rail.
+            final double vt = b.vx * -ny + b.vy * nx;
+            final bool roll = vn * vn < vt * vt * kBmCornerHug2;
+            final double ec = roll ? 0 : kBmRailE;
             b.vx -= (1 + ec) * vn * nx;
             b.vy -= (1 + ec) * vn * ny;
+            if (bl) {
+              if (roll) {
+                b.spin += vt / SPIN_R * .004;
+              } else if (vn > 200) {
+                hooks.sfx('wall', vn / 1800);
+              }
+            }
           }
         }
       }
@@ -885,7 +916,7 @@ class BmEngine {
       if (sp > 0) {
         if (bl) {
           // Reference: the ball rolls with ~1.08/s linear drag + ~13 px/s^2 (global fit over 14 free rolls, rms 3.8 px).
-          final double f = kBmBallF0 * K * _mn(1, sp / (300 * K)) + sp * kBmBallDrag, ns = sp - f * dt;
+          final double f = kBmBallF0 * K * _mn(1, sp / (kBmBallF0Ramp * K)) + sp * kBmBallDrag, ns = sp - f * dt;
           if (ns < 12 * K) {
             b.vx = 0;
             b.vy = 0;

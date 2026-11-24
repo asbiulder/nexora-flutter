@@ -37,8 +37,11 @@ const int kBmMatchSeconds = 300;
 /// v9 match chrome: the top bar (clock, menu, formation button) below the status bar and the bottom strip (voice
 /// controls online, the "one minute left" toast) above the gesture bar. The pitch art is fitted between them, so no
 /// control ever sits on the playfield.
-const double kFsTopBarHeight = 52;
+/// v12: the top bar is the match scoreboard (menu, both sides' crest + score, the clock, the formation button).
+const double kFsTopBarHeight = 56;
 const double kFsBottomStripHeight = 58;
+/// v12: offline there are no voice controls, so the bottom strip shrinks and the pitch gets the room (bigger pitch).
+const double kFsBottomStripCompact = 10;
 const double kBmOnlineTurnSeconds = 10;
 
 /// v6 reference: how long the "one minute left" toast stays up (about 3 s in the recordings).
@@ -90,6 +93,8 @@ class _BermudaViewState extends State<BermudaView>
   final BmView view = BmView();
   late final BmAudio audio = BmAudio(enabled: widget.launch.soundOn);
   final ValueNotifier<int> _frame = ValueNotifier<int>(0);
+  /// v12: the scoreboard's data; it only notifies when something it shows changes (not every frame).
+  final ValueNotifier<FsHudData> _hud = ValueNotifier<FsHudData>(FsHudData.empty);
   late final Ticker _ticker;
   Duration _last = Duration.zero;
   double _nowMs = 0;
@@ -309,6 +314,27 @@ class _BermudaViewState extends State<BermudaView>
     }
     if (_disposed) return;
     _frame.value++;
+    if (stage == 'match') _hud.value = _hudData();
+  }
+
+  /// The scoreboard's current data (quantised so it changes a few times a second, not every frame).
+  FsHudData _hudData() {
+    final bool hasBodies = e.bodies.isNotEmpty;
+    return FsHudData(
+      clock: _clockText(),
+      red: ((e.mt > 0 && !e.sd ? bmClockRed(e.mleft, e.mt) : (e.sd ? 1.0 : 0.0)) * 20).round() / 20,
+      turn: e.phase == 'aim' && e.tt > 0 ? ((e.tleft / e.tt).clamp(0.0, 1.0) * 60).round() / 60 : -1,
+      turnMine: e.turn == 0,
+      score0: e.score[0],
+      score1: e.score[1],
+      name0: hasBodies ? e.nm(0) : '',
+      name1: hasBodies ? e.nm(1) : '',
+      crest0: _hudCrests[0],
+      crest1: _hudCrests[1],
+      pulse0: (e.shake[0].clamp(0.0, 1.0) * 10).round() / 10,
+      pulse1: (e.shake[1].clamp(0.0, 1.0) * 10).round() / 10,
+      formation: _tableT < 0,
+    );
   }
 
   void _ensureBallRenderer() {
@@ -606,6 +632,23 @@ class _BermudaViewState extends State<BermudaView>
     }
     im.team[0] = r[3];
     im.team[1] = r[4];
+    _refreshHudCrests();
+  }
+
+  /// v12: the scoreboard holds its own handles (clones) of the two crests, so replacing / disposing the match images
+  /// never leaves it painting a disposed image: the old handles are released only after the next frame, when the
+  /// scoreboard has been rebuilt with the new ones.
+  List<ui.Image?> _hudCrests = <ui.Image?>[null, null];
+  void _refreshHudCrests() {
+    final List<ui.Image?> old = _hudCrests;
+    _hudCrests = <ui.Image?>[im.team[0]?.clone(), im.team[1]?.clone()];
+    if (stage == 'match') _hud.value = _hudData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final ui.Image? i in old) {
+        i?.dispose();
+      }
+    });
+    WidgetsBinding.instance.scheduleFrame();
   }
 
   void _end(List<int> local) {
@@ -1095,6 +1138,10 @@ class _BermudaViewState extends State<BermudaView>
     audio.dispose();
     im.dispose();
     _frame.dispose();
+    _hud.dispose();
+    for (final ui.Image? i in _hudCrests) {
+      i?.dispose();
+    }
     e.stop();
     super.dispose();
   }
@@ -1168,7 +1215,7 @@ class _BermudaViewState extends State<BermudaView>
     // v9 layout: the top bar and the bottom strip are outside the pitch; the pitch art is fitted between them.
     final EdgeInsets pad = MediaQuery.paddingOf(context);
     view.insetTop = pad.top + kFsTopBarHeight;
-    view.insetBottom = pad.bottom + kFsBottomStripHeight;
+    view.insetBottom = pad.bottom + (online ? kFsBottomStripHeight : kFsBottomStripCompact);
     final bool fancy = launch.fancyEffects && !launch.reducedMotion;
     final FsFlameGame game = _flame ??= FsFlameGame(
       painter: BmPainter(e, im, view, () => _nowMs, dpr, fancy, repaint: _frame),
@@ -1195,17 +1242,24 @@ class _BermudaViewState extends State<BermudaView>
             right: 0,
             top: pad.top,
             height: kFsTopBarHeight,
-            child: ValueListenableBuilder<int>(
-              valueListenable: _frame,
-              builder: (BuildContext context, int _, Widget? __) => FsMatchTopBar(
-                clock: _clockText(),
-                red: e.mt > 0 && !e.sd ? bmClockRed(e.mleft, e.mt) : (e.sd ? 1 : 0),
-                turn: e.phase == 'aim' && e.tt > 0 ? (e.tleft / e.tt).clamp(0.0, 1.0).toDouble() : -1,
-                turnMine: e.turn == 0,
-                menuLabel: launch.tx('منو', 'Menu'),
-                formLabel: launch.tx('تغییر ترکیب', 'Formation'),
-                onMenu: _pause,
-                onFormation: _tableT < 0 ? _changeFormation : null,
+            child: RepaintBoundary(
+              child: ValueListenableBuilder<FsHudData>(
+                valueListenable: _hud,
+                builder: (BuildContext context, FsHudData h, Widget? __) => FsMatchTopBar(
+                  clock: h.clock,
+                  red: h.red,
+                  turn: h.turn,
+                  turnMine: h.turnMine,
+                  scores: <int>[h.score0, h.score1],
+                  names: <String>[h.name0, h.name1],
+                  crests: <ui.Image?>[h.crest0, h.crest1],
+                  pulse: <double>[h.pulse0, h.pulse1],
+                  fa: launch.isFa,
+                  menuLabel: launch.tx('منو', 'Menu'),
+                  formLabel: launch.tx('تغییر ترکیب', 'Formation'),
+                  onMenu: _pause,
+                  onFormation: h.formation ? _changeFormation : null,
+                ),
               ),
             ),
           ),
@@ -1980,10 +2034,61 @@ class _BermudaViewState extends State<BermudaView>
 }
 
 /// Height of the in-match formation button (v9: in the top bar).
-const double kBmFormButtonHeight = 36;
+const double kBmFormButtonHeight = 44;
 
-/// v9 top bar of the match screen: the menu button, the match clock (with the turn clock as a thin bar under it) and
-/// the formation button - nothing else, and it sits above the pitch art, never on it.
+/// v12: what the match scoreboard shows. Values are quantised by the caller, so == only changes a few times a second
+/// and the scoreboard (a ValueListenableBuilder on this) does not rebuild every frame.
+@immutable
+class FsHudData {
+  const FsHudData({
+    required this.clock,
+    required this.red,
+    required this.turn,
+    required this.turnMine,
+    required this.score0,
+    required this.score1,
+    required this.name0,
+    required this.name1,
+    required this.crest0,
+    required this.crest1,
+    required this.pulse0,
+    required this.pulse1,
+    required this.formation,
+  });
+  static const FsHudData empty = FsHudData(
+      clock: '', red: 0, turn: -1, turnMine: true, score0: 0, score1: 0, name0: '', name1: '',
+      crest0: null, crest1: null, pulse0: 0, pulse1: 0, formation: false);
+  final String clock, name0, name1;
+  final double red, turn, pulse0, pulse1;
+  final bool turnMine, formation;
+  final int score0, score1;
+  final ui.Image? crest0, crest1;
+
+  @override
+  bool operator ==(Object o) =>
+      o is FsHudData &&
+      o.clock == clock &&
+      o.red == red &&
+      o.turn == turn &&
+      o.turnMine == turnMine &&
+      o.score0 == score0 &&
+      o.score1 == score1 &&
+      o.name0 == name0 &&
+      o.name1 == name1 &&
+      identical(o.crest0, crest0) &&
+      identical(o.crest1, crest1) &&
+      o.pulse0 == pulse0 &&
+      o.pulse1 == pulse1 &&
+      o.formation == formation;
+
+  @override
+  int get hashCode => Object.hash(clock, red, turn, turnMine, score0, score1, name0, name1, crest0, crest1, pulse0,
+      pulse1, formation);
+}
+
+/// v12 match scoreboard (rebuilt HUD), above the pitch, never on it: the menu button, the local side (crest, name,
+/// score; green), the match clock with the turn clock under it, the other side (score, name, crest; gold) and the
+/// formation button. Every tap target is at least 44 dp.
 class FsMatchTopBar extends StatelessWidget {
   const FsMatchTopBar({
     super.key,
@@ -1995,6 +2100,11 @@ class FsMatchTopBar extends StatelessWidget {
     required this.formLabel,
     required this.onMenu,
     required this.onFormation,
+    this.scores = const <int>[0, 0],
+    this.names = const <String>['', ''],
+    this.crests = const <ui.Image?>[null, null],
+    this.pulse = const <double>[0, 0],
+    this.fa = true,
   });
 
   final String clock;
@@ -2004,6 +2114,13 @@ class FsMatchTopBar extends StatelessWidget {
   final double turn;
   /// The turn being timed is the local side's (green) or the other side's (gold).
   final bool turnMine;
+  /// Goals of the local side [0] and the other side [1]; their names and crests; goal pulse 0..1 per side.
+  final List<int> scores;
+  final List<String> names;
+  final List<ui.Image?> crests;
+  final List<double> pulse;
+  /// Persian digits.
+  final bool fa;
   final String menuLabel, formLabel;
   final VoidCallback onMenu;
   final VoidCallback? onFormation;
@@ -2011,27 +2128,125 @@ class FsMatchTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Row(children: <Widget>[
-        LuxeIconButton(icon: Icons.menu_rounded, tooltip: menuLabel, size: 40, onTap: onMenu),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: FsClockPill(clock: clock, red: red, turn: turn, turnMine: turnMine),
-            ),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[Color(0xF21A1650), Color(0xF20B0A2A)],
           ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Luxe.line),
+          boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x80000000), blurRadius: 12, offset: Offset(0, 4))],
         ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: FittedBox(
+        child: Row(children: <Widget>[
+          const SizedBox(width: 2),
+          LuxeIconButton(icon: Icons.menu_rounded, tooltip: menuLabel, size: 44, onTap: onMenu),
+          const SizedBox(width: 4),
+          Expanded(child: _FsHudSide(
+            name: names[0], score: scores[0], crest: crests[0], pulse: pulse[0], fa: fa, mine: true,
+            active: turn >= 0 && turnMine)),
+          FittedBox(
             fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: BmChangeFormButton(label: formLabel, onTap: onFormation),
+            child: FsClockPill(clock: clock, red: red, turn: turn, turnMine: turnMine),
           ),
+          Expanded(child: _FsHudSide(
+            name: names[1], score: scores[1], crest: crests[1], pulse: pulse[1], fa: fa, mine: false,
+            active: turn >= 0 && !turnMine)),
+          const SizedBox(width: 4),
+          BmChangeFormButton(label: formLabel, onTap: onFormation),
+          const SizedBox(width: 2),
+        ]),
+      ),
+    );
+  }
+}
+
+/// One side of the scoreboard: crest + name + score (mirrored for the other side, so the scores meet at the clock).
+class _FsHudSide extends StatelessWidget {
+  const _FsHudSide({
+    required this.name,
+    required this.score,
+    required this.crest,
+    required this.pulse,
+    required this.fa,
+    required this.mine,
+    required this.active,
+  });
+  final String name;
+  final int score;
+  final ui.Image? crest;
+  final double pulse;
+  final bool fa, mine, active;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color accent = mine ? kBmRingGreen : kBmRingGold;
+    final ui.Image? c = crest;
+    final Widget badge = Container(
+      width: 26,
+      height: 26,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF07080C),
+        border: Border.all(color: active ? accent : Luxe.line, width: active ? 2 : 1),
+      ),
+      child: c == null
+          ? Icon(Icons.shield_rounded, size: 14, color: accent)
+          : ClipOval(child: RawImage(image: c, fit: BoxFit.cover, filterQuality: FilterQuality.medium)),
+    );
+    final Widget label = Flexible(
+      child: Text(
+        name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: mine ? TextAlign.left : TextAlign.right,
+        style: const TextStyle(color: Luxe.mute, fontSize: 10.5, fontWeight: FontWeight.w700, height: 1.1),
+      ),
+    );
+    final String digits = fa ? fsFa(score) : '$score';
+    final Widget value = Transform.scale(
+      scale: 1 + pulse * .35,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 32),
+        height: 32,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF07080C),
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: accent.withValues(alpha: .55)),
         ),
-      ]),
+        child: Text(digits,
+            maxLines: 1,
+            style: TextStyle(
+              color: Color.lerp(Luxe.gold2, accent, pulse)!,
+              fontSize: 20,
+              height: 1,
+              fontWeight: FontWeight.w900,
+              fontFeatures: const <ui.FontFeature>[ui.FontFeature.tabularFigures()],
+            )),
+      ),
+    );
+    return Semantics(
+      label: '$name $digits',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: LayoutBuilder(builder: (BuildContext context, BoxConstraints box) {
+          // Narrow phones: the score always shows; the crest and then the name give way first.
+          final double w = box.maxWidth;
+          final List<Widget> row = <Widget>[
+            if (w >= 72) ...<Widget>[badge, const SizedBox(width: 5)],
+            if (w >= 104) ...<Widget>[label, const SizedBox(width: 5)],
+            value,
+          ];
+          return Row(
+            mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            children: mine ? row : row.reversed.toList(growable: false),
+          );
+        }),
+      ),
     );
   }
 }
@@ -2092,7 +2307,8 @@ class FsClockPill extends StatelessWidget {
   }
 }
 
-/// The in-match "تغییر ترکیب" button (v9: Luxe pill in the top bar, with the small green pitch icon).
+/// The in-match "تغییر ترکیب" button. v12: a compact 44 dp scoreboard button (the pitch icon), its label read by
+/// screen readers and shown as a tooltip; dimmed and inert while the formation cannot change.
 class BmChangeFormButton extends StatelessWidget {
   const BmChangeFormButton({super.key, required this.label, required this.onTap});
   final String label;
@@ -2100,33 +2316,33 @@ class BmChangeFormButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: onTap == null ? .45 : 1,
-      child: LuxePress(
-        onTap: onTap,
-        semantics: label,
-        child: Container(
-          height: kBmFormButtonHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xE6101014),
-            borderRadius: BorderRadius.circular(LuxeRadius.pill),
-            border: Border.all(color: Luxe.line),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-            Container(
-              width: 26,
-              height: 20,
+    return Tooltip(
+      message: label,
+      child: Opacity(
+        opacity: onTap == null ? .45 : 1,
+        child: LuxePress(
+          onTap: onTap,
+          semantics: label,
+          child: Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0x0FFFFFFF),
+              shape: BoxShape.circle,
+              border: Border.all(color: Luxe.line),
+            ),
+            child: Container(
+              width: 24,
+              height: 18,
               decoration: BoxDecoration(
                 color: const Color(0xFF2E9B32),
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: const Color(0xFF9CFF7A)),
               ),
-              child: const Icon(Icons.grid_view_rounded, size: 13, color: Colors.white),
+              child: const Icon(Icons.grid_view_rounded, size: 12, color: Colors.white),
             ),
-            const SizedBox(width: 6),
-            Text(label, style: const TextStyle(color: Luxe.ink, fontSize: 12, fontWeight: FontWeight.w700)),
-          ]),
+          ),
         ),
       ),
     );

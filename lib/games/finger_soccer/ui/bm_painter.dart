@@ -106,6 +106,56 @@ class BmView {
   Offset toWorld(Offset p) => Offset((p.dx - ox) / s, (p.dy - oy) / s);
 }
 
+/// v12: the pitch's four round corner cushions in world coordinates: for each corner, the square [RC] x [RC] between
+/// the two rails minus the quarter circle of radius [BmEngine.RC] the bodies roll on (BmEngine.walls). [arcsOnly]
+/// returns just the four arcs (for the bevel line).
+Path bmCornerCushionPath(BmEngine e, {bool arcsOnly = false}) {
+  final double rc = e.RC;
+  final Path out = Path();
+  for (final List<double> c in <List<double>>[
+    <double>[e.Fl, e.Ft, 1, 1],
+    <double>[e.Fr, e.Ft, -1, 1],
+    <double>[e.Fl, e.Fb, 1, -1],
+    <double>[e.Fr, e.Fb, -1, -1],
+  ]) {
+    final double x0 = c[0], y0 = c[1], sx = c[2], sy = c[3];
+    final double cx = x0 + sx * rc, cy = y0 + sy * rc;
+    if (arcsOnly) {
+      out
+        ..moveTo(cx, y0)
+        ..arcToPoint(Offset(x0, cy), radius: Radius.circular(rc), clockwise: sx * sy < 0);
+    } else {
+      out
+        ..moveTo(x0, y0)
+        ..lineTo(cx, y0)
+        ..arcToPoint(Offset(x0, cy), radius: Radius.circular(rc), clockwise: sx * sy < 0)
+        ..close();
+    }
+  }
+  return out;
+}
+
+/// v12: draws the corner cushions: a dark rail fill with a soft champagne bevel along the arc the bodies roll on.
+void bmPaintCornerCushions(Canvas c, BmEngine e) {
+  if (e.RC <= 0) return;
+  c.drawPath(bmCornerCushionPath(e), Paint()..color = const Color(0xF20A0B12));
+  final Path arcs = bmCornerCushionPath(e, arcsOnly: true);
+  c.drawPath(
+      arcs,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6
+        ..strokeCap = StrokeCap.round
+        ..color = const Color(0x80D9B872));
+  c.drawPath(
+      arcs,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round
+        ..color = const Color(0xDDF6E7BD));
+}
+
 Color _rgba(int r, int g, int b, double a) => Color.fromRGBO(r, g, b, a.clamp(0.0, 1.0).toDouble());
 
 // ---------------------------------------------------------------- reference aim + turn ring (measured 2026-11-20)
@@ -405,14 +455,15 @@ class BmPainter extends CustomPainter {
   void paintScore(Canvas canvas) {
     final BmScoreDisplay? d = e.field.score;
     if (d == null) return;
-    final double k = e.field.W / d.artW; // art px -> world
+    final double k = e.field.W / d.artW; // art px -> world (across)
+    final double ky = k * BmFieldS.stretchY; // art px -> world (along the stretched length)
     _world(canvas);
     for (int side = 0; side < 2; side++) {
       final int v = e.score[side].clamp(0, 99).toInt();
       final double cx = (side == 0 ? d.leftCx : d.rightCx) * k;
       final Color c = side == 0 ? e.field.scoreLeft : e.field.scoreRight;
-      final Rect tens = Rect.fromCenter(center: Offset(cx, d.tensCy * k), width: d.digitW * k, height: d.digitH * k);
-      final Rect ones = Rect.fromCenter(center: Offset(cx, d.onesCy * k), width: d.digitW * k, height: d.digitH * k);
+      final Rect tens = Rect.fromCenter(center: Offset(cx, d.tensCy * ky), width: d.digitW * k, height: d.digitH * ky);
+      final Rect ones = Rect.fromCenter(center: Offset(cx, d.onesCy * ky), width: d.digitW * k, height: d.digitH * ky);
       final Rect panel = tens.expandToInclude(ones).inflate(3.5 * k);
       canvas.drawRRect(
         RRect.fromRectAndRadius(panel, Radius.circular(3 * k)),
@@ -468,6 +519,13 @@ class BmPainter extends CustomPainter {
               Color(0xFF000000),
               Color(0x00000000)
             ], const <double>[0, .012, .988, 1]));
+      b.restore();
+      // v12: the round corner cushions the bodies roll round (BmEngine.walls, kBmCornerR), baked into the cached
+      // background so they cost nothing per frame.
+      b.save();
+      b.translate(view.ox, view.oy);
+      b.scale(view.s);
+      bmPaintCornerCushions(b, e);
       b.restore();
       final ui.Picture pic = rec.endRecording();
       im.bg = pic.toImageSync(math.max(1, (size.width * d).round()), math.max(1, (size.height * d).round()));

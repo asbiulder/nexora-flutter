@@ -394,7 +394,7 @@ void main() {
       final Rect bar = tester.getRect(find.byType(FsMatchTopBar));
       final Rect art = g.view.artRect(e);
       expect(bar.bottom, lessThanOrEqualTo(art.top + .5));
-      expect(art.bottom, lessThanOrEqualTo(800 - kFsBottomStripHeight + .5));
+      expect(art.bottom, lessThanOrEqualTo(800 - kFsBottomStripCompact + .5));
       expect(art.left, greaterThanOrEqualTo(-.5));
       expect(art.right, lessThanOrEqualTo(360.5));
       // formation button still opens the picker
